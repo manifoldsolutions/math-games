@@ -235,8 +235,8 @@
         </svg>
         manifoldsolutions.fi
       </span>
-      <h1>Pick a topic. Play to learn it.</h1>
-      <p>A small library of browser games. Choose a topic, then a subtopic, and jump straight in — no downloads, works on phone and desktop.</p>
+      <h1>Math games by Vadim Weinstein.</h1>
+      <p></p>
     </div>
   </header>
 
@@ -257,28 +257,11 @@
 const CATALOG = [
   {
     id: "algebra",
-    title: "Algebra",
-    blurb: "Manipulating expressions, solving for the unknown.",
+    title: "Finnish high school curriculum (lukio)",
+    blurb: "In Finnish for Finnish students.",
     subtopics: [
-      { id: "linear",    title: "Linear equations",  blurb: "Balance both sides to isolate x.",        game: "games/algebra/linear/" },
-      { id: "quadratic", title: "Quadratics",        blurb: "Factor, complete the square, solve.",     game: null },
-    ],
-  },
-  {
-    id: "geometry",
-    title: "Geometry",
-    blurb: "Shapes, angles, and the space between them.",
-    subtopics: [
-      { id: "angles",   title: "Angle chase",   blurb: "Find the missing angle before time runs out.", game: null },
-      { id: "area",     title: "Area builder",  blurb: "Compose shapes to hit a target area.",          game: null },
-    ],
-  },
-  {
-    id: "functions",
-    title: "Functions",
-    blurb: "Inputs, outputs, and the curves they trace.",
-    subtopics: [
-      { id: "graphs",   title: "Read the graph", blurb: "Match each curve to its rule.",                game: null },
+      { id: "MAA 1-2",    title: "Funktiot ja yhtälöt",  blurb: "", game: "games/algebra/linear/" },
+      { id: "MAA 3", title: "Geometria", blurb: "", game: null },
     ],
   },
 ];
@@ -316,7 +299,7 @@ function renderTopics(){
     </a>`;
   }).join('');
   app.innerHTML = `<section class="view">
-    <div class="lead"><h2>Topics</h2><p>Everything on the site, grouped by subject.</p></div>
+    <div class="lead"><h2>Select category</h2><p></p></div>
     <div class="grid">${cards}</div>
   </section>`;
 }
