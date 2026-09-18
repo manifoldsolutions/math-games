@@ -8,15 +8,22 @@
 <!-- ════════════════════════════════════════════════════════════════════
      HOW TO ADD GAMES
      ────────────────────────────────────────────────────────────────────
+     Structure is three levels:  Category → Course → Games
      Everything you edit lives in the CATALOG array in the <script> block
-     near the bottom of this file. Each topic has subtopics; each subtopic
-     points at a game folder via its `game` path.
+     near the bottom of this file.
+
+       Category  (e.g. "Lukio math")
+         Course  (e.g. "MAA 1–2")
+           Game  → points at a folder via its `game` path
 
      To add a game:
-       1. Put the game in its own folder, e.g.  games/algebra/linear/
+       1. Put the game in its own folder, e.g.  games/lukio/maa1-2/game1/
           with the game's own index.html inside it.
-       2. Add a subtopic entry whose `game` is that folder path.
-     Set `game: null` to show a subtopic as "Coming soon" (not clickable).
+       2. Add a game entry in the right course whose `game` is that path.
+     Set `game: null` to show a game as "Coming soon" (not clickable).
+
+     IDs (the `id:` fields) become part of the URL, so keep them short and
+     url-safe: lowercase letters, numbers and hyphens, no spaces.
      Paths are relative to this file, so keep this file at the repo root.
      ════════════════════════════════════════════════════════════════════ -->
 
@@ -250,18 +257,52 @@
 
 <script>
 /* ══════════════════════════════════════════════════════════════════════
-   EDIT ME — your topics, subtopics, and games live here.
-   Each subtopic's `game` is a path to a folder containing that game's
-   own index.html. Use `game: null` for a subtopic that isn't ready yet.
+   EDIT ME — your categories, courses, and games live here.
+   Three levels:  category → courses[] → games[]
+   Each game's `game` is a path to a folder containing that game's own
+   index.html. Use `game: null` for a game that isn't ready yet.
+   Keep every `id` short and url-safe (lowercase, digits, hyphens).
    ══════════════════════════════════════════════════════════════════════ */
 const CATALOG = [
   {
-    id: "algebra",
-    title: "Finnish high school curriculum (lukio)",
-    blurb: "In Finnish for Finnish students.",
-    subtopics: [
-      { id: "MAA 1-2",    title: "Funktiot ja yhtälöt",  blurb: "", game: "games/algebra/linear/" },
-      { id: "MAA 3", title: "Geometria", blurb: "", game: null },
+    id: "lukio",
+    title: "Lukio math",
+    blurb: "Finnish upper-secondary curriculum, in Finnish.",
+    courses: [
+      {
+        id: "maa1-2",
+        title: "MAA 1–2",
+        blurb: "Funktiot ja yhtälöt",
+        games: [
+          { id: "game1", title: "Game 1", blurb: "", game: "games/lukio/maa1-2/game1/" },
+          { id: "game2", title: "Game 2", blurb: "", game: null },
+        ],
+      },
+      {
+        id: "maa3",
+        title: "MAA 3",
+        blurb: "Geometria",
+        games: [
+          { id: "game1", title: "Game 1", blurb: "", game: null },
+          { id: "game2", title: "Game 2", blurb: "", game: null },
+        ],
+      },
+    ],
+  },
+  {
+    id: "ib",
+    title: "IB math",
+    blurb: "International Baccalaureate, in English.",
+    courses: [
+      {
+        id: "integrals",
+        title: "Integrals",
+        blurb: "",
+        games: [
+          { id: "game1", title: "Game 1", blurb: "", game: null },
+          { id: "game2", title: "Game 2", blurb: "", game: null },
+        ],
+      },
     ],
   },
 ];
@@ -269,7 +310,8 @@ const CATALOG = [
 
 const app   = document.getElementById('app');
 const crumb = document.getElementById('crumb');
-const topicById = id => CATALOG.find(t => t.id === id);
+const catById    = id => CATALOG.find(c => c.id === id);
+const courseById = (cat, id) => cat.courses.find(c => c.id === id);
 
 // glyph shown on each card — small, quiet, geometric
 const glyph = `<svg class="glyph" width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
@@ -278,6 +320,7 @@ const glyph = `<svg class="glyph" width="26" height="26" viewBox="0 0 26 26" ari
 const arrow = `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2,7 h9 M7,3 l4,4 -4,4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+const enc = s => encodeURIComponent(s);
 
 function setCrumb(parts){
   crumb.innerHTML = parts.map((p, i) => {
@@ -287,53 +330,84 @@ function setCrumb(parts){
   }).join(' ');
 }
 
-function renderTopics(){
-  setCrumb([{ label: 'Topics' }]);
-  const cards = CATALOG.map(t => {
-    const n = t.subtopics.length;
-    return `<a class="card" href="#/${t.id}">
-      ${glyph}
-      <span class="title">${esc(t.title)}</span>
-      <span class="blurb">${esc(t.blurb)}</span>
-      <span class="meta">${n} ${n === 1 ? 'game' : 'games'} ${arrow}</span>
-    </a>`;
+// one reusable card builder. `soon:true` → renders a disabled "coming soon" card.
+function card({ href, title, blurb, meta, soon }){
+  const inner = `${glyph}
+    <span class="title">${esc(title)}</span>
+    ${blurb ? `<span class="blurb">${esc(blurb)}</span>` : ''}
+    <span class="meta">${meta}</span>`;
+  return soon
+    ? `<div class="card soon">${inner}</div>`
+    : `<a class="card" href="${href}">${inner}</a>`;
+}
+
+function renderCategories(){
+  setCrumb([{ label: 'Categories' }]);
+  const cards = CATALOG.map(c => {
+    const n = c.courses.length;
+    return card({
+      href: `#/${enc(c.id)}`,
+      title: c.title,
+      blurb: c.blurb,
+      meta: `${n} ${n === 1 ? 'course' : 'courses'} ${arrow}`,
+    });
   }).join('');
   app.innerHTML = `<section class="view">
-    <div class="lead"><h2>Select category</h2><p></p></div>
+    <div class="lead"><h2>Select category</h2></div>
     <div class="grid">${cards}</div>
   </section>`;
 }
 
-function renderSubtopics(topic){
-  setCrumb([{ label: 'Topics', href: '#/' }, { label: topic.title }]);
-  const cards = topic.subtopics.map(s => {
-    if (!s.game){
-      return `<div class="card soon">
-        ${glyph}
-        <span class="title">${esc(s.title)}</span>
-        <span class="blurb">${esc(s.blurb)}</span>
-        <span class="meta">Coming soon</span>
-      </div>`;
-    }
-    return `<a class="card" href="${esc(s.game)}">
-      ${glyph}
-      <span class="title">${esc(s.title)}</span>
-      <span class="blurb">${esc(s.blurb)}</span>
-      <span class="meta">Play ${arrow}</span>
-    </a>`;
+function renderCourses(cat){
+  setCrumb([{ label: 'Categories', href: '#/' }, { label: cat.title }]);
+  const cards = cat.courses.map(co => {
+    const n = co.games.length;
+    return card({
+      href: `#/${enc(cat.id)}/${enc(co.id)}`,
+      title: co.title,
+      blurb: co.blurb,
+      meta: `${n} ${n === 1 ? 'game' : 'games'} ${arrow}`,
+    });
   }).join('');
   app.innerHTML = `<section class="view">
-    <div class="lead"><h2>${esc(topic.title)}</h2><p>${esc(topic.blurb)}</p></div>
+    <div class="lead"><h2>${esc(cat.title)}</h2>${cat.blurb ? `<p>${esc(cat.blurb)}</p>` : ''}</div>
+    <div class="grid">${cards}</div>
+  </section>`;
+}
+
+function renderGames(cat, course){
+  setCrumb([
+    { label: 'Categories', href: '#/' },
+    { label: cat.title, href: `#/${enc(cat.id)}` },
+    { label: course.title },
+  ]);
+  const cards = course.games.map(g => card({
+    href: g.game ? esc(g.game) : null,
+    soon: !g.game,
+    title: g.title,
+    blurb: g.blurb,
+    meta: g.game ? `Play ${arrow}` : 'Coming soon',
+  })).join('');
+  app.innerHTML = `<section class="view">
+    <div class="lead"><h2>${esc(course.title)}</h2>${course.blurb ? `<p>${esc(course.blurb)}</p>` : ''}</div>
     <div class="grid">${cards}</div>
   </section>`;
 }
 
 function route(){
-  const id = location.hash.replace(/^#\/?/, '');
-  const topic = id ? topicById(id) : null;
-  if (id && !topic){ location.replace('#/'); return; }   // unknown topic → home
-  document.title = topic ? `${topic.title} — Manifold` : 'Manifold — learning games';
-  topic ? renderSubtopics(topic) : renderTopics();
+  const segs = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
+  const [catId, courseId] = segs;
+
+  const cat = catId ? catById(catId) : null;
+  if (catId && !cat){ location.replace('#/'); return; }            // unknown category → home
+
+  const course = (cat && courseId) ? courseById(cat, courseId) : null;
+  if (courseId && !course){ location.replace(`#/${enc(cat.id)}`); return; }  // unknown course → category
+
+  if (course){ document.title = `${course.title} — ${cat.title}`; renderGames(cat, course); }
+  else if (cat){ document.title = `${cat.title} — Manifold`; renderCourses(cat); }
+  else { document.title = 'Manifold — learning games'; renderCategories(); }
+
   window.scrollTo({ top: 0 });
 }
 
