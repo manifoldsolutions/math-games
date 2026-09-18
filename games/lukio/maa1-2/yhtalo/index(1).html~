@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yhtälön ratkaisu</title>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     GAME: Yhtälön ratkaisu (solve the equation in the fewest steps)
+     Self-contained. Lives at  games/lukio/maa1-2/yhtalo/index.html
+     Buttons: +x  −x  +1  −1  swap   (keys 1–5, r = restart)
+     Stage 1: linear equations, no brackets, never needs ×/÷.
+     ════════════════════════════════════════════════════════════════════ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#eceef3; --surface:#fff; --ink:#14162b; --muted:#5b6079; --line:#d6d9e4;
+    --accent:#4a3ecf; --accent-ink:#3a30a8;
+    --green:#1f9e57; --green-ink:#137a41; --green-wash:#e6f5ec;
+    --brown:#b07d16; --brown-ink:#8a610d; --brown-wash:#f6efdd;
+    --radius:14px;
+    --ui:"Space Grotesk", system-ui, sans-serif;
+    --math:"Fredoka", system-ui, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--ui);
+    min-height:100dvh; display:flex; flex-direction:column;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:14px clamp(16px,4vw,28px); border-bottom:1px solid var(--line);
+    background:var(--surface);
+  }
+  .back{ font-family:var(--ui); font-weight:500; font-size:14px; color:var(--muted); text-decoration:none; }
+  .back:hover{ color:var(--accent-ink); }
+  .title{ font-family:var(--math); font-weight:600; font-size:18px; }
+  .hud{ display:flex; gap:18px; font-family:var(--ui); font-size:14px; color:var(--muted); }
+  .hud b{ color:var(--ink); font-weight:600; }
+
+  main{ flex:1; display:flex; flex-direction:column; }
+
+  /* the equation stack sits in the vertical middle */
+  .board{
+    flex:1; display:flex; flex-direction:column; justify-content:center;
+    padding:24px 12px; overflow-x:auto;
+  }
+  .stack{
+    width:min(600px,96vw); margin-inline:auto;
+    display:flex; flex-direction:column; gap:.45em;
+  }
+  .row{
+    display:grid; grid-template-columns:1fr minmax(78px,auto); align-items:baseline; gap:1.1em;
+  }
+  .eqn{
+    font-family:var(--math); font-weight:500; font-size:clamp(23px,6.2vw,40px);
+    white-space:nowrap; text-align:right;
+  }
+  .row.committed .eqn{ color:var(--ink); opacity:.85; }
+  .ann{
+    font-family:var(--math); font-weight:500; font-size:clamp(15px,3.6vw,21px);
+    color:var(--muted); white-space:nowrap;
+  }
+  .ann .bar{ color:var(--line); margin-right:.35em; }
+
+  .xterm{ color:var(--green-ink); }
+  .cterm{ color:var(--brown-ink); }
+  .op{ color:var(--muted); margin:0 .14em; }
+  .eq{ color:var(--ink); margin:0 .26em; }
+
+  /* controls */
+  .ops{
+    display:flex; gap:10px; flex-wrap:wrap; justify-content:center;
+    padding:16px clamp(12px,4vw,24px) 8px;
+  }
+  .op-btn{
+    font-family:var(--math); font-weight:600; font-size:clamp(17px,4.4vw,21px);
+    min-width:64px; padding:12px 18px; border-radius:12px; cursor:pointer;
+    background:var(--surface); border:1px solid var(--line); color:var(--ink);
+    transition:transform .1s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+  }
+  .op-btn:hover{ transform:translateY(-1px); box-shadow:0 6px 16px -10px rgba(20,22,43,.5); }
+  .op-btn:active{ transform:translateY(0); }
+  .op-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .op-btn.x{ color:var(--green-ink); border-color:#bfe3cd; background:var(--green-wash); }
+  .op-btn.c{ color:var(--brown-ink); border-color:#e8d9ac; background:var(--brown-wash); }
+  .op-btn.n{ color:var(--accent-ink); }
+  .op-btn[disabled]{ opacity:.4; cursor:default; transform:none; box-shadow:none; }
+
+  .subctrl{
+    display:flex; gap:18px; justify-content:center; padding:4px 0 22px;
+    font-family:var(--ui); font-size:13px;
+  }
+  .subctrl button{
+    background:none; border:none; color:var(--muted); cursor:pointer; font:inherit;
+    padding:4px 6px; border-radius:6px;
+  }
+  .subctrl button:hover{ color:var(--accent-ink); }
+
+  .hint{ text-align:center; color:var(--muted); font-size:13px; padding:0 16px 8px; min-height:1.2em; }
+
+  /* win overlay */
+  .overlay{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(20,22,43,.42); padding:20px; z-index:10;
+  }
+  .overlay.show{ display:flex; }
+  .win{
+    background:var(--surface); border-radius:18px; padding:30px 30px 24px; width:min(400px,92vw);
+    text-align:center; box-shadow:0 30px 70px -30px rgba(20,22,43,.6);
+  }
+  .win h2{ font-family:var(--math); font-weight:600; font-size:28px; margin:0 0 6px; }
+  .win .result{ font-family:var(--math); font-size:30px; margin:10px 0 4px; }
+  .win p{ color:var(--muted); margin:6px 0 20px; }
+  .win .btns{ display:flex; gap:10px; justify-content:center; }
+  .win .btns a, .win .btns button{
+    font-family:var(--ui); font-weight:500; font-size:15px; cursor:pointer;
+    padding:11px 18px; border-radius:11px; border:1px solid var(--line);
+    text-decoration:none; color:var(--ink); background:var(--surface);
+  }
+  .win .btns .primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+</style>
+</head>
+<body>
+
+  <header>
+    <a class="back" href="../../../../#/lukio/maa1-2">← Takaisin</a>
+    <span class="title">Yhtälön ratkaisu</span>
+    <span class="hud"><span>Par <b id="par">–</b></span><span>Steps <b id="steps">0</b></span></span>
+  </header>
+
+  <main>
+    <div class="board"><div class="stack" id="stack"></div></div>
+    <div class="hint" id="hint">Ratkaise x mahdollisimman harvalla askeleella.</div>
+    <div class="ops" id="ops"></div>
+    <div class="subctrl">
+      <button id="restart">↺ Alusta</button>
+      <button id="new">✦ Uusi yhtälö</button>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="win">
+      <h2>Ratkaistu! 🎉</h2>
+      <div class="result" id="winResult"></div>
+      <p id="winMsg"></p>
+      <div class="btns">
+        <button class="primary" id="winNew">Uusi yhtälö</button>
+        <button id="winRetry">Yritä samaa uudestaan</button>
+        <a href="../../../../#/lukio/maa1-2">Palaa kurssiin</a>
+      </div>
+    </div>
+  </div>
+
+<script>
+"use strict";
+const motion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const rand = (lo,hi)=> lo + Math.floor(Math.random()*(hi-lo+1));
+
+/* ── equation model: side = {c: x-coefficient, k: constant} ─────────── */
+const clone = eq => ({L:{...eq.L}, R:{...eq.R}});
+
+function applyStep(eq, step){
+  const e = clone(eq);
+  if(step.kind==="x"){ e.L.c+=step.value; e.R.c+=step.value; }
+  else if(step.kind==="const"){ e.L.k+=step.value; e.R.k+=step.value; }
+  else if(step.kind==="swap"){ const t=e.L; e.L=e.R; e.R=t; }
+  return e;
+}
+
+/* fold the flat click list into merged steps (consecutive same kind merge) */
+function derive(base, actions){
+  const steps=[];
+  for(const a of actions){
+    const last=steps[steps.length-1];
+    if(a.kind==="swap") steps.push({kind:"swap"});
+    else if(last && last.kind===a.kind) last.value += a.d;
+    else steps.push({kind:a.kind, value:a.d});
+  }
+  let eq=clone(base); const lines=[]; let count=0;
+  for(const s of steps){
+    if(s.kind!=="swap" && s.value===0) continue;   // net no-op
+    lines.push({source:clone(eq), step:s});
+    eq=applyStep(eq,s); count++;
+  }
+  return {lines, current:eq, stepCount:count};
+}
+
+/* ── formatting to coloured HTML ────────────────────────────────────── */
+function coef(n){ const a=Math.abs(n); return a===1?"":String(a); }
+
+function sideHTML(side){
+  const terms=[];
+  if(side.c!==0) terms.push({sign:side.c<0?"-":"+", html:`<span class="xterm">${coef(side.c)}x</span>`});
+  if(side.k!==0) terms.push({sign:side.k<0?"-":"+", html:`<span class="cterm">${Math.abs(side.k)}</span>`});
+  if(terms.length===0) return `<span class="cterm">0</span>`;
+  return terms.map((t,i)=>{
+    if(i===0) return (t.sign==="-"?`<span class="op">−</span>`:"")+t.html;
+    return `<span class="op">${t.sign==="-"?"−":"+"}</span>`+t.html;
+  }).join("");
+}
+function eqHTML(eq){
+  return `${sideHTML(eq.L)}<span class="eq">=</span>${sideHTML(eq.R)}`;
+}
+function annHTML(step){
+  if(step.kind==="swap") return `<span class="bar">|</span>swap`;
+  const cls = step.kind==="x" ? "xterm" : "cterm";
+  const txt = step.kind==="x" ? `${coef(step.value)}x` : `${Math.abs(step.value)}`;
+  return `<span class="bar">|</span><span class="${cls}">${step.value<0?"−":"+"}${txt}</span>`;
+}
+
+/* ── minimal-steps oracle (BFS; one step = one add-kx / add-const / swap) ─ */
+function minSteps(base){
+  const goal=s=>s.L.c===1&&s.L.k===0&&s.R.c===0;
+  const key=s=>`${s.L.c},${s.L.k},${s.R.c},${s.R.k}`;
+  let frontier=[clone(base)]; const seen=new Set([key(frontier[0])]);
+  if(goal(frontier[0])) return 0;
+  for(let depth=1; depth<=5; depth++){
+    const next=[];
+    for(const s of frontier){
+      const moves=[{L:{...s.R},R:{...s.L}}];
+      for(let v=-12; v<=12; v++){ if(!v) continue;
+        moves.push({L:{c:s.L.c+v,k:s.L.k},R:{c:s.R.c+v,k:s.R.k}});
+        moves.push({L:{c:s.L.c,k:s.L.k+v},R:{c:s.R.c,k:s.R.k+v}});
+      }
+      for(const m of moves){ const kk=key(m); if(seen.has(kk)) continue;
+        seen.add(kk); if(goal(m)) return depth; next.push(m); }
+    }
+    frontier=next; if(!frontier.length) break;
+  }
+  return null;
+}
+
+/* ── minimal clicks: each ±x / ±1 / swap press counts as one step ──────
+   For |Lc−Rc| = 1 there's a closed form. Coeff adds preserve Lc−Rc;
+   swap negates it; the solved form x = m needs Lc−Rc = 1, so:
+     Lc−Rc = 1  → no swap:  |Rc| coeff presses + |Lk| constant presses
+     Lc−Rc = −1 → one swap: 1 + |Lc| + |Rk|                              */
+function minClicks(base){
+  const {L,R}=base;
+  if(L.c-R.c===1)  return Math.abs(R.c) + Math.abs(L.k);
+  if(L.c-R.c===-1) return Math.abs(L.c) + Math.abs(R.k) + 1;
+  return Math.abs(R.c) + Math.abs(L.k);   // safety fallback (generator keeps |Lc−Rc|=1)
+}
+
+/* ── equation generator: |a−c| = 1, integer solution, real puzzle ───── */
+function genEquation(){
+  for(let t=0;t<600;t++){
+    const a=rand(1,5), c=a+(Math.random()<.5?1:-1);
+    if(c<1||c>6||c===a) continue;
+    const x0=rand(-9,9), b=rand(-9,9), d=(a-c)*x0+b;
+    if(Math.abs(d)>12) continue;
+    let base={L:{c:a,k:b},R:{c,k:d}};
+    if(Math.random()<.5) base={L:{...base.R},R:{...base.L}};
+    if(base.L.c===base.R.c) continue;
+    const m=minSteps(base);
+    if(m===null||m<2||m>3) continue;      // gate difficulty by merged-step count
+    return {base, par:minClicks(base)};   // but score/par is measured in clicks
+  }
+  return {base:{L:{c:3,k:-1},R:{c:4,k:5}}, par:minClicks({L:{c:3,k:-1},R:{c:4,k:5}})};
+}
+
+/* ── game state ─────────────────────────────────────────────────────── */
+const stackEl=document.getElementById("stack");
+let base, actions, state, par, solved;
+
+function newEquation(){
+  const g=genEquation();
+  base=g.base; par=g.par; actions=[]; solved=false;
+  state=derive(base,actions);
+  document.getElementById("par").textContent=par;
+  document.getElementById("overlay").classList.remove("show");
+  setButtons(true);
+  render();
+}
+
+function setButtons(on){
+  document.querySelectorAll(".op-btn").forEach(b=>b.disabled=!on);
+}
+
+function render(){
+  let html="";
+  state.lines.forEach((ln)=>{
+    html += `<div class="row committed"><div class="eqn">${eqHTML(ln.source)}</div>`
+          + `<div class="ann">${annHTML(ln.step)}</div></div>`;
+  });
+  html += `<div class="row" id="curRow"><div class="eqn" id="curEqn"></div><div class="ann"></div></div>`;
+  stackEl.innerHTML=html;
+
+  const cur=document.getElementById("curEqn");
+  // the simplified result appears immediately — no raw intermediate line
+  cur.innerHTML=eqHTML(state.current);
+  document.getElementById("steps").textContent=actions.length;
+}
+
+function doAction(action){
+  if(solved) return;
+  actions=actions.concat([action]);
+  state=derive(base,actions);
+  render();
+  checkWin();
+}
+
+function checkWin(){
+  const e=state.current;
+  if(e.L.c===1 && e.L.k===0 && e.R.c===0){
+    solved=true; setButtons(false);
+    document.getElementById("winResult").innerHTML=eqHTML(e);
+    const par=Number(document.getElementById("par").textContent);
+    const s=actions.length;
+    document.getElementById("winMsg").textContent =
+      s<=par ? `Täydellistä — ${s} askelta, sama kuin paras mahdollinen.`
+             : `Ratkaistu ${s} askeleella. Paras mahdollinen: ${par}.`;
+    setTimeout(()=>document.getElementById("overlay").classList.add("show"), 300);
+  }
+}
+
+/* ── buttons ────────────────────────────────────────────────────────── */
+const BUTTONS=[
+  {label:"+x",  cls:"x", act:{kind:"x",d:+1}},
+  {label:"−x",  cls:"x", act:{kind:"x",d:-1}},
+  {label:"+1",  cls:"c", act:{kind:"const",d:+1}},
+  {label:"−1",  cls:"c", act:{kind:"const",d:-1}},
+  {label:"swap",cls:"n", act:{kind:"swap"}},
+];
+const opsEl=document.getElementById("ops");
+BUTTONS.forEach((b,i)=>{
+  const el=document.createElement("button");
+  el.className=`op-btn ${b.cls}`; el.textContent=b.label; el.dataset.i=i;
+  el.addEventListener("click",()=>doAction(b.act));
+  opsEl.appendChild(el);
+});
+
+document.addEventListener("keydown",e=>{
+  if(e.key>="1" && e.key<="5"){ const b=BUTTONS[+e.key-1]; if(b) doAction(b.act); }
+  else if(e.key.toLowerCase()==="r") restart();
+});
+
+function restart(){ actions=[]; solved=false; state=derive(base,actions); setButtons(true);
+  document.getElementById("overlay").classList.remove("show"); render(); }
+
+document.getElementById("restart").addEventListener("click",restart);
+document.getElementById("new").addEventListener("click",newEquation);
+document.getElementById("winNew").addEventListener("click",newEquation);
+document.getElementById("winRetry").addEventListener("click",restart);
+
+newEquation();
+</script>
+</body>
+</html>
