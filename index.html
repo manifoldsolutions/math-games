@@ -203,6 +203,18 @@
   .card.soon{ opacity: .62; cursor: default; }
   .card.soon .meta{ color: var(--muted); }
 
+  /* empty state — a category with no courses, or a course with no games */
+  .empty{
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 44px 24px;
+    text-align: center;
+    color: var(--muted);
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 16px;
+  }
+
   footer{
     border-top: 1px solid var(--line);
     color: var(--muted);
@@ -341,6 +353,9 @@ function card({ href, title, blurb, meta, soon }){
     : `<a class="card" href="${href}">${inner}</a>`;
 }
 
+// shown when a category has no courses, or a course has no games
+function emptyState(msg){ return `<div class="empty">${esc(msg)}</div>`; }
+
 function renderCategories(){
   setCrumb([{ label: 'Categories' }]);
   const cards = CATALOG.map(c => {
@@ -371,7 +386,7 @@ function renderCourses(cat){
   }).join('');
   app.innerHTML = `<section class="view">
     <div class="lead"><h2>${esc(cat.title)}</h2>${cat.blurb ? `<p>${esc(cat.blurb)}</p>` : ''}</div>
-    <div class="grid">${cards}</div>
+    ${cat.courses.length ? `<div class="grid">${cards}</div>` : emptyState('No courses here yet.')}
   </section>`;
 }
 
@@ -390,7 +405,7 @@ function renderGames(cat, course){
   })).join('');
   app.innerHTML = `<section class="view">
     <div class="lead"><h2>${esc(course.title)}</h2>${course.blurb ? `<p>${esc(course.blurb)}</p>` : ''}</div>
-    <div class="grid">${cards}</div>
+    ${course.games.length ? `<div class="grid">${cards}</div>` : emptyState('No games here yet.')}
   </section>`;
 }
 
