@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manifold — learning games</title>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     HOW TO ADD GAMES
+     ────────────────────────────────────────────────────────────────────
+     Everything you edit lives in the CATALOG array in the <script> block
+     near the bottom of this file. Each topic has subtopics; each subtopic
+     points at a game folder via its `game` path.
+
+     To add a game:
+       1. Put the game in its own folder, e.g.  games/algebra/linear/
+          with the game's own index.html inside it.
+       2. Add a subtopic entry whose `game` is that folder path.
+     Set `game: null` to show a subtopic as "Coming soon" (not clickable).
+     Paths are relative to this file, so keep this file at the repo root.
+     ════════════════════════════════════════════════════════════════════ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:        #eceef3;
+    --surface:   #ffffff;
+    --ink:       #14162b;
+    --muted:     #5b6079;
+    --line:      #d6d9e4;
+    --accent:    #4a3ecf;
+    --accent-ink:#3a30a8;
+    --accent-wash:#ecebfa;
+    --radius: 14px;
+    --maxw: 1040px;
+    --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --display: "Space Grotesk", var(--sans);
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{ margin:0; }
+
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-weight: 450;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  a{ color: inherit; }
+
+  .wrap{
+    width: 100%;
+    max-width: var(--maxw);
+    margin-inline: auto;
+    padding-inline: clamp(20px, 5vw, 44px);
+  }
+
+  /* ── Hero ──────────────────────────────────────────────── */
+  .hero{
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+  }
+  .hero .wrap{
+    position: relative;
+    z-index: 1;
+    padding-block: clamp(38px, 8vw, 72px) clamp(30px, 6vw, 52px);
+  }
+  .mark{
+    font-family: var(--display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    font-size: 15px;
+    color: var(--accent-ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+  }
+  .mark svg{ display:block; }
+  .hero h1{
+    font-family: var(--display);
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    font-size: clamp(34px, 6.5vw, 58px);
+    line-height: 1.02;
+    margin: 20px 0 0;
+    max-width: 16ch;
+  }
+  .hero p{
+    color: var(--muted);
+    font-size: clamp(15px, 2.2vw, 18px);
+    margin: 16px 0 0;
+    max-width: 52ch;
+  }
+  /* faint manifold mesh behind the hero */
+  .mesh{
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    width: 100%; height: 100%;
+    opacity: .5;
+    pointer-events: none;
+    mask-image: linear-gradient(105deg, #000 30%, transparent 78%);
+    -webkit-mask-image: linear-gradient(105deg, #000 30%, transparent 78%);
+  }
+  .mesh path{ stroke: var(--accent); stroke-width: 1; fill: none; opacity: .28; }
+
+  /* ── Breadcrumb ────────────────────────────────────────── */
+  .crumb{
+    font-family: var(--display);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted);
+    padding-block: 22px 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .crumb a{ text-decoration: none; color: var(--muted); border-radius: 4px; }
+  .crumb a:hover{ color: var(--accent-ink); }
+  .crumb .sep{ color: var(--line); }
+  .crumb .here{ color: var(--ink); }
+
+  /* ── Content ───────────────────────────────────────────── */
+  main{ flex: 1; padding-bottom: 64px; }
+  .lead{ margin: 6px 0 26px; }
+  .lead h2{
+    font-family: var(--display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    font-size: clamp(22px, 3.4vw, 30px);
+    margin: 0;
+  }
+  .lead p{ color: var(--muted); margin: 8px 0 0; max-width: 56ch; }
+
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .card{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    text-decoration: none;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 22px 22px 20px;
+    min-height: 150px;
+    transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+  }
+  .card .glyph{ color: var(--accent); }
+  .card .title{
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 20px;
+    letter-spacing: -0.015em;
+    margin-top: 2px;
+  }
+  .card .blurb{ color: var(--muted); font-size: 14.5px; }
+  .card .meta{
+    margin-top: auto;
+    padding-top: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent-ink);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  a.card:hover{
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 24px -16px rgba(74,62,207,.55);
+  }
+  a.card:focus-visible{
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* disabled "coming soon" card */
+  .card.soon{ opacity: .62; cursor: default; }
+  .card.soon .meta{ color: var(--muted); }
+
+  footer{
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer .wrap{ padding-block: 20px; }
+
+  .view{ animation: rise .28s ease both; }
+  @media (prefers-reduced-motion: reduce){
+    .view{ animation: none; }
+    a.card:hover{ transform: none; }
+  }
+  @keyframes rise{ from{ opacity:0; transform: translateY(6px);} to{ opacity:1; transform:none; } }
+</style>
+</head>
+<body>
+
+  <header class="hero">
+    <svg class="mesh" viewBox="0 0 800 300" preserveAspectRatio="xMinYMid slice" aria-hidden="true">
+      <!-- a lightly warped grid — a nod to "manifold" -->
+      <path d="M0,60 C160,30 320,90 480,55 C620,26 720,72 800,48"/>
+      <path d="M0,110 C160,84 320,140 480,104 C620,76 720,122 800,98"/>
+      <path d="M0,160 C160,136 320,190 480,154 C620,128 720,172 800,150"/>
+      <path d="M0,210 C160,188 320,240 480,206 C620,180 720,224 800,202"/>
+      <path d="M0,260 C160,240 320,290 480,258 C620,232 720,276 800,256"/>
+      <path d="M60,0 C40,90 96,150 60,300"/>
+      <path d="M180,0 C158,92 214,150 180,300"/>
+      <path d="M300,0 C280,90 336,152 300,300"/>
+      <path d="M420,0 C400,92 456,150 420,300"/>
+      <path d="M540,0 C520,90 576,152 540,300"/>
+      <path d="M660,0 C640,92 696,150 660,300"/>
+    </svg>
+    <div class="wrap">
+      <span class="mark">
+        <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+          <path d="M2,12 C5,4 8,4 9,9 C10,14 13,14 16,6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+        manifoldsolutions.fi
+      </span>
+      <h1>Pick a topic. Play to learn it.</h1>
+      <p>A small library of browser games. Choose a topic, then a subtopic, and jump straight in — no downloads, works on phone and desktop.</p>
+    </div>
+  </header>
+
+  <nav class="wrap crumb" id="crumb" aria-label="Breadcrumb"></nav>
+
+  <main class="wrap">
+    <div id="app"></div>
+  </main>
+
+  <footer><div class="wrap">Built and hosted on GitHub Pages.</div></footer>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   EDIT ME — your topics, subtopics, and games live here.
+   Each subtopic's `game` is a path to a folder containing that game's
+   own index.html. Use `game: null` for a subtopic that isn't ready yet.
+   ══════════════════════════════════════════════════════════════════════ */
+const CATALOG = [
+  {
+    id: "algebra",
+    title: "Algebra",
+    blurb: "Manipulating expressions, solving for the unknown.",
+    subtopics: [
+      { id: "linear",    title: "Linear equations",  blurb: "Balance both sides to isolate x.",        game: "games/algebra/linear/" },
+      { id: "quadratic", title: "Quadratics",        blurb: "Factor, complete the square, solve.",     game: null },
+    ],
+  },
+  {
+    id: "geometry",
+    title: "Geometry",
+    blurb: "Shapes, angles, and the space between them.",
+    subtopics: [
+      { id: "angles",   title: "Angle chase",   blurb: "Find the missing angle before time runs out.", game: null },
+      { id: "area",     title: "Area builder",  blurb: "Compose shapes to hit a target area.",          game: null },
+    ],
+  },
+  {
+    id: "functions",
+    title: "Functions",
+    blurb: "Inputs, outputs, and the curves they trace.",
+    subtopics: [
+      { id: "graphs",   title: "Read the graph", blurb: "Match each curve to its rule.",                game: null },
+    ],
+  },
+];
+/* ════════════════════ end of the part you edit ════════════════════════ */
+
+const app   = document.getElementById('app');
+const crumb = document.getElementById('crumb');
+const topicById = id => CATALOG.find(t => t.id === id);
+
+// glyph shown on each card — small, quiet, geometric
+const glyph = `<svg class="glyph" width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
+  <circle cx="13" cy="13" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/>
+  <path d="M3,13 h20 M13,3 v20" stroke="currentColor" stroke-width="1.2" opacity=".5"/></svg>`;
+const arrow = `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2,7 h9 M7,3 l4,4 -4,4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function setCrumb(parts){
+  crumb.innerHTML = parts.map((p, i) => {
+    const tail = i < parts.length - 1 ? '<span class="sep">/</span>' : '';
+    if (p.href) return `<a href="${p.href}">${esc(p.label)}</a>${tail}`;
+    return `<span class="here">${esc(p.label)}</span>${tail}`;
+  }).join(' ');
+}
+
+function renderTopics(){
+  setCrumb([{ label: 'Topics' }]);
+  const cards = CATALOG.map(t => {
+    const n = t.subtopics.length;
+    return `<a class="card" href="#/${t.id}">
+      ${glyph}
+      <span class="title">${esc(t.title)}</span>
+      <span class="blurb">${esc(t.blurb)}</span>
+      <span class="meta">${n} ${n === 1 ? 'game' : 'games'} ${arrow}</span>
+    </a>`;
+  }).join('');
+  app.innerHTML = `<section class="view">
+    <div class="lead"><h2>Topics</h2><p>Everything on the site, grouped by subject.</p></div>
+    <div class="grid">${cards}</div>
+  </section>`;
+}
+
+function renderSubtopics(topic){
+  setCrumb([{ label: 'Topics', href: '#/' }, { label: topic.title }]);
+  const cards = topic.subtopics.map(s => {
+    if (!s.game){
+      return `<div class="card soon">
+        ${glyph}
+        <span class="title">${esc(s.title)}</span>
+        <span class="blurb">${esc(s.blurb)}</span>
+        <span class="meta">Coming soon</span>
+      </div>`;
+    }
+    return `<a class="card" href="${esc(s.game)}">
+      ${glyph}
+      <span class="title">${esc(s.title)}</span>
+      <span class="blurb">${esc(s.blurb)}</span>
+      <span class="meta">Play ${arrow}</span>
+    </a>`;
+  }).join('');
+  app.innerHTML = `<section class="view">
+    <div class="lead"><h2>${esc(topic.title)}</h2><p>${esc(topic.blurb)}</p></div>
+    <div class="grid">${cards}</div>
+  </section>`;
+}
+
+function route(){
+  const id = location.hash.replace(/^#\/?/, '');
+  const topic = id ? topicById(id) : null;
+  if (id && !topic){ location.replace('#/'); return; }   // unknown topic → home
+  document.title = topic ? `${topic.title} — Manifold` : 'Manifold — learning games';
+  topic ? renderSubtopics(topic) : renderTopics();
+  window.scrollTo({ top: 0 });
+}
+
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>
