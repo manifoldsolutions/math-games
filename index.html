@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Manifold — learning games</title>
+<title>Manifold Solutions — learning games</title>
 
 <!-- ════════════════════════════════════════════════════════════════════
      HOW TO ADD GAMES
@@ -409,8 +409,8 @@ function route(){
   if (courseId && !course){ location.replace(`#/${enc(cat.id)}`); return; }  // unknown course → category
 
   if (course){ document.title = `${course.title} — ${cat.title}`; renderGames(cat, course); }
-  else if (cat){ document.title = `${cat.title} — Manifold`; renderCourses(cat); }
-  else { document.title = 'Manifold — learning games'; renderCategories(); }
+  else if (cat){ document.title = `${cat.title} — Manifold Solutions`; renderCourses(cat); }
+  else { document.title = 'Manifold Solutions — learning games'; renderCategories(); }
 
   window.scrollTo({ top: 0 });
 }
