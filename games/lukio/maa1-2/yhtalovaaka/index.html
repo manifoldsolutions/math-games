@@ -502,8 +502,8 @@ function checkEnd(){
   const {L,R}=cur;
   const alone = c => c.b===1 && c.d===0 && !c.p;     // just the box
   const gems  = c => c.b===0 && (!c.p || !c.d);      // only diamonds, or only balloons (x < 0)
-  if(alone(L) && gems(R)){ status="winning"; settle=0; needFlip=false; }
-  else if(alone(R) && gems(L)){ status="winning"; settle=0; needFlip=true; }   // x on the right
+  if(alone(L) && gems(R)){ status="winning"; settle=0; needFlip=false; startFireworks(); }
+  else if(alone(R) && gems(L)){ status="winning"; settle=0; needFlip=true; startFireworks(); }   // x on the right
   // balanced with the same number of boxes on both sides ⇒ an identity (e.g. 0 = 0):
   // true for every x, so the box's contents can no longer be deduced
   else if(L.b===R.b){ status="identity"; settle=0; }
@@ -764,10 +764,10 @@ function crash(side){
 function reveal(){
   status="won"; solvedCount++; setText("solved",solvedCount);
   renderPan("L", true); updateUI();
-  startFireworks();                                    // (normally already running)
   setTimeout(()=>showOverlay("win"), motion ? 1950 : 200);
 }
-const FIREWORKS_LEAD = 0.15;     // fireworks begin this many seconds before the box opens
+// fireworks begin the moment the winning move is made; the scale settles,
+// turns around and the box opens while they are still in the air
 function startFireworks(){ if(celebrated || !motion) return; celebrated=true; celebrate(); }
 
 /* ── celebration: streamers and confetti bursting at the height of the beam ──
@@ -896,7 +896,6 @@ function frame(now){
     }
     if((status==="winning" || status==="identity") && Math.abs(tilt)<0.01 && Math.abs(tiltV)<0.03){
       settle+=dt;
-      if(status==="winning" && !needFlip && settle>0.4-FIREWORKS_LEAD) startFireworks();
       if(settle>0.4){
         if(status==="winning"){
           if(needFlip){ status="flipping"; flipT=0; if(!motion) flipT=1; }
@@ -910,7 +909,6 @@ function frame(now){
   if(status==="flipping"){
     const before=flipT;
     flipT=Math.min(1, flipT+dt/0.9);
-    if(flipT>=1-FIREWORKS_LEAD/0.9) startFireworks();
     if(before<0.5 && flipT>=0.5){ [cur.L, cur.R]=[cur.R, cur.L]; renderPan("L"); renderPan("R"); updateUI(); }
     const sx=Math.max(0.001, Math.abs(Math.cos(Math.PI*flipT)));
     $("rig").setAttribute("transform",`translate(${PIV.x} 0) scale(${sx.toFixed(3)} 1) translate(${-PIV.x} 0)`);
