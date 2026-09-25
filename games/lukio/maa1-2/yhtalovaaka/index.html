@@ -530,14 +530,14 @@ svg.addEventListener("pointerdown",e=>{
   const p=svgPt(e), hit=pick(p);
   if(!hit) return;
   e.preventDefault();
-  svg.setPointerCapture(e.pointerId);
-  pending={hit, id:e.pointerId, cx:e.clientX, cy:e.clientY, p};
+  try{ svg.setPointerCapture(e.pointerId); }catch(_){}
+  pending={hit, id:e.pointerId, cx:e.clientX, cy:e.clientY, p, touch:e.pointerType!=="mouse"};
 });
 svg.addEventListener("pointermove",e=>{
   if(pending && e.pointerId===pending.id){
     if(Math.hypot(e.clientX-pending.cx, e.clientY-pending.cy) < DRAG_START_PX) return;
     if(status!=="play"){ pending=null; return; }
-    beginDrag(pending.hit, pending.p, e.pointerId); pending=null;
+    beginDrag(pending.hit, pending.p, e.pointerId, pending.touch); pending=null;
   }
   if(drag && e.pointerId===drag.id) moveDrag(svgPt(e));
 });
@@ -550,11 +550,24 @@ svg.addEventListener("pointercancel",e=>{
   if(drag && e.pointerId===drag.id) endDrag(null);
 });
 
-function beginDrag(hit, p, id){
+/* On a touch screen the finger would hide what it holds, so the held item
+   grows and rides above the fingertip. The cup it lands in is decided by
+   where the ITEM is, not where the finger is. */
+const TOUCH_LIFT_PX = 70;                     // gap between fingertip and item
+const TOUCH_GROW = {b:1.25, d:1.9, p:1.6};    // how much the held item grows
+
+function beginDrag(hit, p, id, touch){
   if(hit.from!=="S"){ cur[hit.from][hit.t]--; renderPan(hit.from); }   // lifting it takes its weight off
   const g=document.createElementNS(SVGNS,"g");
   g.setAttribute("class","held"); g.innerHTML=shapeOf(hit.t); dragLayer.appendChild(g);
-  drag={t:hit.t, from:hit.from, g, id, ox:hit.x-p.x, oy:hit.y-p.y, x:hit.x, y:hit.y,
+  let grow=1, ox=hit.x-p.x, oy=hit.y-p.y;
+  if(touch){
+    grow=TOUCH_GROW[hit.t];
+    const unitsPerPx=1/svg.getScreenCTM().a;
+    const half=(hit.t==="b"?51:hit.t==="p"?20:12)*S*1.06*grow;   // half the held item's height
+    ox=0; oy=-(TOUCH_LIFT_PX*unitsPerPx + half);
+  }
+  drag={t:hit.t, from:hit.from, g, id, ox, oy, grow, x:p.x+ox, y:p.y+oy,
         vx:0, vy:0, lt:performance.now()};
   svg.classList.add("dragging");
   updateUI();
@@ -566,8 +579,8 @@ function moveDrag(p){
   // smoothed hand velocity, so a released item keeps a little of its motion
   drag.vx=0.6*drag.vx+0.4*(nx-drag.x)/dt; drag.vy=0.6*drag.vy+0.4*(ny-drag.y)/dt;
   drag.x=nx; drag.y=ny; drag.lt=now;
-  drag.g.setAttribute("transform",`translate(${nx.toFixed(1)},${ny.toFixed(1)}) scale(${(1.06*S).toFixed(3)})`);
-  const target=cupAt(p);
+  drag.g.setAttribute("transform",`translate(${nx.toFixed(1)},${ny.toFixed(1)}) scale(${(1.06*S*drag.grow).toFixed(3)})`);
+  const target=cupAt({x:nx, y:ny});             // where the item is, not the finger
   ["L","R"].forEach(s=>panEl[s].classList.toggle("target", s===target && s!==drag.from));
 }
 
@@ -586,7 +599,7 @@ function dropToFloor(t, x, y, vx=0, vy=0){
 
 function endDrag(p){
   const {t, from, x, y, vx, vy}=drag;
-  const target = p ? cupAt(p) : null;
+  const target = p ? cupAt({x, y}) : null;
   drag.g.remove(); drag=null;
   svg.classList.remove("dragging");
   ["L","R"].forEach(s=>panEl[s].classList.remove("target"));
