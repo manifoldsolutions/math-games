@@ -84,6 +84,8 @@
   .shelf-label{ font-family:var(--ui); font-size:20px; fill:var(--muted); text-anchor:middle; }
   .supply{ cursor:grab; }
   .dragging{ cursor:grabbing; }
+  .return-ring{ fill:none; stroke:var(--accent); stroke-width:2.5; stroke-dasharray:7 6; opacity:.55; pointer-events:none; }
+  .return-ring.on{ opacity:1; stroke-width:4; fill:rgba(74,62,207,.10); }
   .held{ filter:drop-shadow(0 8px 10px rgba(20,22,43,.28)); pointer-events:none; }
 
   .item{ cursor:grab; }
@@ -207,6 +209,7 @@
         </g>
         </g>
         <g id="fx"></g>
+        <circle id="returnRing" class="return-ring" r="10" style="display:none"/>
         <g id="dragLayer"></g>
       </svg>
     </div>
@@ -415,13 +418,14 @@ function startPuzzle(p){
 const newPuzzle = ()=> startPuzzle(genPuzzle(level));
 const restart   = ()=> startPuzzle(puzzle);
 
-function renderPan(side, revealX){
+function renderPan(side, revealX, dim){
   const g=panEl[side].querySelector(".items");
   const items=layout(cur[side]);
+  const isDim = it => dim && it.t===dim.t && Math.abs(it.x-dim.lx)<0.5 && Math.abs(it.y-dim.ly)<0.5;
   // balloons first, so their strings pass behind boxes and diamonds
   items.sort((a,b)=>(b.t==="p")-(a.t==="p"));
   g.innerHTML = items.map(it =>
-    `<g class="item${revealX?" revealed":""}" transform="translate(${it.x},${it.y})">` +
+    `<g class="item${revealX?" revealed":""}"${isDim(it)?' opacity="0.25"':''} transform="translate(${it.x},${it.y})">` +
     (it.t==="b" ? (revealX ? openBoxShape(puzzle.x) : boxShape("x"))
      : it.t==="p" ? balloonShape(it.ax-it.x, -it.y) : gemShape()) + `</g>`).join("");
 }
@@ -513,17 +517,44 @@ function pick(p){
       let d;
       if(it.t==="b") d = (Math.abs(p.x-gx)<=54*S && Math.abs(p.y-gy)<=54*S) ? 0 : Infinity;
       else { d=Math.hypot(p.x-gx,p.y-gy); if(d>(it.t==="p"?Math.max(20*S,tol):tol)) d=Infinity; }
-      if(d<Infinity && (!best || d<best.d)) best={from:side, t:it.t, x:gx, y:gy, d};
+      if(d<Infinity && (!best || d<best.d)) best={from:side, t:it.t, x:gx, y:gy, lx:it.x, ly:it.y, d};
     }
   }
   return best;
 }
 
-/* A press only picks an item up once the pointer has moved a few pixels —
-   a plain click does nothing. Released anywhere except the OTHER cup, the item
-   drops out of the scale and falls to the floor. */
+/* Touch screens: the moment a finger touches an item, a big copy of it rises
+   above the fingertip so the player sees what they are holding. The item
+   still weighs on the cup — releasing without moving leaves it there.
+   Moving the finger a few pixels takes it out for real.
+   Mouse: a plain click does nothing; moving a few pixels takes the item out.
+   A taken-out item released anywhere except the OTHER cup falls / flies away. */
 const DRAG_START_PX = 6;
+const TOUCH_LIFT_PX = 70;                     // gap between fingertip and item
+const TOUCH_GROW = {b:1.25, d:1.9, p:1.6};    // how much the held item grows
 let pending=null;
+
+function heldOffset(t, touch){
+  if(!touch) return null;
+  const grow=TOUCH_GROW[t];
+  const unitsPerPx=1/svg.getScreenCTM().a;
+  const half=(t==="b"?51:t==="p"?20:12)*S*1.06*grow;   // half the held item's height
+  // the lifted copy sits half as far from the original as "clear of the finger" would put it
+  return {grow, ox:0, oy:-(TOUCH_LIFT_PX*unitsPerPx + half)*0.5};
+}
+function makeHeld(t){
+  const g=document.createElementNS(SVGNS,"g");
+  g.setAttribute("class","held"); g.innerHTML=shapeOf(t); dragLayer.appendChild(g);
+  return g;
+}
+function placeHeld(g, x, y, grow){
+  g.setAttribute("transform",`translate(${x.toFixed(1)},${y.toFixed(1)}) scale(${(1.06*S*grow).toFixed(3)})`);
+}
+function endPreview(){
+  if(!pending || !pending.g) return;
+  pending.g.remove();
+  if(pending.hit.from!=="S") renderPan(pending.hit.from);          // show the original again
+}
 
 svg.addEventListener("pointerdown",e=>{
   if(status!=="play" || drag || pending) return;
@@ -531,44 +562,47 @@ svg.addEventListener("pointerdown",e=>{
   if(!hit) return;
   e.preventDefault();
   try{ svg.setPointerCapture(e.pointerId); }catch(_){}
-  pending={hit, id:e.pointerId, cx:e.clientX, cy:e.clientY, p, touch:e.pointerType!=="mouse"};
+  const touch=e.pointerType!=="mouse";
+  pending={hit, id:e.pointerId, cx:e.clientX, cy:e.clientY, p, touch};
+  if(touch){                                   // show it big above the finger right away
+    const o=heldOffset(hit.t, true);
+    pending.g=makeHeld(hit.t); placeHeld(pending.g, p.x+o.ox, p.y+o.oy, o.grow);
+    if(hit.from!=="S") renderPan(hit.from, false, hit);            // dim the original
+  }
 });
 svg.addEventListener("pointermove",e=>{
   if(pending && e.pointerId===pending.id){
     if(Math.hypot(e.clientX-pending.cx, e.clientY-pending.cy) < DRAG_START_PX) return;
-    if(status!=="play"){ pending=null; return; }
-    beginDrag(pending.hit, pending.p, e.pointerId, pending.touch); pending=null;
+    if(status!=="play"){ endPreview(); pending=null; return; }
+    const pd=pending; pending=null;
+    beginDrag(pd.hit, pd.p, e.pointerId, pd.touch, pd.g);
   }
   if(drag && e.pointerId===drag.id) moveDrag(svgPt(e));
 });
 svg.addEventListener("pointerup",e=>{
-  if(pending && e.pointerId===pending.id){ pending=null; return; }   // just a click
+  if(pending && e.pointerId===pending.id){ endPreview(); pending=null; return; }   // tap: stays in the cup
   if(drag && e.pointerId===drag.id) endDrag(svgPt(e));
 });
 svg.addEventListener("pointercancel",e=>{
-  if(pending && e.pointerId===pending.id) pending=null;
+  if(pending && e.pointerId===pending.id){ endPreview(); pending=null; }
   if(drag && e.pointerId===drag.id) endDrag(null);
 });
 
-/* On a touch screen the finger would hide what it holds, so the held item
-   grows and rides above the fingertip. The cup it lands in is decided by
-   where the ITEM is, not where the finger is. */
-const TOUCH_LIFT_PX = 70;                     // gap between fingertip and item
-const TOUCH_GROW = {b:1.25, d:1.9, p:1.6};    // how much the held item grows
-
-function beginDrag(hit, p, id, touch){
-  if(hit.from!=="S"){ cur[hit.from][hit.t]--; renderPan(hit.from); }   // lifting it takes its weight off
-  const g=document.createElementNS(SVGNS,"g");
-  g.setAttribute("class","held"); g.innerHTML=shapeOf(hit.t); dragLayer.appendChild(g);
-  let grow=1, ox=hit.x-p.x, oy=hit.y-p.y;
-  if(touch){
-    grow=TOUCH_GROW[hit.t];
-    const unitsPerPx=1/svg.getScreenCTM().a;
-    const half=(hit.t==="b"?51:hit.t==="p"?20:12)*S*1.06*grow;   // half the held item's height
-    ox=0; oy=-(TOUCH_LIFT_PX*unitsPerPx + half);
-  }
-  drag={t:hit.t, from:hit.from, g, id, ox, oy, grow, x:p.x+ox, y:p.y+oy,
+function beginDrag(hit, p, id, touch, g){
+  if(hit.from!=="S"){ cur[hit.from][hit.t]--; renderPan(hit.from); }   // now its weight comes off
+  if(!g) g=makeHeld(hit.t);
+  const o=heldOffset(hit.t, touch) || {grow:1, ox:hit.x-p.x, oy:hit.y-p.y};
+  drag={t:hit.t, from:hit.from, g, id, ox:o.ox, oy:o.oy, grow:o.grow, x:p.x+o.ox, y:p.y+o.oy,
         vx:0, vy:0, lt:performance.now()};
+  if(hit.from!=="S"){
+    // mark where it came from: bringing it back onto this ring puts it back
+    const px=1/svg.getScreenCTM().a;
+    const r = hit.t==="b" ? 60*S : hit.t==="p" ? Math.max(20*S, 26*px) : Math.max(16*S, 24*px);
+    drag.home={lx:hit.lx, ly:hit.ly, r};
+    const ring=$("returnRing"); ring.setAttribute("r", r.toFixed(1)); ring.style.display="";
+    updateReturnRing();
+  }
+  placeHeld(g, drag.x, drag.y, drag.grow);
   svg.classList.add("dragging");
   updateUI();
 }
@@ -579,8 +613,8 @@ function moveDrag(p){
   // smoothed hand velocity, so a released item keeps a little of its motion
   drag.vx=0.6*drag.vx+0.4*(nx-drag.x)/dt; drag.vy=0.6*drag.vy+0.4*(ny-drag.y)/dt;
   drag.x=nx; drag.y=ny; drag.lt=now;
-  drag.g.setAttribute("transform",`translate(${nx.toFixed(1)},${ny.toFixed(1)}) scale(${(1.06*S*drag.grow).toFixed(3)})`);
-  const target=cupAt({x:nx, y:ny});             // where the item is, not the finger
+  placeHeld(drag.g, nx, ny, drag.grow);
+  const target=atHome() ? null : cupAt({x:nx, y:ny});   // where the item is, not the finger
   ["L","R"].forEach(s=>panEl[s].classList.toggle("target", s===target && s!==drag.from));
 }
 
@@ -597,14 +631,31 @@ function dropToFloor(t, x, y, vx=0, vy=0){
   spawn(shapeOf(t), x, y, {vx:cap(vx*0.3,180), vy:cap(Math.min(0,vy)*0.2,150), vr:cap(vx*0.2,120), r:(t==="b"?51:11)*S, scale:S});
 }
 
+/* the "put it back" ring rides along with its cup */
+function homePos(){ const c=cupPos(drag.from); return {x:c.x+drag.home.lx*S, y:c.y+drag.home.ly*S}; }
+function atHome(){
+  if(!drag || !drag.home) return false;
+  const h=homePos(); return Math.hypot(drag.x-h.x, drag.y-h.y) <= drag.home.r*1.1;
+}
+function updateReturnRing(){
+  const ring=$("returnRing");
+  if(!drag || !drag.home){ ring.style.display="none"; return; }
+  const h=homePos();
+  ring.setAttribute("cx",h.x.toFixed(1)); ring.setAttribute("cy",h.y.toFixed(1));
+  ring.classList.toggle("on", atHome());
+}
+
 function endDrag(p){
   const {t, from, x, y, vx, vy}=drag;
-  const target = p ? cupAt({x, y}) : null;
+  const home=atHome();
+  $("returnRing").style.display="none";
+  const target = p && !home ? cupAt({x, y}) : null;
   drag.g.remove(); drag=null;
   svg.classList.remove("dragging");
   ["L","R"].forEach(s=>panEl[s].classList.remove("target"));
 
-  if(target && target!==from){
+  if(home){ cur[from][t]++; renderPan(from); }             // put back where it was
+  else if(target && target!==from){
     if(cur[target][t] >= CAP[t]){ flashHint("Kuppi on täynnä."); dropToFloor(t,x,y,vx,vy); }
     else { cur[target][t]++; renderPan(target); }
   } else {
@@ -613,7 +664,9 @@ function endDrag(p){
   updateUI(); checkEnd();
 }
 function cancelDrag(){
+  if(pending && pending.g) pending.g.remove();
   pending=null;
+  $("returnRing").style.display="none";
   if(!drag) return;
   drag.g.remove(); drag=null; svg.classList.remove("dragging");
   ["L","R"].forEach(s=>panEl[s].classList.remove("target"));
@@ -782,6 +835,7 @@ function frame(now){
   });
   stringsEl.innerHTML=strings;
 
+  if(drag && drag.home) updateReturnRing();
   stepParticles(dt);
   requestAnimationFrame(frame);
 }
