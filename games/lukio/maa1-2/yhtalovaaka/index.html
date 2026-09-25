@@ -81,7 +81,8 @@
   .target .bowl{ stroke:var(--accent); fill:#efedff; }
   .target .bowl-rim{ stroke:var(--accent); }
   .shelf{ stroke:#c9cddb; stroke-width:6; stroke-linecap:round; }
-  .shelf-label{ font-family:var(--ui); font-size:20px; fill:var(--muted); text-anchor:middle; }
+  [hidden]{ display:none !important; }
+  .shelf-label{ font-family:var(--ui); font-size:26px; fill:var(--muted); text-anchor:middle; }
   .supply{ cursor:grab; }
   .dragging{ cursor:grabbing; }
   .return-ring{ fill:none; stroke:var(--accent); stroke-width:2.5; stroke-dasharray:7 6; opacity:.55; pointer-events:none; }
@@ -173,17 +174,13 @@
 
   <main>
     <div class="stage-wrap">
-      <svg id="stage" viewBox="0 0 1100 1070" aria-label="Vaaka, jossa on kaksi kuppia">
+      <svg id="stage" viewBox="0 -145 1100 1215" aria-label="Vaaka, jossa on kaksi kuppia">
         <line class="floor" x1="20" y1="1051" x2="1080" y2="1051"/>
         <path class="stand" d="M505,1050 L595,1050 L583,1026 L517,1026 Z"/>
         <rect class="stand" x="539" y="300" width="22" height="730" rx="5"/>
 
-        <!-- supply shelf: drag new items from here -->
-        <line class="shelf" x1="395" y1="148" x2="728" y2="148"/>
-        <g class="supply" transform="translate(470,93)" id="supplyBox"></g>
-        <g class="supply" id="supplyGems"></g>
-        <g class="supply" id="supplyBalloons"></g>
-        <text class="shelf-label" x="570" y="180">Lisää vetämällä</text>
+        <!-- supply shelf: drag new items from here (drawn by renderShelf) -->
+        <g id="shelf"></g>
 
         <g id="rig">
         <g id="strings"></g>
@@ -262,7 +259,7 @@ const BOWL_DEPTH = 36*S;
 const MAX_TILT = Math.asin((FLOOR - BOWL_DEPTH - HANG - PIV.y) / ARM);  // lower cup touches floor
 const CAP = {b:6, d:24, p:8};    // (24 diamonds: they are big now and stack up)
 document.querySelectorAll(".cup-scale").forEach(g=>g.setAttribute("transform",`scale(${S})`));    // what fits in one cup
-const SUPPLY = { b:{x:470, y:93, w:60, h:60}, d:{x:610, y:100, w:58, h:52}, p:{x:711, y:64, w:52, h:58} };
+let SUPPLY = {};                 // shelf pick areas, set by renderShelf()
 const BALLOON_LEVEL = 3;
 const balloonsOn = () => level >= BALLOON_LEVEL;
 
@@ -306,11 +303,35 @@ const shapeOf = t => t==="b" ? boxShape("x") : t==="p" ? balloonShape(3,62) : ge
 const SHARD_L = "M-85,-18 L72,-18 L64,-5 L78,6 L70,18 L-25,18 Q-70,16 -85,-18 Z";
 const SHARD_R = "M-90,-18 L90,-18 Q76,16 30,18 L-90,18 L-82,6 L-96,-5 Z";
 
-$("supplyBox").innerHTML = boxShape("x");
-$("supplyGems").innerHTML = [[-33,130],[0,130],[33,130],[-16.5,97],[16.5,97],[0,64]]
-  .map(([x,y])=>`<g transform="translate(${610+x},${y})">${gemShape()}</g>`).join("");
-$("supplyBalloons").innerHTML = [[688,76],[734,84],[711,40]]
-  .map(([x,y])=>`<g transform="translate(${x},${y})">${balloonShape(711-x,146-y)}</g>`).join("");
+/* The shelf is half the screen wide (box + diamonds), and three quarters wide
+   once balloons join from level 3. Its items are drawn at cup scale and
+   spread evenly along it. */
+const SHELF_Y = 50;
+function renderShelf(){
+  const kinds = balloonsOn() ? ["b","d","p"] : ["b","d"];
+  const W = balloonsOn() ? 1100*0.75 : 1100*0.5, x0 = 550 - W/2;
+  let h=`<line class="shelf" x1="${x0}" y1="${SHELF_Y}" x2="${x0+W}" y2="${SHELF_Y}"/>`;
+  SUPPLY={};
+  kinds.forEach((t,i)=>{
+    const cx = x0 + W*(i+0.5)/kinds.length;
+    let inner;
+    if(t==="b"){
+      inner=`<g transform="translate(0,-54)">${boxShape("x")}</g>`;
+      SUPPLY.b={x:cx, y:SHELF_Y-54*S, w:58*S, h:58*S};
+    } else if(t==="d"){
+      inner=[[-33,-18],[0,-18],[33,-18],[-16.5,-51],[16.5,-51],[0,-84]]
+        .map(([x,y])=>`<g transform="translate(${x},${y})">${gemShape()}</g>`).join("");
+      SUPPLY.d={x:cx, y:SHELF_Y-51*S, w:58*S, h:56*S};
+    } else {
+      inner=[[-24,-78],[24,-70],[0,-112]]
+        .map(([x,y])=>`<g transform="translate(${x},${y})">${balloonShape(-x,-2-y)}</g>`).join("");
+      SUPPLY.p={x:cx, y:SHELF_Y-90*S, w:52*S, h:56*S};
+    }
+    h+=`<g class="supply" transform="translate(${cx},${SHELF_Y}) scale(${S})">${inner}</g>`;
+  });
+  h+=`<text class="shelf-label" x="550" y="${SHELF_Y+32}">Lisää vetämällä</text>`;
+  $("shelf").innerHTML=h;
+}
 
 /* item positions inside a cup.
    Boxes sit on the cup floor, 3 per row. Diamonds only rest on something solid:
@@ -418,7 +439,7 @@ function startPuzzle(p){
   ["L","R"].forEach(s=>{ panEl[s].style.display=""; renderPan(s); });
   $("overlay").classList.remove("show");
   setText("level",level); setText("solved",solvedCount);
-  $("supplyBalloons").style.display = balloonsOn() ? "" : "none";
+  renderShelf();
   $("legendBalloon").hidden = !balloonsOn();
   updateUI();
 }
