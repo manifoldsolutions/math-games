@@ -11,6 +11,8 @@
      Box = x (unknown number of diamonds), diamond = 1,
      balloon = −1 (from level 3; it lifts its cup by one diamond's weight).
      A released balloon flies away. Balloons and diamonds do not cancel.
+     From level 4, x may be negative: the box is full of balloons, so it
+     lifts its cup, and a box taken out floats away instead of falling.
      Take (or add) an item in one cup, then do the SAME in the other cup
      before the scale tips over. The scale compares real weights. Goal: one box alone in a cup, only diamonds in the other. If the box ends up
      on the right, the scale turns itself around so the answer reads x = n.
@@ -171,11 +173,11 @@
     <div class="stage-wrap">
       <svg id="stage" viewBox="0 0 1100 1070" aria-label="Vaaka, jossa on kaksi kuppia">
         <line class="floor" x1="20" y1="1051" x2="1080" y2="1051"/>
-        <path class="stand" d="M470,1050 L630,1050 L613,1024 L487,1024 Z"/>
+        <path class="stand" d="M505,1050 L595,1050 L583,1026 L517,1026 Z"/>
         <rect class="stand" x="539" y="300" width="22" height="730" rx="5"/>
 
         <!-- supply shelf: drag new items from here -->
-        <line class="shelf" x1="395" y1="148" x2="745" y2="148"/>
+        <line class="shelf" x1="395" y1="148" x2="728" y2="148"/>
         <g class="supply" transform="translate(470,93)" id="supplyBox"></g>
         <g class="supply" id="supplyGems"></g>
         <g class="supply" id="supplyBalloons"></g>
@@ -184,20 +186,24 @@
         <g id="rig">
         <g id="strings"></g>
         <g id="beam">
-          <rect id="beamBar" class="beam" x="160" y="292" width="780" height="16" rx="8"/>
-          <circle class="hook" cx="170" cy="300" r="9"/>
-          <circle class="hook" cx="930" cy="300" r="9"/>
+          <rect id="beamBar" class="beam" x="236" y="292" width="628" height="16" rx="8"/>
+          <circle class="hook" cx="246" cy="300" r="9"/>
+          <circle class="hook" cx="854" cy="300" r="9"/>
         </g>
         <circle class="pivot" cx="550" cy="300" r="14"/>
         <g id="panL">
+          <g class="cup-scale">
           <path class="bowl" d="M-170,0 L170,0 Q156,34 110,36 L-110,36 Q-156,34 -170,0 Z"/>
           <line class="bowl-rim" x1="-172" y1="0" x2="172" y2="0"/>
           <g class="items"></g>
+          </g>
         </g>
         <g id="panR">
+          <g class="cup-scale">
           <path class="bowl" d="M-170,0 L170,0 Q156,34 110,36 L-110,36 Q-156,34 -170,0 Z"/>
           <line class="bowl-rim" x1="-172" y1="0" x2="172" y2="0"/>
           <g class="items"></g>
+          </g>
         </g>
         </g>
         <g id="fx"></g>
@@ -239,12 +245,20 @@ const SVGNS="http://www.w3.org/2000/svg";
 
 /* ── geometry (SVG units) ───────────────────────────────────────────── */
 const PIV = {x:550, y:300};      // beam pivot
-const ARM = 380;                 // half beam length
-const HANG = 500;                // string length: hook → cup rim
+const ARM = 304;                 // half beam length (0.8 × the original 380)
+/* Cups are wider than originally (440 vs 340 units). Everything inside a cup —
+   bowl, boxes, diamonds, balloons — is drawn in the original units and scaled
+   by S, so items grow in the same proportion as the cup. */
+const CUP_W_OLD = 340, CUP_W = 440;
+const S = CUP_W / CUP_W_OLD;     // ≈ 1.29
+// string length: hook → cup rim. Chosen so that at full tilt the cups stay
+// clear of the post and the lower cup lands beside the stand's foot.
+const HANG = 520;
 const FLOOR = 1050;
-const BOWL_DEPTH = 36;
+const BOWL_DEPTH = 36*S;
 const MAX_TILT = Math.asin((FLOOR - BOWL_DEPTH - HANG - PIV.y) / ARM);  // lower cup touches floor
-const CAP = {b:6, d:28, p:8};    // what fits in one cup
+const CAP = {b:6, d:28, p:8};
+document.querySelectorAll(".cup-scale").forEach(g=>g.setAttribute("transform",`scale(${S})`));    // what fits in one cup
 const SUPPLY = { b:{x:470, y:93, w:60, h:60}, d:{x:610, y:118, w:62, h:40}, p:{x:702, y:66, w:40, h:50} };
 const BALLOON_LEVEL = 3;
 const balloonsOn = () => level >= BALLOON_LEVEL;
@@ -259,13 +273,16 @@ const gemShape = () =>
   `<polyline points="-10,-4 10,-4" class="gem-facet"/>` +
   `<polyline points="-3,-10 0,-4 3,-10" class="gem-facet"/>`;
 /* an opened box with n diamonds inside (shown when the puzzle is solved) */
-function openBoxShape(n){
+function openBoxShape(v){
+  const n=Math.abs(v), neg=v<0;                     // negative x: the box holds balloons
   const cols = n<=4 ? 2 : 3, rows = Math.ceil(n/cols);
   let gems="";
   for(let i=0;i<n;i++){
     const r=Math.floor(i/cols), inRow=Math.min(cols,n-r*cols), j=i-r*cols;
     const x=(j-(inRow-1)/2)*28, y=8+(r-(rows-1)/2)*25;
-    gems+=`<g transform="translate(${x},${y})">${gemShape()}</g>`;
+    gems += neg
+      ? `<g transform="translate(${x},${y-2}) scale(0.68)">${balloonShape(0,20)}</g>`
+      : `<g transform="translate(${x},${y})">${gemShape()}</g>`;
   }
   return `<rect x="-51" y="-51" width="102" height="102" rx="12" class="box-body"/>` + gems +
          `<rect x="-55" y="-25" width="110" height="24" rx="8" class="open-lid" transform="rotate(-24 -55 -51) translate(-8 -44)"/>`;
@@ -350,12 +367,19 @@ function layout(c){
 }
 
 /* ── puzzle generator: start from x = n and add the same to both sides ─ */
+const NEG_LEVEL = 4;             // from this level the answer may be negative
 function genPuzzle(level){
-  const x  = rand(2, Math.min(9, 3+level));
   const kb = rand(level>=2 ? 1 : 0, Math.min(3, level));       // boxes added to both
-  let k;                                                        // constant added to both sides
-  if(level>=BALLOON_LEVEL && Math.random()<0.75) k = -rand(1, Math.min(6, level+2));  // negative ⇒ balloons
-  else k = rand(1, Math.max(1, Math.min(18-x, 2+2*level)));
+  let x, k;                                                     // answer; constant added to both sides
+  if(level>=NEG_LEVEL && Math.random()<0.4){
+    // x = −2 … −(level+1): the box holds balloons. x = ±1 and 0 are never used.
+    x = -rand(2, Math.min(8, level+1));
+    do { k = rand(-4, 6); } while(k===0 || Math.abs(x+k)>8);
+  } else {
+    x = rand(2, Math.min(9, 3+level));
+    if(level>=BALLOON_LEVEL && Math.random()<0.75) k = -rand(1, Math.min(6, level+2));  // negative ⇒ balloons
+    else k = rand(1, Math.max(1, Math.min(18-x, 2+2*level)));
+  }
   // a side's constant c is shown as c diamonds, or |c| balloons when c < 0
   const side = (b,c) => ({b, d:Math.max(0,c), p:Math.max(0,-c)});
   const p = { x, L:side(1+kb, k), R:side(kb, x+k) };
@@ -427,6 +451,7 @@ function updateUI(){
   const hint=$("hint");
   let msg="Vedä esine pois kupista (se putoaa lattialle) tai lisää hyllyltä — ja tee sama toiselle kupille. Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa.", warn=false;
   if(balloonsOn()) msg="Ilmapallo keventää kuppia yhden timantin verran. Irti vedetty pallo lentää pois. Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa.";
+  if(level>=NEG_LEVEL) msg="Laatikossa voi nyt olla myös ilmapalloja. Tavoite: yksi laatikko yksin toisessa kupissa, toisessa pelkkiä timantteja tai pelkkiä palloja.";
   if(flash && performance.now()<flash.until){ msg=flash.msg; warn=true; }
   else if(status==="play" && tiltSign()!==0){ warn=true; msg = balloonsOn() ? "Vaaka kallistuu! Tasapainota se muuttamalla myös toista kuppia." : "Vaaka kallistuu! Tee sama myös toiselle kupille."; }
   else if(status==="winning") msg="Tasapainossa! Katsotaan, mitä laatikossa on…";
@@ -441,7 +466,7 @@ function checkEnd(){
   if(status!=="play" || tiltSign()!==0) return;
   const {L,R}=cur;
   const alone = c => c.b===1 && c.d===0 && !c.p;     // just the box
-  const gems  = c => c.b===0 && !c.p;                // only diamonds
+  const gems  = c => c.b===0 && (!c.p || !c.d);      // only diamonds, or only balloons (x < 0)
   if(alone(L) && gems(R)){ status="winning"; settle=0; needFlip=false; }
   else if(alone(R) && gems(L)){ status="winning"; settle=0; needFlip=true; }   // x on the right
   // balanced with the same number of boxes on both sides ⇒ an identity (e.g. 0 = 0):
@@ -460,7 +485,7 @@ function cupAt(p){
   for(const side of ["L","R"]){
     if(panEl[side].style.display==="none") continue;
     const c=cupPos(side);
-    if(Math.abs(p.x-c.x)<=195 && p.y>=c.y-440 && p.y<=c.y+80) return side;
+    if(Math.abs(p.x-c.x)<=235 && p.y>=c.y-HANG && p.y<=c.y+80) return side;
   }
   return null;
 }
@@ -476,16 +501,16 @@ function pick(p){
     if(Math.abs(p.x-s.x)<=s.w && Math.abs(p.y-s.y)<=s.h) return {from:"S", t, x:p.x, y:p.y};
   }
   // generous touch radius: at least ~22 screen pixels around each diamond
-  const tol=Math.max(14, 22/svg.getScreenCTM().a);
+  const tol=Math.max(14*S, 22/svg.getScreenCTM().a);
   let best=null;
   for(const side of ["L","R"]){
     if(panEl[side].style.display==="none") continue;
     const c=cupPos(side);
     for(const it of layout(cur[side])){
-      const gx=c.x+it.x, gy=c.y+it.y;
+      const gx=c.x+it.x*S, gy=c.y+it.y*S;
       let d;
-      if(it.t==="b") d = (Math.abs(p.x-gx)<=54 && Math.abs(p.y-gy)<=54) ? 0 : Infinity;
-      else { d=Math.hypot(p.x-gx,p.y-gy); if(d>(it.t==="p"?Math.max(20,tol):tol)) d=Infinity; }
+      if(it.t==="b") d = (Math.abs(p.x-gx)<=54*S && Math.abs(p.y-gy)<=54*S) ? 0 : Infinity;
+      else { d=Math.hypot(p.x-gx,p.y-gy); if(d>(it.t==="p"?Math.max(20*S,tol):tol)) d=Infinity; }
       if(d<Infinity && (!best || d<best.d)) best={from:side, t:it.t, x:gx, y:gy, d};
     }
   }
@@ -539,18 +564,22 @@ function moveDrag(p){
   // smoothed hand velocity, so a released item keeps a little of its motion
   drag.vx=0.6*drag.vx+0.4*(nx-drag.x)/dt; drag.vy=0.6*drag.vy+0.4*(ny-drag.y)/dt;
   drag.x=nx; drag.y=ny; drag.lt=now;
-  drag.g.setAttribute("transform",`translate(${nx.toFixed(1)},${ny.toFixed(1)}) scale(1.06)`);
+  drag.g.setAttribute("transform",`translate(${nx.toFixed(1)},${ny.toFixed(1)}) scale(${(1.06*S).toFixed(3)})`);
   const target=cupAt(p);
   ["L","R"].forEach(s=>panEl[s].classList.toggle("target", s===target && s!==drag.from));
 }
 
 function dropToFloor(t, x, y, vx=0, vy=0){
   const cap=(v,m)=>Math.max(-m,Math.min(m,v));
-  if(t==="p"){                                           // a balloon flies up into the sky
-    spawn(shapeOf("p"), x, y, {vx:cap(vx*0.2,80), vy:-60, gravity:-380, sway:true, r:17});
+  if(t==="b" && puzzle.x<0){                             // a box full of balloons floats away
+    spawn(shapeOf("b"), x, y, {vx:cap(vx*0.2,60), vy:-30, gravity:-250, sway:true, r:51*S, scale:S});
     return;
   }
-  spawn(shapeOf(t), x, y, {vx:cap(vx*0.3,180), vy:cap(Math.min(0,vy)*0.2,150), vr:cap(vx*0.2,120), r:t==="b"?51:10});
+  if(t==="p"){                                           // a balloon flies up into the sky
+    spawn(shapeOf("p"), x, y, {vx:cap(vx*0.2,80), vy:-60, gravity:-380, sway:true, r:17*S, scale:S});
+    return;
+  }
+  spawn(shapeOf(t), x, y, {vx:cap(vx*0.3,180), vy:cap(Math.min(0,vy)*0.2,150), vr:cap(vx*0.2,120), r:(t==="b"?51:10)*S, scale:S});
 }
 
 function endDrag(p){
@@ -587,14 +616,14 @@ function nudge(side, t, add){
 function spawn(inner, x, y, o){
   const g=document.createElementNS(SVGNS,"g");
   g.innerHTML=inner; fxEl.appendChild(g);
-  particles.push({g, x, y, rot:0, vx:o.vx||0, vy:o.vy||0, vr:o.vr||0, sway:!!o.sway, age:0,
+  particles.push({g, x, y, rot:0, scale:o.scale||1, vx:o.vx||0, vy:o.vy||0, vr:o.vr||0, sway:!!o.sway, age:0,
     gravity:o.gravity??1600, r:o.r||10, life:o.life??Infinity, max:o.life??Infinity});
 }
 function stepParticles(dt){
   particles=particles.filter(p=>{
     p.vy+=p.gravity*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.vr*dt;
     if(p.sway){ p.age+=dt; p.vx*=0.98; p.x+=Math.sin(p.age*3)*18*dt; p.rot=Math.sin(p.age*2.4)*8; p.vy=Math.max(p.vy,-420); }
-    if(p.gravity<0 && p.y<-200){ p.g.remove(); return false; }          // gone into the sky
+    if(p.gravity<0 && p.y<-260){ p.g.remove(); return false; }          // gone into the sky
     if(p.gravity>0 && (p.x<20+p.r || p.x>1080-p.r)){      // stay on the visible floor
       p.x=Math.max(20+p.r, Math.min(1080-p.r, p.x)); p.vx*=-0.4;
     }
@@ -610,7 +639,7 @@ function stepParticles(dt){
     p.life-=dt;
     if(p.life<=0){ p.g.remove(); return false; }
     const op = p.max===Infinity ? 1 : Math.max(0,p.life/p.max);
-    p.g.setAttribute("transform",`translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${p.rot.toFixed(1)})`);
+    p.g.setAttribute("transform",`translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${p.rot.toFixed(1)}) scale(${p.scale.toFixed(3)})`);
     p.g.setAttribute("opacity",op.toFixed(2));
     return true;
   });
@@ -623,12 +652,13 @@ function crash(side){
   if(drag){ dropToFloor(drag.t, drag.x, drag.y); cancelDrag(); }
   pending=null;
   layout(cur[side]).forEach(it=>{
-    if(it.t==="p"){ dropToFloor("p", c.x+it.x, c.y+it.y, R(-150,150)); return; }
-    spawn(shapeOf(it.t), c.x+it.x, c.y+it.y,
-      {vx:R(-200,200)*k, vy:R(-380,-100)*k, vr:(it.t==="b"?R(-150,150):R(-420,420))*k, r:it.t==="b"?51:10});
+    const gx=c.x+it.x*S, gy=c.y+it.y*S;
+    if(it.t==="p" || (it.t==="b" && puzzle.x<0)){ dropToFloor(it.t, gx, gy, R(-150,150)); return; }
+    spawn(shapeOf(it.t), gx, gy,
+      {vx:R(-200,200)*k, vy:R(-380,-100)*k, vr:(it.t==="b"?R(-150,150):R(-420,420))*k, r:(it.t==="b"?51:10)*S, scale:S});
   });
-  spawn(`<path class="bowl" d="${SHARD_L}"/>`, c.x-85, c.y+18, {vx:-170*k, vy:-180*k, vr:-120*k, r:18});
-  spawn(`<path class="bowl" d="${SHARD_R}"/>`, c.x+80, c.y+18, {vx: 180*k, vy:-200*k, vr: 130*k, r:18});
+  spawn(`<path class="bowl" d="${SHARD_L}"/>`, c.x-85*S, c.y+18*S, {vx:-170*k, vy:-180*k, vr:-120*k, r:18*S, scale:S});
+  spawn(`<path class="bowl" d="${SHARD_R}"/>`, c.x+80*S, c.y+18*S, {vx: 180*k, vy:-200*k, vr: 130*k, r:18*S, scale:S});
   panEl[side].style.display="none";
   updateUI();
   setTimeout(()=>showOverlay("crash"), motion?1100:300);
@@ -651,9 +681,13 @@ function showOverlay(kind){
 
   if(kind==="win"){
     $("ovTitle").textContent="Ratkaistu! 🎉";
-    $("ovResult").innerHTML=`<span class="xterm">x</span><span class="eq">=</span><span class="cterm">${puzzle.x}</span>`;
-    $("ovGems").innerHTML=Array.from({length:puzzle.x},()=>`<svg viewBox="-11 -11 22 22">${gemShape()}</svg>`).join("");
-    $("ovMsg").textContent=`Laatikossa on ${puzzle.x} timanttia.`;
+    const n=Math.abs(puzzle.x), neg=puzzle.x<0;
+    $("ovResult").innerHTML=`<span class="xterm">x</span><span class="eq">=</span>` +
+      (neg ? `<span class="pterm">−${n}</span>` : `<span class="cterm">${n}</span>`);
+    $("ovGems").innerHTML=Array.from({length:n},()=> neg
+      ? `<svg viewBox="-15 -18 30 40">${balloonShape(0,20)}</svg>`
+      : `<svg viewBox="-11 -11 22 22">${gemShape()}</svg>`).join("");
+    $("ovMsg").textContent = neg ? `Laatikossa on ${n} ilmapalloa.` : `Laatikossa on ${n} timanttia.`;
     first=btn("Seuraava taso",()=>{ level++; newPuzzle(); },true);
     btn("Uusi tehtävä samalla tasolla",newPuzzle);
   } else if(kind==="identity"){
@@ -728,8 +762,8 @@ function frame(now){
     if(panEl[side].style.display==="none") return;
     const h=hookPos(side), c=cupPos(side);
     panEl[side].setAttribute("transform",`translate(${c.x.toFixed(1)},${c.y.toFixed(1)})`);
-    strings+=`<line class="string" x1="${h.x}" y1="${h.y}" x2="${c.x-168}" y2="${c.y}"/>`
-            +`<line class="string" x1="${h.x}" y1="${h.y}" x2="${c.x+168}" y2="${c.y}"/>`;
+    strings+=`<line class="string" x1="${h.x}" y1="${h.y}" x2="${c.x-168*S}" y2="${c.y}"/>`
+            +`<line class="string" x1="${h.x}" y1="${h.y}" x2="${c.x+168*S}" y2="${c.y}"/>`;
   });
   stringsEl.innerHTML=strings;
 
