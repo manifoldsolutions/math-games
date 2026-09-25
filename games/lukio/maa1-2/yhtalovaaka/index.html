@@ -268,10 +268,11 @@ const boxShape = label =>
   `<rect x="-51" y="-51" width="102" height="102" rx="12" class="box-body"/>` +
   `<line x1="-51" y1="-27" x2="51" y2="-27" class="box-lid"/>` +
   `<text y="33" class="box-label">${label}</text>`;
-const gemShape = () =>
+const GEM_SCALE = 1.1;            // diamonds are drawn 1.1× their original size
+const gemShape = () => `<g transform="scale(${GEM_SCALE})">` +
   `<polygon points="-6,-10 6,-10 10,-4 0,11 -10,-4" class="gem-body"/>` +
   `<polyline points="-10,-4 10,-4" class="gem-facet"/>` +
-  `<polyline points="-3,-10 0,-4 3,-10" class="gem-facet"/>`;
+  `<polyline points="-3,-10 0,-4 3,-10" class="gem-facet"/></g>`;
 /* an opened box with n diamonds inside (shown when the puzzle is solved) */
 function openBoxShape(v){
   const n=Math.abs(v), neg=v<0;                     // negative x: the box holds balloons
@@ -309,7 +310,7 @@ $("supplyBalloons").innerHTML = [[686,74],[718,80],[702,48]]
    first one layer on top of the boxes (≈5 per box), then on the cup floor beside
    the boxes (hugging them), then on exposed tops of lower box rows, and only after
    that in further layers on top of the boxes. Each layer is full before the next. */
-const GEM_W=20, GEM_H=22, CUP_HALF=162;
+const GEM_W=22, GEM_H=24, CUP_HALF=162;   // slot size for the 1.1× diamonds
 function layout(c){
   const out=[];
   const rows=[];                                   // box rows: {n, half-width, top y}
@@ -335,7 +336,8 @@ function layout(c){
     shelves.push({ranges:[[-CUP_HALF,CUP_HALF]], y:0, layers:99});
   } else {
     const topRow=rows[rows.length-1];
-    const top={ranges:[[-topRow.half,topRow.half]], y:topRow.top, layers:99};
+    // the top layer may overhang the box edges by 4 units, so 5 diamonds still fit on one box
+    const top={ranges:[[-topRow.half-4,topRow.half+4]], y:topRow.top, layers:99};
     shelves.push({...top, layers:1});                                  // 1) first layer on top
     const h0=rows[0].half+3;
     shelves.push({ranges:[[-CUP_HALF,-h0],[h0,CUP_HALF]], y:0, layers:4}); // 2) floor beside boxes
@@ -349,7 +351,7 @@ function layout(c){
   let left=c.d;
   for(const sh of shelves){
     for(let k=0;k<sh.layers && left>0;k++){
-      const sl=layerSlots(sh.ranges, sh.y-11-k*GEM_H);
+      const sl=layerSlots(sh.ranges, sh.y-12-k*GEM_H);
       if(!sl.length) break;
       for(const p of sl){ if(!left) break; out.push({t:"d", x:p.x, y:p.y}); left--; }
     }
@@ -357,7 +359,7 @@ function layout(c){
   }
 
   // balloons float above everything else, their strings tied to the cup rim
-  const top=out.reduce((m,it)=>Math.min(m, it.y-(it.t==="b"?51:11)), 0);
+  const top=out.reduce((m,it)=>Math.min(m, it.y-(it.t==="b"?51:12)), 0);
   for(let i=0;i<(c.p||0);i++){
     const r=Math.floor(i/4), inRow=Math.min(4,c.p-r*4), j=i-r*4;
     const x=(j-(inRow-1)/2)*32 + (r%2)*10, y=top-62-r*42;
@@ -579,7 +581,7 @@ function dropToFloor(t, x, y, vx=0, vy=0){
     spawn(shapeOf("p"), x, y, {vx:cap(vx*0.2,80), vy:-60, gravity:-380, sway:true, r:17*S, scale:S});
     return;
   }
-  spawn(shapeOf(t), x, y, {vx:cap(vx*0.3,180), vy:cap(Math.min(0,vy)*0.2,150), vr:cap(vx*0.2,120), r:(t==="b"?51:10)*S, scale:S});
+  spawn(shapeOf(t), x, y, {vx:cap(vx*0.3,180), vy:cap(Math.min(0,vy)*0.2,150), vr:cap(vx*0.2,120), r:(t==="b"?51:11)*S, scale:S});
 }
 
 function endDrag(p){
@@ -655,7 +657,7 @@ function crash(side){
     const gx=c.x+it.x*S, gy=c.y+it.y*S;
     if(it.t==="p" || (it.t==="b" && puzzle.x<0)){ dropToFloor(it.t, gx, gy, R(-150,150)); return; }
     spawn(shapeOf(it.t), gx, gy,
-      {vx:R(-200,200)*k, vy:R(-380,-100)*k, vr:(it.t==="b"?R(-150,150):R(-420,420))*k, r:(it.t==="b"?51:10)*S, scale:S});
+      {vx:R(-200,200)*k, vy:R(-380,-100)*k, vr:(it.t==="b"?R(-150,150):R(-420,420))*k, r:(it.t==="b"?51:11)*S, scale:S});
   });
   spawn(`<path class="bowl" d="${SHARD_L}"/>`, c.x-85*S, c.y+18*S, {vx:-170*k, vy:-180*k, vr:-120*k, r:18*S, scale:S});
   spawn(`<path class="bowl" d="${SHARD_R}"/>`, c.x+80*S, c.y+18*S, {vx: 180*k, vy:-200*k, vr: 130*k, r:18*S, scale:S});
