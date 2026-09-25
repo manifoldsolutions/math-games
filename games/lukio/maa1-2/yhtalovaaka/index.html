@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Yhtälövaaka</title>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     GAME: Yhtälövaaka (balance-scale equations)
+     Self-contained. Lives at  games/lukio/maa1-2/vaaka/index.html
+     Box = x (unknown number of diamonds), diamond = 1,
+     balloon = −1 (from level 3; it lifts its cup by one diamond's weight).
+     A released balloon flies away. Balloons and diamonds do not cancel.
+     Take (or add) an item in one cup, then do the SAME in the other cup
+     before the scale tips over. The scale compares real weights. Goal: one box alone in a cup, only diamonds in the other. If the box ends up
+     on the right, the scale turns itself around so the answer reads x = n.
+     Grab an item and move it a little to take it out: it drops to the floor.
+     Drop it into the other cup to move it there. Drag from the shelf to add.
+     A plain click does nothing.
+     Keys: A / S / D = left box / diamond / balloon,
+           K / L / J = right box / diamond / balloon
+           (Shift adds instead of removing),  r = restart,  n = new puzzle
+     Puzzles are generated backwards from x = n by adding the same thing
+     to both sides, so every state stays non-negative and solvable.
+     ════════════════════════════════════════════════════════════════════ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#eceef3; --surface:#fff; --ink:#14162b; --muted:#5b6079; --line:#d6d9e4;
+    --accent:#4a3ecf; --accent-ink:#3a30a8;
+    --green:#1f9e57; --green-ink:#137a41; --green-wash:#e6f5ec;
+    --brown:#b07d16; --brown-ink:#8a610d; --brown-wash:#f6efdd;
+    --gold:#f2c14e;
+    --red:#c8372d;
+    --radius:14px;
+    --ui:"Space Grotesk", system-ui, sans-serif;
+    --math:"Fredoka", system-ui, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--ui);
+    min-height:100dvh; display:flex; flex-direction:column;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:14px clamp(16px,4vw,28px); border-bottom:1px solid var(--line);
+    background:var(--surface);
+  }
+  .back{ font-family:var(--ui); font-weight:500; font-size:14px; color:var(--muted); text-decoration:none; }
+  .back:hover{ color:var(--accent-ink); }
+  .title{ font-family:var(--math); font-weight:600; font-size:18px; }
+  .hud{ display:flex; gap:18px; font-family:var(--ui); font-size:14px; color:var(--muted); }
+  .hud b{ color:var(--ink); font-weight:600; }
+
+  main{ flex:1; display:flex; flex-direction:column; align-items:center; }
+
+  /* ── stage ── */
+  .stage-wrap{ width:min(820px,100%); padding:8px 8px 0; }
+  #stage{
+    display:block; width:100%; height:auto;
+    max-height:calc(100dvh - 250px); min-height:260px;
+    user-select:none; -webkit-user-select:none; touch-action:none; cursor:default;
+  }
+  .floor{ stroke:var(--line); stroke-width:3; }
+  .stand{ fill:#c9cddb; }
+  .pivot{ fill:var(--ink); }
+  .beam{ fill:var(--muted); }
+  .hook{ fill:var(--ink); }
+  .string{ stroke:#9ba0b5; stroke-width:1.6; }
+  .bowl{ fill:var(--surface); stroke:var(--muted); stroke-width:2.5; stroke-linejoin:round; }
+  .bowl-rim{ stroke:var(--muted); stroke-width:5; stroke-linecap:round; }
+  .target .bowl{ stroke:var(--accent); fill:#efedff; }
+  .target .bowl-rim{ stroke:var(--accent); }
+  .shelf{ stroke:#c9cddb; stroke-width:6; stroke-linecap:round; }
+  .shelf-label{ font-family:var(--ui); font-size:20px; fill:var(--muted); text-anchor:middle; }
+  .supply{ cursor:grab; }
+  .dragging{ cursor:grabbing; }
+  .held{ filter:drop-shadow(0 8px 10px rgba(20,22,43,.28)); pointer-events:none; }
+
+  .item{ cursor:grab; }
+  .box-body{ fill:var(--green-wash); stroke:var(--green); stroke-width:3.5; }
+  .box-lid{ stroke:var(--green); stroke-width:3; opacity:.6; }
+  .box-label{ font-family:var(--math); font-weight:600; font-size:60px; fill:var(--green-ink); text-anchor:middle; }
+  .gem-body{ fill:var(--gold); stroke:var(--brown-ink); stroke-width:1.6; stroke-linejoin:round; }
+  .balloon-body{ fill:#9d93f5; stroke:var(--accent-ink); stroke-width:1.6; }
+  .balloon-knot{ fill:var(--accent-ink); }
+  .balloon-shine{ fill:#fff; opacity:.55; }
+  .bstring{ fill:none; stroke:#7b7fa0; stroke-width:1.3; }
+  .pterm{ color:var(--accent-ink); }
+  .gem-facet{ fill:none; stroke:var(--brown-ink); stroke-width:1; opacity:.55; }
+  .item:hover .box-body{ fill:#d3eedd; }
+  .item:hover .gem-body{ fill:#f7cf6c; }
+  .open-lid{ fill:var(--green-wash); stroke:var(--green); stroke-width:3.5; }
+
+  /* ── equation readout ── */
+  .readout{
+    font-family:var(--math); font-weight:500; font-size:clamp(24px,6vw,38px);
+    display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline;
+    width:min(560px,96vw); white-space:nowrap; margin-top:2px;
+  }
+  .readout .lhs{ text-align:right; }
+  .readout .rhs{ text-align:left; }
+  .xterm{ color:var(--green-ink); }
+  .cterm{ color:var(--brown-ink); }
+  .op{ color:var(--muted); margin:0 .14em; }
+  .eq{ color:var(--ink); margin:0 .3em; }
+  .eq.off{ color:var(--red); }
+
+  .legend{
+    display:flex; gap:22px; justify-content:center; align-items:center;
+    font-family:var(--math); font-size:16px; color:var(--muted); padding:2px 0 4px;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend svg{ width:20px; height:20px; overflow:visible; }
+
+  .hint{ text-align:center; color:var(--muted); font-size:13px; padding:4px 16px 8px; min-height:2.6em; max-width:520px; }
+  .hint.warn{ color:var(--red); font-weight:500; }
+
+  .subctrl{
+    display:flex; gap:18px; justify-content:center; padding:6px 0 22px;
+    font-family:var(--ui); font-size:13px;
+  }
+  .subctrl button{
+    background:none; border:none; color:var(--muted); cursor:pointer; font:inherit;
+    padding:4px 6px; border-radius:6px;
+  }
+  .subctrl button:hover{ color:var(--accent-ink); }
+  .subctrl button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* ── overlay ── */
+  .overlay{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(20,22,43,.42); padding:20px; z-index:10;
+  }
+  .overlay.show{ display:flex; }
+  .win{
+    background:var(--surface); border-radius:18px; padding:30px 30px 24px; width:min(420px,92vw);
+    text-align:center; box-shadow:0 30px 70px -30px rgba(20,22,43,.6);
+  }
+  .win h2{ font-family:var(--math); font-weight:600; font-size:28px; margin:0 0 6px; }
+  .win .result{ font-family:var(--math); font-size:30px; margin:10px 0 4px; }
+  .win .gems{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin:8px auto 0; max-width:260px; }
+  .win .gems svg{ width:22px; height:24px; overflow:visible; }
+  .win p{ color:var(--muted); margin:10px 0 20px; }
+  .win .btns{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .win .btns a, .win .btns button{
+    font-family:var(--ui); font-weight:500; font-size:15px; cursor:pointer;
+    padding:11px 18px; border-radius:11px; border:1px solid var(--line);
+    text-decoration:none; color:var(--ink); background:var(--surface);
+  }
+  .win .btns .primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .win .btns :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+</style>
+</head>
+<body>
+
+  <header>
+    <a class="back" href="../../../../#/lukio/maa1-2">← Takaisin</a>
+    <span class="title">Yhtälövaaka</span>
+    <span class="hud"><span>Taso: <b id="level">1</b></span><span>Ratkaistu: <b id="solved">0</b></span></span>
+  </header>
+
+  <main>
+    <div class="stage-wrap">
+      <svg id="stage" viewBox="0 0 1100 1070" aria-label="Vaaka, jossa on kaksi kuppia">
+        <line class="floor" x1="20" y1="1051" x2="1080" y2="1051"/>
+        <path class="stand" d="M470,1050 L630,1050 L613,1024 L487,1024 Z"/>
+        <rect class="stand" x="539" y="300" width="22" height="730" rx="5"/>
+
+        <!-- supply shelf: drag new items from here -->
+        <line class="shelf" x1="395" y1="148" x2="745" y2="148"/>
+        <g class="supply" transform="translate(470,93)" id="supplyBox"></g>
+        <g class="supply" id="supplyGems"></g>
+        <g class="supply" id="supplyBalloons"></g>
+        <text class="shelf-label" x="570" y="180">Lisää vetämällä</text>
+
+        <g id="rig">
+        <g id="strings"></g>
+        <g id="beam">
+          <rect id="beamBar" class="beam" x="160" y="292" width="780" height="16" rx="8"/>
+          <circle class="hook" cx="170" cy="300" r="9"/>
+          <circle class="hook" cx="930" cy="300" r="9"/>
+        </g>
+        <circle class="pivot" cx="550" cy="300" r="14"/>
+        <g id="panL">
+          <path class="bowl" d="M-170,0 L170,0 Q156,34 110,36 L-110,36 Q-156,34 -170,0 Z"/>
+          <line class="bowl-rim" x1="-172" y1="0" x2="172" y2="0"/>
+          <g class="items"></g>
+        </g>
+        <g id="panR">
+          <path class="bowl" d="M-170,0 L170,0 Q156,34 110,36 L-110,36 Q-156,34 -170,0 Z"/>
+          <line class="bowl-rim" x1="-172" y1="0" x2="172" y2="0"/>
+          <g class="items"></g>
+        </g>
+        </g>
+        <g id="fx"></g>
+        <g id="dragLayer"></g>
+      </svg>
+    </div>
+
+    <div class="readout" id="readout" aria-live="polite"></div>
+    <div class="legend">
+      <span><svg viewBox="-17 -17 34 34"><rect x="-15" y="-15" width="30" height="30" rx="6" class="box-body" style="stroke-width:2.2"/></svg>= x</span>
+      <span><svg viewBox="-11 -11 22 22"><polygon points="-6,-10 6,-10 10,-4 0,11 -10,-4" class="gem-body"/></svg>= 1</span>
+      <span id="legendBalloon" hidden><svg viewBox="-15 -18 30 40"><ellipse rx="14" ry="17" class="balloon-body"/></svg>= −1</span>
+    </div>
+    <div class="hint" id="hint"></div>
+
+    <div class="subctrl">
+      <button id="restart">↺ Alusta</button>
+      <button id="new">✦ Uusi tehtävä</button>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="win" role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+      <h2 id="ovTitle"></h2>
+      <div class="result" id="ovResult"></div>
+      <div class="gems" id="ovGems"></div>
+      <p id="ovMsg"></p>
+      <div class="btns" id="ovBtns"></div>
+    </div>
+  </div>
+
+<script>
+"use strict";
+const motion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const rand = (lo,hi)=> lo + Math.floor(Math.random()*(hi-lo+1));
+const $ = id => document.getElementById(id);
+const setText = (id,v)=>{ const el=$(id); if(el) el.textContent=v; };
+const SVGNS="http://www.w3.org/2000/svg";
+
+/* ── geometry (SVG units) ───────────────────────────────────────────── */
+const PIV = {x:550, y:300};      // beam pivot
+const ARM = 380;                 // half beam length
+const HANG = 500;                // string length: hook → cup rim
+const FLOOR = 1050;
+const BOWL_DEPTH = 36;
+const MAX_TILT = Math.asin((FLOOR - BOWL_DEPTH - HANG - PIV.y) / ARM);  // lower cup touches floor
+const CAP = {b:6, d:28, p:8};    // what fits in one cup
+const SUPPLY = { b:{x:470, y:93, w:60, h:60}, d:{x:610, y:118, w:62, h:40}, p:{x:702, y:66, w:40, h:50} };
+const BALLOON_LEVEL = 3;
+const balloonsOn = () => level >= BALLOON_LEVEL;
+
+/* ── shapes ─────────────────────────────────────────────────────────── */
+const boxShape = label =>
+  `<rect x="-51" y="-51" width="102" height="102" rx="12" class="box-body"/>` +
+  `<line x1="-51" y1="-27" x2="51" y2="-27" class="box-lid"/>` +
+  `<text y="33" class="box-label">${label}</text>`;
+const gemShape = () =>
+  `<polygon points="-6,-10 6,-10 10,-4 0,11 -10,-4" class="gem-body"/>` +
+  `<polyline points="-10,-4 10,-4" class="gem-facet"/>` +
+  `<polyline points="-3,-10 0,-4 3,-10" class="gem-facet"/>`;
+/* an opened box with n diamonds inside (shown when the puzzle is solved) */
+function openBoxShape(n){
+  const cols = n<=4 ? 2 : 3, rows = Math.ceil(n/cols);
+  let gems="";
+  for(let i=0;i<n;i++){
+    const r=Math.floor(i/cols), inRow=Math.min(cols,n-r*cols), j=i-r*cols;
+    const x=(j-(inRow-1)/2)*28, y=8+(r-(rows-1)/2)*25;
+    gems+=`<g transform="translate(${x},${y})">${gemShape()}</g>`;
+  }
+  return `<rect x="-51" y="-51" width="102" height="102" rx="12" class="box-body"/>` + gems +
+         `<rect x="-55" y="-25" width="110" height="24" rx="8" class="open-lid" transform="rotate(-24 -55 -51) translate(-8 -44)"/>`;
+}
+/* balloon: (tx,ty) = where its string ends, relative to the balloon's centre */
+function balloonShape(tx, ty){
+  return `<path d="M0,20 Q${(tx*0.35-6).toFixed(1)},${(20+(ty-20)*0.5).toFixed(1)} ${tx.toFixed(1)},${ty.toFixed(1)}" class="bstring"/>` +
+         `<ellipse rx="14" ry="17" class="balloon-body"/>` +
+         `<path d="M-3.5,21 L3.5,21 L0,16 Z" class="balloon-knot"/>` +
+         `<ellipse cx="-5" cy="-7" rx="3.5" ry="5.5" class="balloon-shine"/>`;
+}
+const shapeOf = t => t==="b" ? boxShape("x") : t==="p" ? balloonShape(3,44) : gemShape();
+const SHARD_L = "M-85,-18 L72,-18 L64,-5 L78,6 L70,18 L-25,18 Q-70,16 -85,-18 Z";
+const SHARD_R = "M-90,-18 L90,-18 Q76,16 30,18 L-90,18 L-82,6 L-96,-5 Z";
+
+$("supplyBox").innerHTML = boxShape("x");
+$("supplyGems").innerHTML = [[-44,164],[-22,164],[0,164],[22,164],[44,164],[-33,141],[-11,141],[11,141],[33,141],[-22,118],[0,118],[22,118]]
+  .map(([x,y])=>`<g transform="translate(${610+x},${y-30})">${gemShape()}</g>`).join("");
+$("supplyBalloons").innerHTML = [[686,74],[718,80],[702,48]]
+  .map(([x,y])=>`<g transform="translate(${x},${y})">${balloonShape(702-x,146-y)}</g>`).join("");
+
+/* item positions inside a cup.
+   Boxes sit on the cup floor, 3 per row. Diamonds only rest on something solid:
+   first one layer on top of the boxes (≈5 per box), then on the cup floor beside
+   the boxes (hugging them), then on exposed tops of lower box rows, and only after
+   that in further layers on top of the boxes. Each layer is full before the next. */
+const GEM_W=20, GEM_H=22, CUP_HALF=162;
+function layout(c){
+  const out=[];
+  const rows=[];                                   // box rows: {n, half-width, top y}
+  for(let i=0;i<c.b;i++){
+    const r=Math.floor(i/3), inRow=Math.min(3,c.b-r*3), j=i-r*3;
+    out.push({t:"b", x:(j-(inRow-1)/2)*108, y:-(53+r*106)});
+    rows[r]={half:(inRow*108-6)/2, top:-(104+r*106)};
+  }
+
+  // slots of one layer on a surface made of x-ranges; nearest to the centre first
+  const layerSlots=(ranges,y)=>{
+    const sl=[];
+    for(const [a,b] of ranges){
+      const n=Math.floor((b-a)/GEM_W); if(n<=0) continue;
+      const x0=a+((b-a)-n*GEM_W)/2+GEM_W/2;
+      for(let i=0;i<n;i++) sl.push({x:x0+i*GEM_W, y});
+    }
+    return sl.sort((p,q)=>Math.abs(p.x)-Math.abs(q.x));
+  };
+  // shelves: {ranges, y (surface), layers allowed}
+  const shelves=[];
+  if(!rows.length){
+    shelves.push({ranges:[[-CUP_HALF,CUP_HALF]], y:0, layers:99});
+  } else {
+    const topRow=rows[rows.length-1];
+    const top={ranges:[[-topRow.half,topRow.half]], y:topRow.top, layers:99};
+    shelves.push({...top, layers:1});                                  // 1) first layer on top
+    const h0=rows[0].half+3;
+    shelves.push({ranges:[[-CUP_HALF,-h0],[h0,CUP_HALF]], y:0, layers:4}); // 2) floor beside boxes
+    for(let r=0;r<rows.length-1;r++){                                  // 3) exposed lower tops
+      const a=rows[r].half, b=rows[r+1].half+3;
+      if(a-b>=GEM_W) shelves.push({ranges:[[-a,-b],[b,a]], y:rows[r].top, layers:4});
+    }
+    shelves.push({...top, y:top.y-GEM_H, layers:99});                  // 4) more layers on top
+  }
+
+  let left=c.d;
+  for(const sh of shelves){
+    for(let k=0;k<sh.layers && left>0;k++){
+      const sl=layerSlots(sh.ranges, sh.y-11-k*GEM_H);
+      if(!sl.length) break;
+      for(const p of sl){ if(!left) break; out.push({t:"d", x:p.x, y:p.y}); left--; }
+    }
+    if(!left) break;
+  }
+
+  // balloons float above everything else, their strings tied to the cup rim
+  const top=out.reduce((m,it)=>Math.min(m, it.y-(it.t==="b"?51:11)), 0);
+  for(let i=0;i<(c.p||0);i++){
+    const r=Math.floor(i/4), inRow=Math.min(4,c.p-r*4), j=i-r*4;
+    const x=(j-(inRow-1)/2)*32 + (r%2)*10, y=top-62-r*42;
+    out.push({t:"p", x, y, ax:Math.max(-150,Math.min(150,x*2.4))});
+  }
+  return out;
+}
+
+/* ── puzzle generator: start from x = n and add the same to both sides ─ */
+function genPuzzle(level){
+  const x  = rand(2, Math.min(9, 3+level));
+  const kb = rand(level>=2 ? 1 : 0, Math.min(3, level));       // boxes added to both
+  let k;                                                        // constant added to both sides
+  if(level>=BALLOON_LEVEL && Math.random()<0.75) k = -rand(1, Math.min(6, level+2));  // negative ⇒ balloons
+  else k = rand(1, Math.max(1, Math.min(18-x, 2+2*level)));
+  // a side's constant c is shown as c diamonds, or |c| balloons when c < 0
+  const side = (b,c) => ({b, d:Math.max(0,c), p:Math.max(0,-c)});
+  const p = { x, L:side(1+kb, k), R:side(kb, x+k) };
+  if(Math.random()<.5) [p.L, p.R] = [p.R, p.L];               // box may end up on either side
+  return p;
+}
+const fallTimeFor = level => Math.max(2.4, 6 - 0.45*(level-1));   // seconds to hit the floor
+
+/* ── state ──────────────────────────────────────────────────────────── */
+let level=1, solvedCount=0, puzzle, cur, tilt, tiltV=0, needFlip=false, flipT=0, status, settle, particles=[], drag=null, flash=null;
+// status: play | winning | identity | won | crash | over
+
+const svg=$("stage");
+const panEl={L:$("panL"), R:$("panR")};
+const stringsEl=$("strings"), fxEl=$("fx"), dragLayer=$("dragLayer"), beamEl=$("beam"), beamBar=$("beamBar");
+
+function startPuzzle(p){
+  puzzle=p;
+  cur={L:{p:0,...p.L}, R:{p:0,...p.R}};
+  tilt=0; tiltV=0; needFlip=false; flipT=0; status="play"; settle=0; flash=null;
+  $("rig").removeAttribute("transform");
+  cancelDrag();
+  particles.forEach(q=>q.g.remove()); particles=[];
+  ["L","R"].forEach(s=>{ panEl[s].style.display=""; renderPan(s); });
+  $("overlay").classList.remove("show");
+  setText("level",level); setText("solved",solvedCount);
+  $("supplyBalloons").style.display = balloonsOn() ? "" : "none";
+  $("legendBalloon").hidden = !balloonsOn();
+  updateUI();
+}
+const newPuzzle = ()=> startPuzzle(genPuzzle(level));
+const restart   = ()=> startPuzzle(puzzle);
+
+function renderPan(side, revealX){
+  const g=panEl[side].querySelector(".items");
+  const items=layout(cur[side]);
+  // balloons first, so their strings pass behind boxes and diamonds
+  items.sort((a,b)=>(b.t==="p")-(a.t==="p"));
+  g.innerHTML = items.map(it =>
+    `<g class="item${revealX?" revealed":""}" transform="translate(${it.x},${it.y})">` +
+    (it.t==="b" ? (revealX ? openBoxShape(puzzle.x) : boxShape("x"))
+     : it.t==="p" ? balloonShape(it.ax-it.x, -it.y) : gemShape()) + `</g>`).join("");
+}
+
+/* ── weights: the scale is honest — it compares real weights ────────── */
+const weight = c => c.b*puzzle.x + c.d - (c.p||0);   // a balloon lifts by one diamond
+function tiltSign(){                       // +1 = right cup down, −1 = left cup down
+  const w = weight(cur.L) - weight(cur.R);
+  return w<0 ? 1 : w>0 ? -1 : 0;
+}
+
+/* ── equation readout ───────────────────────────────────────────────── */
+function sideHTML(c){
+  const t=[];
+  if(c.b) t.push(`<span class="xterm">${c.b===1?"":c.b}x</span>`);
+  if(c.d) t.push(`<span class="cterm">${c.d}</span>`);
+  let h=t.join(`<span class="op">+</span>`);
+  if(c.p) h += (t.length ? `<span class="op">−</span>` : `<span class="pterm">−</span>`) + `<span class="pterm">${c.p}</span>`;
+  return h || `<span class="cterm">0</span>`;
+}
+function eqHTML(){
+  const s=tiltSign();
+  const rel = s===0 ? `<span class="eq">=</span>` : `<span class="eq off">${s>0?"&lt;":"&gt;"}</span>`;
+  return `<span class="lhs">${sideHTML(cur.L)}</span>${rel}<span class="rhs">${sideHTML(cur.R)}</span>`;
+}
+
+function updateUI(){
+  $("readout").innerHTML = eqHTML();
+  const hint=$("hint");
+  let msg="Vedä esine pois kupista (se putoaa lattialle) tai lisää hyllyltä — ja tee sama toiselle kupille. Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa.", warn=false;
+  if(balloonsOn()) msg="Ilmapallo keventää kuppia yhden timantin verran. Irti vedetty pallo lentää pois. Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa.";
+  if(flash && performance.now()<flash.until){ msg=flash.msg; warn=true; }
+  else if(status==="play" && tiltSign()!==0){ warn=true; msg = balloonsOn() ? "Vaaka kallistuu! Tasapainota se muuttamalla myös toista kuppia." : "Vaaka kallistuu! Tee sama myös toiselle kupille."; }
+  else if(status==="winning") msg="Tasapainossa! Katsotaan, mitä laatikossa on…";
+  else if(status==="flipping") msg="Laatikko jäi oikealle — vaaka kääntyy ympäri.";
+  else if(status==="crash") msg="Kuppi osui lattiaan ja hajosi.";
+  hint.textContent=msg; hint.classList.toggle("warn",warn);
+}
+function flashHint(msg){ flash={msg, until:performance.now()+2000}; updateUI(); setTimeout(updateUI,2050); }
+
+/* after every completed move: did we win, or lose the unknown? */
+function checkEnd(){
+  if(status!=="play" || tiltSign()!==0) return;
+  const {L,R}=cur;
+  const alone = c => c.b===1 && c.d===0 && !c.p;     // just the box
+  const gems  = c => c.b===0 && !c.p;                // only diamonds
+  if(alone(L) && gems(R)){ status="winning"; settle=0; needFlip=false; }
+  else if(alone(R) && gems(L)){ status="winning"; settle=0; needFlip=true; }   // x on the right
+  // balanced with the same number of boxes on both sides ⇒ an identity (e.g. 0 = 0):
+  // true for every x, so the box's contents can no longer be deduced
+  else if(L.b===R.b){ status="identity"; settle=0; }
+  updateUI();
+}
+
+/* ── positions ──────────────────────────────────────────────────────── */
+function hookPos(side){
+  const s = side==="L" ? -1 : 1;
+  return {x:PIV.x + s*ARM*Math.cos(tilt), y:PIV.y + s*ARM*Math.sin(tilt)};
+}
+function cupPos(side){ const h=hookPos(side); return {x:h.x, y:h.y+HANG}; }
+function cupAt(p){
+  for(const side of ["L","R"]){
+    if(panEl[side].style.display==="none") continue;
+    const c=cupPos(side);
+    if(Math.abs(p.x-c.x)<=195 && p.y>=c.y-440 && p.y<=c.y+80) return side;
+  }
+  return null;
+}
+
+/* ── dragging ───────────────────────────────────────────────────────── */
+function svgPt(e){
+  const p=svg.createSVGPoint(); p.x=e.clientX; p.y=e.clientY;
+  return p.matrixTransform(svg.getScreenCTM().inverse());
+}
+function pick(p){
+  for(const t of balloonsOn() ? ["b","d","p"] : ["b","d"]){
+    const s=SUPPLY[t];
+    if(Math.abs(p.x-s.x)<=s.w && Math.abs(p.y-s.y)<=s.h) return {from:"S", t, x:p.x, y:p.y};
+  }
+  // generous touch radius: at least ~22 screen pixels around each diamond
+  const tol=Math.max(14, 22/svg.getScreenCTM().a);
+  let best=null;
+  for(const side of ["L","R"]){
+    if(panEl[side].style.display==="none") continue;
+    const c=cupPos(side);
+    for(const it of layout(cur[side])){
+      const gx=c.x+it.x, gy=c.y+it.y;
+      let d;
+      if(it.t==="b") d = (Math.abs(p.x-gx)<=54 && Math.abs(p.y-gy)<=54) ? 0 : Infinity;
+      else { d=Math.hypot(p.x-gx,p.y-gy); if(d>(it.t==="p"?Math.max(20,tol):tol)) d=Infinity; }
+      if(d<Infinity && (!best || d<best.d)) best={from:side, t:it.t, x:gx, y:gy, d};
+    }
+  }
+  return best;
+}
+
+/* A press only picks an item up once the pointer has moved a few pixels —
+   a plain click does nothing. Released anywhere except the OTHER cup, the item
+   drops out of the scale and falls to the floor. */
+const DRAG_START_PX = 6;
+let pending=null;
+
+svg.addEventListener("pointerdown",e=>{
+  if(status!=="play" || drag || pending) return;
+  const p=svgPt(e), hit=pick(p);
+  if(!hit) return;
+  e.preventDefault();
+  svg.setPointerCapture(e.pointerId);
+  pending={hit, id:e.pointerId, cx:e.clientX, cy:e.clientY, p};
+});
+svg.addEventListener("pointermove",e=>{
+  if(pending && e.pointerId===pending.id){
+    if(Math.hypot(e.clientX-pending.cx, e.clientY-pending.cy) < DRAG_START_PX) return;
+    if(status!=="play"){ pending=null; return; }
+    beginDrag(pending.hit, pending.p, e.pointerId); pending=null;
+  }
+  if(drag && e.pointerId===drag.id) moveDrag(svgPt(e));
+});
+svg.addEventListener("pointerup",e=>{
+  if(pending && e.pointerId===pending.id){ pending=null; return; }   // just a click
+  if(drag && e.pointerId===drag.id) endDrag(svgPt(e));
+});
+svg.addEventListener("pointercancel",e=>{
+  if(pending && e.pointerId===pending.id) pending=null;
+  if(drag && e.pointerId===drag.id) endDrag(null);
+});
+
+function beginDrag(hit, p, id){
+  if(hit.from!=="S"){ cur[hit.from][hit.t]--; renderPan(hit.from); }   // lifting it takes its weight off
+  const g=document.createElementNS(SVGNS,"g");
+  g.setAttribute("class","held"); g.innerHTML=shapeOf(hit.t); dragLayer.appendChild(g);
+  drag={t:hit.t, from:hit.from, g, id, ox:hit.x-p.x, oy:hit.y-p.y, x:hit.x, y:hit.y,
+        vx:0, vy:0, lt:performance.now()};
+  svg.classList.add("dragging");
+  updateUI();
+}
+
+function moveDrag(p){
+  const nx=p.x+drag.ox, ny=p.y+drag.oy, now=performance.now();
+  const dt=Math.max(1,now-drag.lt)/1000;
+  // smoothed hand velocity, so a released item keeps a little of its motion
+  drag.vx=0.6*drag.vx+0.4*(nx-drag.x)/dt; drag.vy=0.6*drag.vy+0.4*(ny-drag.y)/dt;
+  drag.x=nx; drag.y=ny; drag.lt=now;
+  drag.g.setAttribute("transform",`translate(${nx.toFixed(1)},${ny.toFixed(1)}) scale(1.06)`);
+  const target=cupAt(p);
+  ["L","R"].forEach(s=>panEl[s].classList.toggle("target", s===target && s!==drag.from));
+}
+
+function dropToFloor(t, x, y, vx=0, vy=0){
+  const cap=(v,m)=>Math.max(-m,Math.min(m,v));
+  if(t==="p"){                                           // a balloon flies up into the sky
+    spawn(shapeOf("p"), x, y, {vx:cap(vx*0.2,80), vy:-60, gravity:-380, sway:true, r:17});
+    return;
+  }
+  spawn(shapeOf(t), x, y, {vx:cap(vx*0.3,180), vy:cap(Math.min(0,vy)*0.2,150), vr:cap(vx*0.2,120), r:t==="b"?51:10});
+}
+
+function endDrag(p){
+  const {t, from, x, y, vx, vy}=drag;
+  const target = p ? cupAt(p) : null;
+  drag.g.remove(); drag=null;
+  svg.classList.remove("dragging");
+  ["L","R"].forEach(s=>panEl[s].classList.remove("target"));
+
+  if(target && target!==from){
+    if(cur[target][t] >= CAP[t]){ flashHint("Kuppi on täynnä."); dropToFloor(t,x,y,vx,vy); }
+    else { cur[target][t]++; renderPan(target); }
+  } else {
+    dropToFloor(t, x, y, vx, vy);            // out of the scale: falls to the floor
+  }
+  updateUI(); checkEnd();
+}
+function cancelDrag(){
+  pending=null;
+  if(!drag) return;
+  drag.g.remove(); drag=null; svg.classList.remove("dragging");
+  ["L","R"].forEach(s=>panEl[s].classList.remove("target"));
+}
+
+/* keyboard fallback: remove one (Shift = add one) */
+function nudge(side, t, add){
+  if(status!=="play" || drag) return;
+  if(add){ if(cur[side][t]>=CAP[t]) return flashHint("Kuppi on täynnä."); cur[side][t]++; }
+  else { if(!cur[side][t]) return; cur[side][t]--; }
+  renderPan(side); updateUI(); checkEnd();
+}
+
+/* ── particles (items dropped to the floor, crash debris) ────────────────────── */
+function spawn(inner, x, y, o){
+  const g=document.createElementNS(SVGNS,"g");
+  g.innerHTML=inner; fxEl.appendChild(g);
+  particles.push({g, x, y, rot:0, vx:o.vx||0, vy:o.vy||0, vr:o.vr||0, sway:!!o.sway, age:0,
+    gravity:o.gravity??1600, r:o.r||10, life:o.life??Infinity, max:o.life??Infinity});
+}
+function stepParticles(dt){
+  particles=particles.filter(p=>{
+    p.vy+=p.gravity*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.vr*dt;
+    if(p.sway){ p.age+=dt; p.vx*=0.98; p.x+=Math.sin(p.age*3)*18*dt; p.rot=Math.sin(p.age*2.4)*8; p.vy=Math.max(p.vy,-420); }
+    if(p.gravity<0 && p.y<-200){ p.g.remove(); return false; }          // gone into the sky
+    if(p.gravity>0 && (p.x<20+p.r || p.x>1080-p.r)){      // stay on the visible floor
+      p.x=Math.max(20+p.r, Math.min(1080-p.r, p.x)); p.vx*=-0.4;
+    }
+    if(p.gravity>0 && p.y+p.r>FLOOR){
+      p.y=FLOOR-p.r; p.vy*=-0.3; p.vx*=0.7; p.vr*=0.5;
+      if(Math.abs(p.vy)<50) p.vy=0;
+      if(p.vy===0){                                   // resting: settle upright
+        p.vx*=0.85; p.vr=0;
+        const flat=Math.round(p.rot/360)*360;   // land upright
+        p.rot+=(flat-p.rot)*Math.min(1,dt*10);
+      }
+    }
+    p.life-=dt;
+    if(p.life<=0){ p.g.remove(); return false; }
+    const op = p.max===Infinity ? 1 : Math.max(0,p.life/p.max);
+    p.g.setAttribute("transform",`translate(${p.x.toFixed(1)},${p.y.toFixed(1)}) rotate(${p.rot.toFixed(1)})`);
+    p.g.setAttribute("opacity",op.toFixed(2));
+    return true;
+  });
+}
+
+/* ── crash, win, identity ───────────────────────────────────────────── */
+function crash(side){
+  status="crash";
+  const c=cupPos(side), R=(a,b)=>a+Math.random()*(b-a), k=motion?1:0;
+  if(drag){ dropToFloor(drag.t, drag.x, drag.y); cancelDrag(); }
+  pending=null;
+  layout(cur[side]).forEach(it=>{
+    if(it.t==="p"){ dropToFloor("p", c.x+it.x, c.y+it.y, R(-150,150)); return; }
+    spawn(shapeOf(it.t), c.x+it.x, c.y+it.y,
+      {vx:R(-200,200)*k, vy:R(-380,-100)*k, vr:(it.t==="b"?R(-150,150):R(-420,420))*k, r:it.t==="b"?51:10});
+  });
+  spawn(`<path class="bowl" d="${SHARD_L}"/>`, c.x-85, c.y+18, {vx:-170*k, vy:-180*k, vr:-120*k, r:18});
+  spawn(`<path class="bowl" d="${SHARD_R}"/>`, c.x+80, c.y+18, {vx: 180*k, vy:-200*k, vr: 130*k, r:18});
+  panEl[side].style.display="none";
+  updateUI();
+  setTimeout(()=>showOverlay("crash"), motion?1100:300);
+}
+
+function reveal(){
+  status="won"; solvedCount++; setText("solved",solvedCount);
+  renderPan("L", true); updateUI();
+  setTimeout(()=>showOverlay("win"), motion?700:200);
+}
+
+function showOverlay(kind){
+  const btns=$("ovBtns"); btns.innerHTML="";
+  const btn=(label,fn,primary)=>{ const b=document.createElement("button");
+    b.textContent=label; if(primary) b.className="primary"; b.addEventListener("click",fn); btns.appendChild(b); return b; };
+  const link=()=>{ const a=document.createElement("a"); a.href="../../../../#/lukio/maa1-2";
+    a.textContent="Palaa kurssiin"; btns.appendChild(a); };
+  $("ovGems").innerHTML="";
+  let first;
+
+  if(kind==="win"){
+    $("ovTitle").textContent="Ratkaistu! 🎉";
+    $("ovResult").innerHTML=`<span class="xterm">x</span><span class="eq">=</span><span class="cterm">${puzzle.x}</span>`;
+    $("ovGems").innerHTML=Array.from({length:puzzle.x},()=>`<svg viewBox="-11 -11 22 22">${gemShape()}</svg>`).join("");
+    $("ovMsg").textContent=`Laatikossa on ${puzzle.x} timanttia.`;
+    first=btn("Seuraava taso",()=>{ level++; newPuzzle(); },true);
+    btn("Uusi tehtävä samalla tasolla",newPuzzle);
+  } else if(kind==="identity"){
+    $("ovTitle").textContent="x katosi yhtälöstä";
+    $("ovResult").innerHTML=eqHTML();
+    $("ovMsg").textContent = (cur.L.b===0 && cur.L.d===0)
+      ? "Molemmat kupit ovat tyhjiä. 0 = 0 on totta aina, joten siitä ei voi päätellä, montako timanttia laatikossa oli."
+      : "Kummassakin kupissa on nyt täsmälleen samat esineet. Yhtälö on totta millä tahansa x:n arvolla, joten laatikon sisältöä ei voi enää päätellä.";
+    first=btn("Yritä samaa uudestaan",restart,true);
+    btn("Uusi tehtävä",newPuzzle);
+  } else {
+    $("ovTitle").textContent="Kuppi hajosi!";
+    $("ovResult").innerHTML="";
+    $("ovMsg").textContent="Vaaka kallistui liikaa. Kun muutat yhtä kuppia, tee heti sama muutos myös toiseen.";
+    first=btn("Yritä samaa uudestaan",restart,true);
+    btn("Uusi tehtävä",newPuzzle);
+  }
+  link(); $("overlay").classList.add("show"); first.focus();
+}
+
+/* ── main loop: the scale tips while unbalanced, levels out when balanced ─ */
+const SWING_W=6.5, SWING_Z=0.3;     // swing frequency (rad/s) and damping ratio: ≈2 s to settle
+const BEAM_CALM=[91,96,121], BEAM_DANGER=[200,55,45];
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(.05,(now-last)/1000); last=now;
+
+  if(status==="play" || status==="winning" || status==="identity"){
+    const s=tiltSign();
+    if(s!==0){
+      const toward=Math.max(0, tilt*s)/MAX_TILT;                      // 0 … 1 in the falling direction
+      tiltV = s*(MAX_TILT/fallTimeFor(level))*(0.5+1.2*toward);    // speeds up as it falls
+      tilt += tiltV*dt;
+      if(Math.abs(tilt)>=MAX_TILT){ tilt=s*MAX_TILT; tiltV=0; crash(s>0?"R":"L"); }
+    } else {
+      // balanced: damped spring back to level. It keeps the momentum it had,
+      // so it swings past level a little and settles in about 2 seconds.
+      tiltV += (-SWING_W*SWING_W*tilt - 2*SWING_Z*SWING_W*tiltV)*dt;
+      tilt  += tiltV*dt;
+      tilt = Math.max(-MAX_TILT, Math.min(MAX_TILT, tilt));
+      if(Math.abs(tilt)<1e-4 && Math.abs(tiltV)<1e-3){ tilt=0; tiltV=0; }
+    }
+    if((status==="winning" || status==="identity") && Math.abs(tilt)<0.01 && Math.abs(tiltV)<0.03){
+      settle+=dt;
+      if(settle>0.4){
+        if(status==="winning"){
+          if(needFlip){ status="flipping"; flipT=0; if(!motion) flipT=1; }
+          else reveal();
+        } else { status="over"; updateUI(); showOverlay("identity"); }
+      }
+    }
+  }
+
+  // turning the scale around: squeeze to zero width, swap the cups, open back up
+  if(status==="flipping"){
+    const before=flipT;
+    flipT=Math.min(1, flipT+dt/0.9);
+    if(before<0.5 && flipT>=0.5){ [cur.L, cur.R]=[cur.R, cur.L]; renderPan("L"); renderPan("R"); updateUI(); }
+    const sx=Math.max(0.001, Math.abs(Math.cos(Math.PI*flipT)));
+    $("rig").setAttribute("transform",`translate(${PIV.x} 0) scale(${sx.toFixed(3)} 1) translate(${-PIV.x} 0)`);
+    if(flipT>=1){
+      if(cur.R.b){ [cur.L, cur.R]=[cur.R, cur.L]; renderPan("L"); renderPan("R"); }   // (no-motion path)
+      $("rig").removeAttribute("transform"); needFlip=false; reveal();
+    }
+  }
+
+  beamEl.setAttribute("transform",`rotate(${(tilt*180/Math.PI).toFixed(2)} ${PIV.x} ${PIV.y})`);
+  const k=Math.min(1,Math.abs(tilt)/MAX_TILT);
+  beamBar.style.fill=`rgb(${BEAM_CALM.map((c,i)=>Math.round(c+(BEAM_DANGER[i]-c)*k)).join(",")})`;
+  let strings="";
+  ["L","R"].forEach(side=>{
+    if(panEl[side].style.display==="none") return;
+    const h=hookPos(side), c=cupPos(side);
+    panEl[side].setAttribute("transform",`translate(${c.x.toFixed(1)},${c.y.toFixed(1)})`);
+    strings+=`<line class="string" x1="${h.x}" y1="${h.y}" x2="${c.x-168}" y2="${c.y}"/>`
+            +`<line class="string" x1="${h.x}" y1="${h.y}" x2="${c.x+168}" y2="${c.y}"/>`;
+  });
+  stringsEl.innerHTML=strings;
+
+  stepParticles(dt);
+  requestAnimationFrame(frame);
+}
+
+/* ── other input ────────────────────────────────────────────────────── */
+document.addEventListener("keydown",e=>{
+  if($("overlay").classList.contains("show")) return;
+  const k=e.key.toLowerCase();
+  const map={a:["L","b"], s:["L","d"], d:["L","p"], k:["R","b"], l:["R","d"], j:["R","p"]};
+  if(map[k] && (map[k][1]!=="p" || balloonsOn())) nudge(...map[k], e.shiftKey);
+  else if(k==="r") restart();
+  else if(k==="n") newPuzzle();
+});
+$("restart").addEventListener("click",restart);
+$("new").addEventListener("click",newPuzzle);
+
+newPuzzle();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
