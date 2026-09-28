@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yksikköympyrä</title>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     GAME: Yksikköympyrä (unit circle equations)
+     Self-contained. Suggested home: games/lukio/<course>/yksikkoympyra/index.html
+     An equation about the angle α is shown above the unit circle. The player
+     marks EVERY point on the circle where the equation holds, then checks.
+     Aim: hover with the mouse, or drag with a finger (a ray follows).
+     Place: click, or lift the finger. Placing on an existing point removes it.
+     From level 3 there are also "Ei ratkaisuja" and "Jokainen piste" answers.
+     A placed point counts if it is within TOL degrees of a solution.
+     6 tasks per level, 5 correct to pass. Levels 1–6 have their own themes,
+     level 7+ mixes levels 3–6.
+     Help: "Vihje" gives a method hint, then hints about the placed points
+     (3rd press also draws the helper line). From level 3 two buttons show
+     the memory triangles (30°–60° and 45°) with their sin/cos/tan values.
+     Keys: ← / → turn the ray 15° (Shift: 1°), Space = place/remove,
+           Enter = check / next, r = clear points
+     ════════════════════════════════════════════════════════════════════ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Comfortaa supplies the Greek letters (α, π) that Fredoka lacks -->
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Comfortaa:wght@500;600&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --bg:#eceef3; --surface:#fff; --ink:#14162b; --muted:#5b6079; --line:#d6d9e4;
+    --accent:#4a3ecf; --accent-ink:#3a30a8; --accent-wash:#efedff;
+    --green:#1f9e57; --green-ink:#137a41; --green-wash:#e6f5ec;
+    --brown:#b07d16; --brown-ink:#8a610d; --brown-wash:#f6efdd;
+    --gold:#f2c14e;
+    --red:#c8372d; --red-wash:#fbe8e6;
+    --radius:14px;
+    --ui:"Space Grotesk", system-ui, sans-serif;
+    --math:"Fredoka", "Comfortaa", system-ui, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#15172a; --surface:#1f2238; --ink:#eceef6; --muted:#a3a8c3; --line:#34384f;
+      --accent:#8b80ff; --accent-ink:#b3abff; --accent-wash:#2a2752;
+      --green:#3ccf7f; --green-ink:#6be0a0; --green-wash:#173a28;
+      --brown:#e0a93a; --brown-ink:#f0c46a; --brown-wash:#3a3020;
+      --red:#ff6b5e; --red-wash:#43211f;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#15172a; --surface:#1f2238; --ink:#eceef6; --muted:#a3a8c3; --line:#34384f;
+    --accent:#8b80ff; --accent-ink:#b3abff; --accent-wash:#2a2752;
+    --green:#3ccf7f; --green-ink:#6be0a0; --green-wash:#173a28;
+    --brown:#e0a93a; --brown-ink:#f0c46a; --brown-wash:#3a3020;
+    --red:#ff6b5e; --red-wash:#43211f;
+  }
+  :root{ box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+  html{ scroll-padding-top:env(safe-area-inset-top,0px); }
+  *,*::before,*::after{ box-sizing:border-box; }
+  html,body{ margin:0; height:100%; }
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--ui);
+    min-height:100%; display:flex; flex-direction:column;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:14px clamp(16px,4vw,28px); border-bottom:1px solid var(--line);
+    background:var(--surface);
+  }
+  .back{ font-weight:500; font-size:14px; color:var(--muted); text-decoration:none; }
+  .back:hover{ color:var(--accent-ink); }
+  .title{ font-family:var(--math); font-weight:600; font-size:18px; }
+  .hud{ display:flex; gap:14px; font-size:14px; color:var(--muted); }
+  .hud b{ color:var(--ink); font-weight:600; }
+  @media (max-width:520px){ .title{ display:none; } }
+
+  main{ flex:1; display:flex; flex-direction:column; align-items:center; padding:0 8px; }
+
+  /* ── equation ── */
+  .readout{
+    font-family:var(--math); font-weight:500; font-size:clamp(26px,7.5vw,40px);
+    min-height:2.1em; display:flex; align-items:center; justify-content:center;
+    white-space:nowrap; margin-top:14px; padding:0 8px;
+  }
+  .al{ font-style:normal; color:var(--accent-ink); }
+  .fn{ color:var(--ink); }
+  .eq{ color:var(--ink); margin:0 .3em; }
+  .frac{
+    display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center;
+    font-size:.62em; line-height:1.08; margin:0 .08em;
+  }
+  .frac > span:first-child{ border-bottom:.075em solid currentColor; padding:0 .14em .04em; }
+  .frac > span:last-child{ padding-top:.04em; }
+  .rad{ border-top:.07em solid currentColor; padding:0 .04em; margin-left:-.02em; }
+  sup{ font-size:.6em; line-height:0; }
+
+  /* ── stage ── */
+  .stage-wrap{ width:min(560px,100%); }
+  #stage{
+    display:block; width:100%; height:auto; margin:0 auto;
+    max-height:calc(100dvh - 330px); min-height:250px;
+    user-select:none; -webkit-user-select:none; touch-action:none; cursor:crosshair;
+  }
+  #stage:focus-visible{ outline:2px solid var(--accent); outline-offset:-2px; border-radius:var(--radius); }
+  .grid{ stroke:var(--line); stroke-width:1.5; }
+  .axis{ stroke:var(--muted); stroke-width:2.2; }
+  .arrow{ fill:var(--muted); }
+  .axlabel{ font-family:var(--ui); font-size:21px; fill:var(--muted); }
+  .circle{ fill:none; stroke:var(--ink); stroke-width:3.5; }
+  .tick{ stroke:var(--muted); stroke-width:2; }
+  .tanline{ stroke:var(--accent); stroke-width:2; stroke-dasharray:6 7; opacity:.45; }
+
+  .proj{ stroke:var(--muted); stroke-width:1.6; stroke-dasharray:5 6; }
+  .cosseg{ stroke:var(--green); stroke-width:7; stroke-linecap:round; opacity:.85; }
+  .sinseg{ stroke:var(--brown); stroke-width:7; stroke-linecap:round; opacity:.85; }
+  .tanseg{ stroke:var(--accent); stroke-width:7; stroke-linecap:round; opacity:.7; }
+  .tanext{ stroke:var(--accent); stroke-width:1.8; stroke-dasharray:4 6; opacity:.6; }
+  .ray{ stroke:var(--accent); stroke-width:4; stroke-linecap:round; }
+  .ghost{ fill:var(--surface); stroke:var(--accent); stroke-width:3.5; }
+  .origin{ fill:var(--ink); }
+
+  .pt{ fill:var(--accent); stroke:var(--surface); stroke-width:4; }
+  .pt.ok{ fill:var(--green); }
+  .pt.bad{ fill:var(--red); }
+  .xmark{ stroke:#fff; stroke-width:3.5; stroke-linecap:round; }
+  .miss{ fill:var(--brown-wash); stroke:var(--brown); stroke-width:4; stroke-dasharray:7 5; }
+  .guide{ stroke:var(--brown-ink); stroke-width:2.6; stroke-dasharray:10 7; fill:none; }
+  .guide.solid{ stroke-dasharray:none; }
+  .guide.ring{ stroke:var(--green); stroke-width:10; opacity:.55; stroke-dasharray:none; }
+
+  @media (prefers-reduced-motion: no-preference){
+    .fadein{ animation:fadein .5s ease-out both; }
+    .pop{ animation:pop .35s cubic-bezier(.3,1.6,.5,1) both; transform-box:fill-box; transform-origin:center; }
+    .miss{ animation:pulse 1.4s ease-in-out .3s infinite; transform-box:fill-box; transform-origin:center; }
+  }
+  @keyframes fadein{ from{ opacity:0; } }
+  @keyframes pop{ from{ transform:scale(.3); } }
+  @keyframes pulse{ 50%{ transform:scale(1.18); } }
+
+  .legend{
+    display:flex; gap:20px; justify-content:center; align-items:center; flex-wrap:wrap;
+    font-family:var(--math); font-size:16px; color:var(--muted); padding:2px 0 2px;
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; }
+  .legend i{ display:inline-block; width:18px; height:6px; border-radius:3px; }
+
+  .hint{ text-align:center; color:var(--muted); font-size:13px; padding:6px 16px 6px; min-height:2.6em; max-width:520px; }
+  .hint.warn{ color:var(--red); font-weight:500; }
+  .hint.tip{ color:var(--accent-ink); font-size:14px; line-height:1.55; }
+  .hint .frac{ font-size:.8em; }
+
+  .tools{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 0; }
+  .chip{
+    font-family:var(--ui); font-weight:500; font-size:14px; cursor:pointer;
+    padding:7px 13px; border-radius:999px; border:1px solid var(--line);
+    background:var(--surface); color:var(--ink);
+  }
+  .chip:hover{ border-color:var(--accent); color:var(--accent-ink); }
+  .chip:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* ── memory triangles ── */
+  .sheet{ width:min(460px,94vw); max-height:92dvh; overflow:auto; padding:24px 22px 20px; }
+  .sheet svg{ display:block; width:min(280px,80%); height:auto; margin:4px auto 0; overflow:visible; }
+  .sheet .lead{ color:var(--muted); font-size:14px; line-height:1.5; margin:8px 0 4px; }
+  .tri{ fill:none; stroke:var(--ink); stroke-width:3; stroke-linejoin:round; }
+  .trihalf{ fill:var(--accent-wash); }
+  .trih{ stroke:var(--muted); stroke-width:2; stroke-dasharray:6 6; }
+  .ra{ fill:none; stroke:var(--muted); stroke-width:2; }
+  .tl{ font-family:var(--math); font-size:22px; fill:var(--ink); }
+  .ta{ font-family:var(--math); font-size:18px; fill:var(--accent-ink); }
+  .sheet .lead .frac{ font-size:.85em; }
+  .sheet h2{ font-size:24px; }
+  .vt{ border-collapse:collapse; margin:10px auto 16px; font-family:var(--math); font-size:18px; }
+  .vt th{ font-family:var(--ui); font-weight:500; font-size:13px; color:var(--muted); }
+  .vt th, .vt td{ padding:7px 10px; border-bottom:1px solid var(--line); text-align:center; }
+  .vt .frac{ font-size:.75em; }
+
+  /* ── buttons ── */
+  .actions{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:4px 0 6px; }
+  .btn{
+    font-family:var(--ui); font-weight:500; font-size:15px; cursor:pointer;
+    padding:11px 18px; border-radius:11px; border:1px solid var(--line);
+    color:var(--ink); background:var(--surface); text-decoration:none;
+  }
+  .btn:hover{ border-color:var(--accent); }
+  .btn.primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.primary:hover{ background:var(--accent-ink); }
+  .btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* ── feedback after checking ── */
+  .fb{
+    width:min(520px,100%); background:var(--surface); border-radius:var(--radius);
+    border:1px solid var(--line); padding:14px 18px 16px; margin:4px 0 8px;
+  }
+  .fb h3{ font-family:var(--math); font-weight:600; font-size:22px; margin:0 0 4px; }
+  .fb h3.ok{ color:var(--green-ink); }
+  .fb h3.bad{ color:var(--red); }
+  .fb p{ margin:6px 0; line-height:1.5; font-size:15px; }
+  .fb .sols{ font-family:var(--math); font-size:18px; line-height:1.9; }
+  .fb .row{ display:flex; justify-content:flex-end; margin-top:8px; }
+  .fb .frac{ font-size:.72em; }
+
+  .subctrl{ display:flex; gap:18px; justify-content:center; padding:4px 0 22px; font-size:13px; }
+  .subctrl button{
+    background:none; border:none; color:var(--muted); cursor:pointer; font:inherit;
+    padding:4px 6px; border-radius:6px;
+  }
+  .subctrl button:hover{ color:var(--accent-ink); }
+  .subctrl button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  [hidden]{ display:none !important; }
+
+  /* ── overlay ── */
+  .overlay{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(20,22,43,.42); padding:20px; z-index:10;
+  }
+  .overlay.show{ display:flex; }
+  .win{
+    background:var(--surface); border-radius:18px; padding:30px 30px 24px; width:min(420px,92vw);
+    text-align:center; box-shadow:0 30px 70px -30px rgba(20,22,43,.6);
+  }
+  .win h2{ font-family:var(--math); font-weight:600; font-size:28px; margin:0 0 6px; }
+  .win .result{ font-family:var(--math); font-size:34px; margin:10px 0 4px; }
+  .win p{ color:var(--muted); margin:10px 0 20px; }
+  .win .btns{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+
+  <header>
+    <a class="back" href="../../../../#/lukio">← Takaisin</a>
+    <span class="title">Yksikköympyrä</span>
+    <span class="hud"><span>Taso: <b id="level">1</b></span><span>Tehtävä: <b id="task">1/6</b></span><span>Oikein: <b id="score">0</b></span></span>
+  </header>
+
+  <main>
+    <div class="readout" id="readout" aria-live="polite"></div>
+
+    <div class="stage-wrap">
+      <svg id="stage" viewBox="-430 -430 860 860" tabindex="0"
+           aria-label="Yksikköympyrä. Valitse kulmat nuolinäppäimillä ja välilyönnillä.">
+        <g id="static"></g>
+        <g id="guide"></g>
+        <g id="aimLayer"></g>
+        <g id="points"></g>
+        <circle class="origin" r="6"/>
+      </svg>
+    </div>
+
+    <div class="legend" id="legend">
+      <span><i style="background:var(--green)"></i>cos <span class="al">α</span></span>
+      <span><i style="background:var(--brown)"></i>sin <span class="al">α</span></span>
+      <span id="legendTan" hidden><i style="background:var(--accent)"></i>tan <span class="al">α</span></span>
+    </div>
+
+    <div class="tools" id="tools">
+      <button class="chip" id="hintBtn">💡 Vihje</button>
+      <button class="chip" id="tri30">30°–60°-kolmio</button>
+      <button class="chip" id="tri45">45°-kolmio</button>
+    </div>
+
+    <div class="hint" id="hint"></div>
+
+    <div class="actions" id="actions">
+      <button class="btn" id="none">Ei ratkaisuja</button>
+      <button class="btn" id="all">Jokainen piste</button>
+      <button class="btn primary" id="check">Tarkista</button>
+    </div>
+
+    <div class="fb" id="fb" hidden aria-live="polite">
+      <h3 id="fbTitle"></h3>
+      <div id="fbText"></div>
+      <div class="row"><button class="btn primary" id="next">Seuraava</button></div>
+    </div>
+
+    <div class="subctrl" id="subctrl">
+      <button id="clear">↺ Tyhjennä pisteet</button>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="win" role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+      <h2 id="ovTitle"></h2>
+      <div class="result" id="ovResult"></div>
+      <p id="ovMsg"></p>
+      <div class="btns" id="ovBtns"></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="sheet">
+    <div class="win sheet" role="dialog" aria-modal="true" aria-labelledby="shTitle">
+      <h2 id="shTitle"></h2>
+      <div id="shBody"></div>
+      <div class="btns"><button class="btn primary" id="shClose">Sulje</button></div>
+    </div>
+  </div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const R = 300;                 // circle radius in SVG units
+const TOL = 5;                 // a point counts if it is this close (degrees) to a solution
+const TOGGLE = 7;              // clicking this close to a placed point removes it
+const TASKS = 6, PASS = 5;
+const D2R = Math.PI/180;
+const COURSE_URL = "../../../../#/lukio";
+
+/* ── math typesetting ───────────────────────────────────────────────── */
+const A   = `<span class="al">α</span>`;
+const fr  = (n,d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+const sq  = x => `√<span class="rad">${x}</span>`;
+const fn  = s => `<span class="fn">${s}</span>`;
+const inv = s => `<span class="fn">${s}<sup>−1</sup></span>`;
+const eq  = (l,r) => `${l}<span class="eq">=</span>${r}`;
+const SIN = `${fn("sin")}&thinsp;`, COS = `${fn("cos")}&thinsp;`, TAN = `${fn("tan")}&thinsp;`;
+const SIN2 = `${fn("sin")}<sup>2</sup>&thinsp;`, COS2 = `${fn("cos")}<sup>2</sup>&thinsp;`;
+const PM = "&thinsp;±&thinsp;";
+const pi = (n,d) => d ? fr(n+"π", d) : n+"π";
+
+/* a task: equation, solutions (degrees), what to draw when checking, how to print answers */
+const P = (html, sols, guide, o={}) => ({html, sols, guide, unit:o.unit||"both", note:o.note||"", all:!!o.all, hint:o.hint||"", inv:o.inv||""});
+const NONE = [];
+
+const BANK = {
+1: [ // angles in degrees
+  P(eq(A,"60°"), [60], {t:"rays"}, {unit:"deg"}),
+  P(eq(A,"135°"), [135], {t:"rays"}, {unit:"deg"}),
+  P(eq(A,"−45°"), [315], {t:"rays"}, {unit:"deg", note:"Negatiivinen kulma kierretään myötäpäivään, joten −45° on sama piste kuin 315°."}),
+  P(eq(A,"±30°"), [30,330], {t:"rays"}, {unit:"deg", note:"± tarkoittaa kahta kulmaa: 30° ja −30°. Kulma −30° on sama piste kuin 330°."}),
+  P(eq(A,"90°"+PM+"45°"), [45,135], {t:"rays"}, {unit:"deg"}),
+  P(eq(A,"180°"+PM+"60°"), [120,240], {t:"rays"}, {unit:"deg"}),
+  P(eq(A,"390°"), [30], {t:"rays"}, {unit:"deg", note:"390° = 360° + 30°: täysi kierros ja vielä 30°."}),
+  P(eq(A,"−270°"), [90], {t:"rays"}, {unit:"deg", note:"Kolme neljännestä myötäpäivään päätyy samaan pisteeseen kuin yksi neljännes vastapäivään."}),
+  P(eq(A,"±150°"), [150,210], {t:"rays"}, {unit:"deg"}),
+  P(eq(A,"270°"+PM+"30°"), [240,300], {t:"rays"}, {unit:"deg"}),
+],
+2: [ // angles in radians
+  P(eq(A,pi("",3)), [60], {t:"rays"}, {unit:"rad", note:`${pi("",3)} on kuudesosa täydestä kierroksesta 2π.`}),
+  P(eq(A,"−"+pi("",4)), [315], {t:"rays"}, {unit:"rad", note:`Kulma −${pi("",4)} kierretään myötäpäivään, joten se on sama piste kuin ${pi(7,4)}.`}),
+  P(eq(A,pi(3,2)), [270], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,"2π"+PM+pi("",2)), [90,270], {t:"rays"}, {unit:"rad", note:`2π on täysi kierros, joten tämä on sama kuin ±${pi("",2)}.`}),
+  P(eq(A,"π"+PM+pi("",6)), [150,210], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,"±"+pi(5,6)), [150,210], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,pi(7,6)), [210], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,"−"+pi(2,3)), [240], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,pi(5,4)), [225], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,pi("",2)+PM+pi("",3)), [30,150], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,pi(11,6)), [330], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,"3π"), [180], {t:"rays"}, {unit:"rad", note:"3π = 2π + π: täysi kierros ja vielä puolikas."}),
+],
+3: [ // sine and cosine values
+  P(eq(SIN+A,fr(1,2)), [30,150], {t:"h", v:.5, vh:fr(1,2)}),
+  P(eq(SIN+A,"−"+fr(1,2)), [210,330], {t:"h", v:-.5, vh:"−"+fr(1,2)}),
+  P(eq(COS+A,fr(1,2)), [60,300], {t:"v", v:.5, vh:fr(1,2)}),
+  P(eq(COS+A,"−"+fr(sq(2),2)), [135,225], {t:"v", v:-Math.SQRT1_2, vh:"−"+fr(sq(2),2)}),
+  P(eq(SIN+A,fr(sq(3),2)), [60,120], {t:"h", v:Math.sqrt(3)/2, vh:fr(sq(3),2)}),
+  P(eq(COS+A,"−"+fr(sq(3),2)), [150,210], {t:"v", v:-Math.sqrt(3)/2, vh:"−"+fr(sq(3),2)}),
+  P(eq(SIN+A,"±1"), [90,270], {t:"hh", v:1}, {hint:`Etsi pisteet, joiden y-koordinaatti on 1 tai −1.`, note:`Pisteet, joiden y-koordinaatti on 1 tai −1, ovat ympyrän ylin ja alin piste.`}),
+  P(eq(COS+A,"0"), [90,270], {t:"v", v:0, vh:"0"}),
+  P(eq(SIN+A,"0"), [0,180], {t:"h", v:0, vh:"0"}),
+  P(eq(COS+A,"−1"), [180], {t:"v", v:-1, vh:"−1"}, {note:"Pystysuora suora x = −1 vain sivuaa ympyrää, joten ratkaisuja on yksi."}),
+  P(eq(SIN+A,"2"), NONE, {t:"none"}, {hint:"Mitä arvoja pisteen y-koordinaatti voi saada yksikköympyrällä?", note:`${SIN}${A} on pisteen y-koordinaatti, joten se on aina välillä −1 … 1.`}),
+  P(eq(COS+A,"−"+fr(3,2)), NONE, {t:"v", v:-1.5}, {note:`${COS}${A} on pisteen x-koordinaatti, joten se on aina välillä −1 … 1. Suora x = −${fr(3,2)} ei osu ympyrään.`}),
+  P(eq(SIN+A,"−"+fr(sq(2),2)), [225,315], {t:"h", v:-Math.SQRT1_2, vh:"−"+fr(sq(2),2)}),
+],
+4: [ // tangent, relations, squares
+  P(eq(SIN+A,COS+A), [45,225], {t:"tan", v:1, vh:"1"}, {hint:"Etsi pisteet, joiden x- ja y-koordinaatti ovat yhtä suuret.", note:"Pisteet, joiden x- ja y-koordinaatti ovat samat, ovat suoralla y = x."}),
+  P(eq(SIN+A,"−"+COS+A), [135,315], {t:"tan", v:-1, vh:"−1"}, {hint:"Etsi pisteet, joiden x- ja y-koordinaatti ovat toistensa vastalukuja.", note:"Pisteet, joiden koordinaatit ovat toistensa vastalukuja, ovat suoralla y = −x."}),
+  P(eq(TAN+A,"1"), [45,225], {t:"tan", v:1, vh:"1"}),
+  P(eq(TAN+A,"−"+sq(3)), [120,300], {t:"tan", v:-Math.sqrt(3), vh:"−"+sq(3)}),
+  P(eq(TAN+A,fr(sq(3),3)), [30,210], {t:"tan", v:1/Math.sqrt(3), vh:fr(sq(3),3)}),
+  P(eq(TAN+A,sq(3)), [60,240], {t:"tan", v:Math.sqrt(3), vh:sq(3)}),
+  P(eq(TAN+A,"0"), [0,180], {t:"tan", v:0, vh:"0"}),
+  P(eq(SIN2+A,fr(1,4)), [30,150,210,330], {t:"hh", v:.5}, {hint:`Jos ${SIN2}${A} = ${fr(1,4)}, mitä ${SIN}${A} voi olla? Muista molemmat merkit, + ja −.`, note:`${SIN2}${A} = ${fr(1,4)} tarkoittaa, että ${SIN}${A} = ${fr(1,2)} tai ${SIN}${A} = −${fr(1,2)}. Kaksi vaakasuoraa suoraa, neljä pistettä.`}),
+  P(eq(COS2+A,fr(1,2)), [45,135,225,315], {t:"vv", v:Math.SQRT1_2}, {hint:`Jos ${COS2}${A} = ${fr(1,2)}, niin ${COS}${A} = ±${fr(1,sq(2))}. Laventamalla ${fr(1,sq(2))} = ${fr(sq(2),2)}. Katso 45°-kolmiota.`, note:`${COS}${A} = ±${fr(1,sq(2))} = ±${fr(sq(2),2)}. Kaksi pystysuoraa suoraa, neljä pistettä.`}),
+  P(eq(`|${COS}${A}|`,"1"), [0,180], {t:"vv", v:1}, {hint:`Itseisarvo on 1, joten ${COS}${A} = 1 tai ${COS}${A} = −1.`, note:`${COS}${A} = 1 tai ${COS}${A} = −1.`}),
+  P(eq(SIN2+A+"&thinsp;+&thinsp;"+COS2+A,"1"), null, {t:"all"}, {all:true, hint:"Ympyrän piste on (cos α, sin α), ja sen etäisyys origosta on 1. Mitä Pythagoraan lause silloin sanoo?", note:"Tämä on Pythagoraan lause yksikköympyrässä: se pätee jokaisella kulmalla."}),
+  P(eq(SIN+A+"&thinsp;·&thinsp;"+COS+A,"0"), [0,90,180,270], {t:"axes"}, {hint:"Tulo on nolla, kun jompikumpi tekijä on nolla.", note:`Tulo on nolla, kun ${SIN}${A} = 0 tai ${COS}${A} = 0, eli pisteet ovat akseleilla.`}),
+  P(eq(COS2+A,"−1"), NONE, {t:"none"}, {hint:"Voiko luvun neliö olla negatiivinen?", note:"Neliö ei voi olla negatiivinen."}),
+],
+5: [ // inverse functions, non-special tangents
+  P(eq(A,inv("tan")+"&thinsp;"+fr(1,2)), [Math.atan(.5)/D2R], {t:"tanray", v:.5, vh:fr(1,2)}, {note:`${inv("tan")} antaa vain yhden kulman, väliltä −90° … 90°. Säde kulkee pisteen (1, ${fr(1,2)}) kautta.`}),
+  P(eq(TAN+A,fr(1,2)), [Math.atan(.5)/D2R, 180+Math.atan(.5)/D2R], {t:"tan", v:.5, vh:fr(1,2)}, {note:`Suora origosta pisteeseen (1, ${fr(1,2)}) leikkaa ympyrän kahdesti: tangentin jakso on 180°.`}),
+  P(eq(TAN+A,"2"), [Math.atan(2)/D2R, 180+Math.atan(2)/D2R], {t:"tan", v:2, vh:"2"}, {note:`Kulmakerroin 2: suora kulkee pisteen (${fr(1,2)}, 1) kautta.`}),
+  P(eq(A,inv("tan")+"(−2)"), [360-Math.atan(2)/D2R], {t:"tanray", v:-2, vh:"−2"}, {note:`${inv("tan")}(−2) ≈ −63,4°. Säde kulkee pisteen (${fr(1,2)}, −1) kautta.`}),
+  P(eq(TAN+A,"−"+fr(1,2)), [180-Math.atan(.5)/D2R, 360-Math.atan(.5)/D2R], {t:"tan", v:-.5, vh:"−"+fr(1,2)}),
+  P(eq(A,inv("sin")+"&thinsp;"+fr(1,2)), [30], {t:"h", v:.5, vh:fr(1,2)}, {inv:"sin", note:`${inv("sin")} antaa vain yhden kulman, väliltä −90° … 90°. Siksi 150° ei kelpaa, vaikka sen sini on myös ${fr(1,2)}.`}),
+  P(eq(A,inv("sin")+"(−"+fr(sq(3),2)+")"), [300], {t:"h", v:-Math.sqrt(3)/2, vh:"−"+fr(sq(3),2)}, {inv:"sin", note:`${inv("sin")} antaa kulman väliltä −90° … 90°, eli tässä −60°, joka on sama piste kuin 300°.`}),
+  P(eq(A,inv("cos")+"(−"+fr(1,2)+")"), [120], {t:"v", v:-.5, vh:"−"+fr(1,2)}, {inv:"cos", note:`${inv("cos")} antaa vain yhden kulman, väliltä 0° … 180°. Siksi 240° ei kelpaa.`}),
+  P(eq(A,inv("cos")+"&thinsp;0"), [90], {t:"v", v:0, vh:"0"}, {inv:"cos", note:`${inv("cos")} antaa kulman väliltä 0° … 180°.`}),
+  P(eq(A,inv("tan")+"(−1)"), [315], {t:"tanray", v:-1, vh:"−1"}, {note:`${inv("tan")}(−1) = −45°, sama piste kuin 315°.`}),
+  P(eq(A,inv("cos")+"(−"+fr(sq(2),2)+")"), [135], {t:"v", v:-Math.SQRT1_2, vh:"−"+fr(sq(2),2)}, {inv:"cos", note:`${inv("cos")} antaa kulman väliltä 0° … 180°, joten vain 135° kelpaa.`}),
+  P(eq(A,inv("sin")+"&thinsp;1"), [90], {t:"h", v:1, vh:"1"}, {inv:"sin"}),
+  P(eq(TAN+A,"−2"), [180-Math.atan(2)/D2R, 360-Math.atan(2)/D2R], {t:"tan", v:-2, vh:"−2"}, {note:`Kulmakerroin −2: suora kulkee pisteen (−${fr(1,2)}, 1) kautta.`}),
+],
+6: [ // multiple angles
+  P(eq(SIN+"2"+A,"1"), [45,225], {t:"rays"}, {hint:`Millä kulmalla sini on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 90° + n · 360°, joten ${A} = 45° + n · 180°.`}),
+  P(eq(COS+"2"+A,"0"), [45,135,225,315], {t:"rays"}, {hint:`Millä kulmilla kosini on 0? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 90° + n · 180°, joten ${A} = 45° + n · 90°.`}),
+  P(eq(SIN+"2"+A,"0"), [0,90,180,270], {t:"rays"}, {hint:`Millä kulmilla sini on 0? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = n · 180°, joten ${A} = n · 90°.`}),
+  P(eq(COS+"2"+A,"1"), [0,180], {t:"rays"}, {hint:`Millä kulmalla kosini on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = n · 360°, joten ${A} = n · 180°.`}),
+  P(eq(COS+"2"+A,"−1"), [90,270], {t:"rays"}, {hint:`Millä kulmalla kosini on −1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 180° + n · 360°, joten ${A} = 90° + n · 180°.`}),
+  P(eq(SIN+"3"+A,"1"), [30,150,270], {t:"rays"}, {hint:`Millä kulmalla sini on 1? Ne ovat 3${A}:n arvoja, joten jaa kolmella. Kun ${A} kiertää yhden kierroksen, 3${A} kiertää kolme, joten ratkaisuja on kolme kertaa enemmän.`, note:`3${A} = 90° + n · 360°, joten ${A} = 30° + n · 120°.`}),
+  P(eq(COS+"3"+A,"1"), [0,120,240], {t:"rays"}, {hint:`Millä kulmalla kosini on 1? Ne ovat 3${A}:n arvoja, joten jaa kolmella. Kun ${A} kiertää yhden kierroksen, 3${A} kiertää kolme, joten ratkaisuja on kolme kertaa enemmän.`, note:`3${A} = n · 360°, joten ${A} = n · 120°.`}),
+  P(eq(TAN+"2"+A,"1"), [22.5,112.5,202.5,292.5], {t:"rays"}, {hint:`Millä kulmilla tangentti on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 45° + n · 180°, joten ${A} = 22,5° + n · 90°.`}),
+  P(eq(SIN+"("+A+"&thinsp;−&thinsp;"+pi("",4)+")","0"), [45,225], {t:"rays"}, {unit:"rad", hint:`Millä kulmilla sini on 0? Ne ovat ${A} − ${pi("",4)}:n arvoja, joten lisää niihin ${pi("",4)}.`, note:`${A} − ${pi("",4)} = nπ, joten ${A} = ${pi("",4)} + nπ.`}),
+  P(eq(COS+"("+A+"&thinsp;+&thinsp;30°)","0"), [60,240], {t:"rays"}, {unit:"deg", hint:`Millä kulmilla kosini on 0? Ne ovat ${A} + 30°:n arvoja, joten vähennä niistä 30°.`, note:`${A} + 30° = 90° + n · 180°, joten ${A} = 60° + n · 180°.`}),
+  P(eq(SIN+fr(A,2),"0"), [0], {t:"rays"}, {hint:`Millä kulmilla sini on 0? Ne ovat ${fr(A,2)}:n arvoja, joten kerro kahdella. Huomaa: kun ${A} kiertää yhden kierroksen, ${fr(A,2)} kiertää vain puoli.`, note:`${fr(A,2)} = n · 180°, joten ${A} = n · 360°: ympyrällä vain yksi piste.`}),
+  P(eq(COS+"2"+A,fr(1,2)), [30,150,210,330], {t:"rays"}, {hint:`Millä kulmilla kosini on ${fr(1,2)}? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = ±60° + n · 360°, joten ${A} = ±30° + n · 180°.`}),
+],
+};
+const LEVEL_INTRO = {
+  1:"Kulma α mitataan positiiviselta x-akselilta vastapäivään. Merkitse ympyrälle kaikki kohdat, joissa yhtälö on totta, ja paina Tarkista.",
+  2:"Nyt kulmat ovat radiaaneina. Täysi kierros on 2π ja puoli kierrosta π.",
+  3:"cos α on pisteen x-koordinaatti ja sin α sen y-koordinaatti. Jos ratkaisuja ei ole, paina Ei ratkaisuja.",
+  4:"tan α on säteen kulmakerroin. Pystysuoralla apuviivalla x = 1 se näkyy korkeutena.",
+  5:"sin⁻¹, cos⁻¹ ja tan⁻¹ antavat aina vain yhden kulman. Ruudukon väli on ½.",
+  6:"Kun kulma on kerrottu, ratkaisuja voi olla enemmän kuin kaksi.",
+  7:"Sekoitus kaikesta. Onnea matkaan!",
+};
+
+/* ── helpers ────────────────────────────────────────────────────────── */
+const norm = d => ((d % 360) + 360) % 360;
+const angDist = (a,b) => { const x = Math.abs(norm(a) - norm(b)); return Math.min(x, 360 - x); };
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const gcd = (a,b) => b ? gcd(b, a % b) : a;
+const pt = d => ({x: R*Math.cos(d*D2R), y: -R*Math.sin(d*D2R)});
+const f1 = v => v.toFixed(1);
+
+function degText(d){
+  d = norm(d);
+  const r = Math.round(d*10)/10;
+  if(Math.abs(d - Math.round(d)) < 1e-6) return `${Math.round(d)}°`;
+  if(Math.abs(d*2 - Math.round(d*2)) < 1e-6) return `${String(d).replace(".",",")}°`;
+  return `≈&nbsp;${String(r).replace(".",",")}°`;
+}
+function radText(d){
+  d = norm(d);
+  if(Math.abs(d/15 - Math.round(d/15)) > 1e-6) return null;
+  const k = Math.round(d/15); if(k === 0) return "0";
+  const g = gcd(k,12), n = k/g, m = 12/g, num = n === 1 ? "π" : `${n}π`;
+  return m === 1 ? num : fr(num, m);
+}
+function angleText(d, unit){
+  const r = radText(d);
+  if(unit === "deg" || !r) return degText(d);
+  if(unit === "rad") return r;
+  return r === "0" ? "0°" : `${degText(d)} eli ${r}`;
+}
+
+/* ── state ──────────────────────────────────────────────────────────── */
+let level = 1, tasks = [], idx = 0, score = 0, placed = [], aim = null, answered = false;
+const task = () => tasks[idx];
+const tanOn = () => level >= 4;
+const specialOn = () => level >= 3;
+
+/* ── static drawing ─────────────────────────────────────────────────── */
+function drawStatic(){
+  let h = "";
+  for(const g of [-300,-150,150,300]){
+    h += `<line class="grid" x1="${g}" y1="-400" x2="${g}" y2="400"/><line class="grid" x1="-400" y1="${g}" x2="400" y2="${g}"/>`;
+  }
+  h += `<line class="axis" x1="-410" y1="0" x2="402" y2="0"/><line class="axis" x1="0" y1="410" x2="0" y2="-402"/>`;
+  h += `<path class="arrow" d="M418,0 L398,-9 L398,9 Z"/><path class="arrow" d="M0,-418 L-9,-398 L9,-398 Z"/>`;
+  h += `<text class="axlabel" x="402" y="-16" text-anchor="end">x</text><text class="axlabel" x="16" y="-398">y</text>`;
+  h += `<text class="axlabel" x="${R+8}" y="26">1</text><text class="axlabel" x="${-R-8}" y="26" text-anchor="end">−1</text>`;
+  h += `<text class="axlabel" x="10" y="${-R-10}">1</text><text class="axlabel" x="10" y="${R+26}">−1</text>`;
+  if(tanOn()) h += `<line class="tanline" x1="${R}" y1="-410" x2="${R}" y2="410"/>`;
+  h += `<circle class="circle" r="${R}"/>`;
+  for(let d=0; d<360; d+=15){
+    const len = d % 90 === 0 ? 16 : d % 45 === 0 || d % 30 === 0 ? 11 : 7;
+    const c = Math.cos(d*D2R), s = -Math.sin(d*D2R);
+    h += `<line class="tick" x1="${f1((R-len)*c)}" y1="${f1((R-len)*s)}" x2="${f1(R*c)}" y2="${f1(R*s)}"/>`;
+  }
+  $("static").innerHTML = h;
+  $("legendTan").hidden = !tanOn();
+}
+
+/* ── aim ray, projections ───────────────────────────────────────────── */
+function drawAim(){
+  const layer = $("aimLayer");
+  if(aim === null || answered){ layer.innerHTML = ""; return; }
+  const c = Math.cos(aim*D2R), s = Math.sin(aim*D2R), px = R*c, py = -R*s;
+  let h = "";
+  h += `<line class="proj" x1="${f1(px)}" y1="${f1(py)}" x2="${f1(px)}" y2="0"/>`;
+  h += `<line class="proj" x1="${f1(px)}" y1="${f1(py)}" x2="0" y2="${f1(py)}"/>`;
+  h += `<line class="cosseg" x1="0" y1="0" x2="${f1(px)}" y2="0"/>`;
+  h += `<line class="sinseg" x1="0" y1="0" x2="0" y2="${f1(py)}"/>`;
+  if(tanOn() && Math.abs(c) > 1e-3){
+    const t = s / c;
+    if(Math.abs(t) <= 1.4){
+      h += `<line class="tanext" x1="0" y1="0" x2="${R}" y2="${f1(-R*t)}"/>`;
+      h += `<line class="tanseg" x1="${R}" y1="0" x2="${R}" y2="${f1(-R*t)}"/>`;
+    }
+  }
+  h += `<line class="ray" x1="0" y1="0" x2="${f1(px*1.2)}" y2="${f1(py*1.2)}"/>`;
+  h += `<circle class="ghost" cx="${f1(px)}" cy="${f1(py)}" r="12"/>`;
+  layer.innerHTML = h;
+}
+
+function drawPoints(result){
+  let h = "";
+  for(const d of placed){
+    const p = pt(d);
+    const cls = !result ? "" : result.bad.includes(d) ? " bad pop" : " ok pop";
+    h += `<circle class="pt${cls}" cx="${f1(p.x)}" cy="${f1(p.y)}" r="14"/>`;
+    if(result && result.bad.includes(d))
+      h += `<path class="xmark" d="M${f1(p.x-5)},${f1(p.y-5)} L${f1(p.x+5)},${f1(p.y+5)} M${f1(p.x+5)},${f1(p.y-5)} L${f1(p.x-5)},${f1(p.y+5)}"/>`;
+  }
+  if(result) for(const d of result.missed){
+    const p = pt(d);
+    h += `<circle class="miss" cx="${f1(p.x)}" cy="${f1(p.y)}" r="17"/>`;
+  }
+  $("points").innerHTML = h;
+}
+
+/* ── guide geometry shown after checking ────────────────────────────── */
+function drawGuide(p){
+  const g = p.guide; let h = "";
+  const hl = v => `<line class="guide" x1="-410" y1="${f1(-R*v)}" x2="410" y2="${f1(-R*v)}"/>`;
+  const vl = v => `<line class="guide" x1="${f1(R*v)}" y1="-410" x2="${f1(R*v)}" y2="410"/>`;
+  if(g.t === "h") h += hl(g.v);
+  if(g.t === "v") h += vl(g.v);
+  if(g.t === "hh") h += hl(g.v) + hl(-g.v);
+  if(g.t === "vv") h += vl(g.v) + vl(-g.v);
+  if(g.t === "axes") h += `<line class="guide solid" x1="-410" y1="0" x2="410" y2="0"/><line class="guide solid" x1="0" y1="-410" x2="0" y2="410"/>`;
+  if(g.t === "all") h += `<circle class="guide ring" r="${R}"/>`;
+  if(g.t === "tan" || g.t === "tanray"){
+    const k = 420 / Math.max(1, Math.abs(g.v));
+    const x0 = g.t === "tan" ? -k : 0;
+    h += `<line class="guide" x1="${f1(x0)}" y1="${f1(g.v*x0*-1)}" x2="${f1(k)}" y2="${f1(-g.v*k)}"/>`;
+    if(Math.abs(g.v) <= 1.4) h += `<line class="tanseg" x1="${R}" y1="0" x2="${R}" y2="${f1(-R*g.v)}"/>`;
+  }
+  if(g.t === "rays") for(const d of p.sols){
+    const q = pt(d);
+    h += `<line class="guide" x1="0" y1="0" x2="${f1(q.x)}" y2="${f1(q.y)}"/>`;
+  }
+  $("guide").innerHTML = `<g class="fadein">${h}</g>`;
+}
+
+/* ── task flow ──────────────────────────────────────────────────────── */
+function startLevel(){
+  const pool = level <= 6 ? BANK[level] : [3,4,5,6].flatMap(k => BANK[k]);
+  tasks = shuffle(pool).slice(0, TASKS);
+  idx = 0; score = 0;
+  $("overlay").classList.remove("show");
+  drawStatic();
+  showTask();
+}
+function showTask(){
+  placed = []; answered = false;
+  $("readout").innerHTML = task().html;
+  $("guide").innerHTML = "";
+  drawPoints(); drawAim();
+  $("fb").hidden = true;
+  $("actions").hidden = false; $("subctrl").hidden = false; $("hint").hidden = false;
+  $("none").hidden = $("all").hidden = !specialOn();
+  $("tri30").hidden = $("tri45").hidden = !specialOn();
+  $("hintBtn").hidden = false; hintStep = 0;
+  setHint(LEVEL_INTRO[Math.min(level,7)]);
+  updateHud();
+}
+function updateHud(){
+  $("level").textContent = level;
+  $("task").textContent = `${idx+1}/${TASKS}`;
+  $("score").textContent = score;
+}
+let hintTimer = null;
+function setHint(msg, warn=false){
+  const el = $("hint"); el.textContent = msg; el.classList.toggle("warn", warn); el.classList.remove("tip");
+}
+function flashHint(msg){
+  setHint(msg, true); clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => { if(!answered) setHint(LEVEL_INTRO[Math.min(level,7)]); }, 2400);
+}
+
+/* ── hints: 1st press = method, then the current state, 3rd press also draws the helper line ── */
+let hintStep = 0;
+function methodHint(p){
+  if(p.hint) return p.hint;
+  const g = p.guide;
+  const range = p.inv === "sin" ? `${inv("sin")} antaa vain yhden kulman, väliltä −90° … 90°. `
+              : p.inv === "cos" ? `${inv("cos")} antaa vain yhden kulman, väliltä 0° … 180°. ` : "";
+  if(g.t === "h") return range + `${SIN}${A} on pisteen y-koordinaatti. Etsi ympyrältä pisteet, joiden y-koordinaatti on ${g.vh}.`;
+  if(g.t === "v") return range + `${COS}${A} on pisteen x-koordinaatti. Etsi ympyrältä pisteet, joiden x-koordinaatti on ${g.vh}.`;
+  if(g.t === "tan" || g.t === "tanray"){
+    const pre = g.t === "tanray" ? `${inv("tan")} antaa vain yhden kulman, väliltä −90° … 90°, eli ympyrän oikealta puoliskolta. `
+                                 : `${TAN}${A} on säteen kulmakerroin. `;
+    return pre + (Math.abs(g.v) <= 1.4
+      ? `Etsi säde, joka osuu pystysuoraan apuviivaan x = 1 korkeudella ${g.vh}.`
+      : `Säde nousee ${g.vh} yksikköä, kun x kasvaa yhdellä. Käytä ruudukkoa tai muistikolmiota.`);
+  }
+  if(g.t === "rays"){
+    const pm = p.html.includes("±") ? " Merkki ± tarkoittaa kahta kulmaa." : "";
+    if(p.unit === "rad") return `Muunna asteiksi: π = 180°, joten esimerkiksi ${pi("",6)} = 30° ja ${pi("",4)} = 45°.` + pm;
+    return "Aloita positiiviselta x-akselilta. Positiivinen kulma kierretään vastapäivään, negatiivinen myötäpäivään. Neljännes kierrosta on 90°." + pm;
+  }
+  return "Mieti, missä kohdissa ympyrää yhtälö on totta.";
+}
+function symHint(p){
+  const g = p.guide, n = p.sols.length;
+  if(p.inv || g.t === "tanray") return "";
+  if(g.t === "h" || g.t === "hh") return ` Sini on sama kulmilla ${A} ja 180° − ${A}: peilaa piste y-akselin yli.`;
+  if(g.t === "v" || g.t === "vv") return ` Kosini on sama kulmilla ${A} ja −${A}: peilaa piste x-akselin yli.`;
+  if(g.t === "tan") return ` Tangentti on sama kulmilla ${A} ja ${A} + 180°: katso origon toiselle puolelle.`;
+  if(g.t === "rays" && n >= 3){
+    const s = p.sols.map(norm).sort((a,b) => a-b), gap = 360/n;
+    if(s.every((d,i) => Math.abs(norm(s[(i+1)%n] - d) - gap) < 1e-6)) return ` Ratkaisut ovat ympyrällä tasaisin välein.`;
+    return ` Ratkaisut sijoittuvat ympyrälle symmetrisesti.`;
+  }
+  return "";
+}
+function stateHint(p){
+  if(p.all) return "Kokeile muutamaa kulmaa, vaikkapa 0°, 90° ja 30°. Onko yhtälö totta niillä kaikilla?";
+  if(p.sols.length === 0) return "Voiko yhtälö olla totta millään kulmalla? Mieti, mitä arvoja vasen puoli voi saada.";
+  const bad = placed.filter(d => !p.sols.some(s => angDist(s,d) <= TOL));
+  const missing = p.sols.filter(s => !placed.some(d => angDist(s,d) <= TOL)).length;
+  const n = p.sols.length;
+  if(bad.length) return bad.length === 1 ? "Yksi merkitsemistäsi pisteistä ei ole ratkaisu." : `${bad.length} merkitsemääsi pistettä ei ole ratkaisuja.`;
+  if(placed.length === 0) return (n === 1 ? "Ratkaisuja on vain yksi." : `Ratkaisuja on ${n}.`) + symHint(p);
+  if(missing) return (missing === 1 ? "Hyvä alku! Yksi ratkaisu puuttuu vielä." : `Hyvä alku! Ratkaisuja puuttuu vielä ${missing}.`) + symHint(p);
+  return "Kaikki ratkaisut on löydetty. Paina Tarkista.";
+}
+function giveHint(){
+  if(answered) return;
+  const p = task(); hintStep++;
+  clearTimeout(hintTimer);
+  let msg = hintStep === 1 ? methodHint(p) : stateHint(p);
+  if(hintStep === 3 && ["h","v","hh","vv","tan","tanray","axes"].includes(p.guide.t)){
+    drawGuide(p); msg += " Apuviiva on nyt piirretty ympyrään.";
+  }
+  const el = $("hint"); el.innerHTML = msg; el.classList.remove("warn"); el.classList.add("tip");
+}
+
+/* ── memory triangles ── */
+function showTriangle(kind){
+  let svg, table, lead;
+  if(kind === 30){
+    $("shTitle").textContent = "Tasasivuinen muistikolmio";
+    svg = `<svg viewBox="0 0 260 245">
+      <path class="trihalf" d="M130,215 L240,215 L130,24.5 Z"/>
+      <path class="tri" d="M20,215 L240,215 L130,24.5 Z"/>
+      <line class="trih" x1="130" y1="24.5" x2="130" y2="215"/>
+      <path class="ra" d="M130,201 L144,201 L144,215"/>
+      <text class="tl" x="62" y="115" text-anchor="end">2</text>
+      <text class="tl" x="198" y="115">2</text>
+      <text class="tl" x="75" y="240" text-anchor="middle">1</text>
+      <text class="tl" x="185" y="240" text-anchor="middle">1</text>
+      <text class="tl" x="122" y="140" text-anchor="end">√3</text>
+      <text class="ta" x="206" y="206" text-anchor="end">60°</text>
+      <text class="ta" x="136" y="80">30°</text>
+    </svg>`;
+    lead = `Tasasivuinen kolmio puolitettuna. Yksikköympyrässä hypotenuusa on 1, joten kaikki sivut jaetaan kahdella: kateetit ovat ${fr(1,2)} ja ${fr(sq(3),2)}.`;
+    table = `<tr><th>kulma</th><th>sin</th><th>cos</th><th>tan</th></tr>
+      <tr><td>30° = ${pi("",6)}</td><td>${fr(1,2)}</td><td>${fr(sq(3),2)}</td><td>${fr(1,sq(3))} = ${fr(sq(3),3)}</td></tr>
+      <tr><td>60° = ${pi("",3)}</td><td>${fr(sq(3),2)}</td><td>${fr(1,2)}</td><td>${sq(3)}</td></tr>`;
+  } else {
+    $("shTitle").textContent = "Tasakylkinen muistikolmio";
+    svg = `<svg viewBox="0 0 250 235">
+      <path class="trihalf" d="M40,200 L210,200 L40,30 Z"/>
+      <path class="tri" d="M40,200 L210,200 L40,30 Z"/>
+      <path class="ra" d="M40,186 L54,186 L54,200"/>
+      <text class="tl" x="125" y="228" text-anchor="middle">1</text>
+      <text class="tl" x="24" y="122" text-anchor="end">1</text>
+      <text class="tl" x="136" y="106">√2</text>
+      <text class="ta" x="172" y="192" text-anchor="end">45°</text>
+      <text class="ta" x="48" y="82">45°</text>
+    </svg>`;
+    lead = `Tasakylkinen suorakulmainen kolmio. Yksikköympyrässä hypotenuusa on 1, joten sivut jaetaan luvulla ${sq(2)}: kateetit ovat ${fr(1,sq(2))} = ${fr(sq(2),2)}.`;
+    table = `<tr><th>kulma</th><th>sin</th><th>cos</th><th>tan</th></tr>
+      <tr><td>45° = ${pi("",4)}</td><td>${fr(sq(2),2)}</td><td>${fr(sq(2),2)}</td><td>1</td></tr>`;
+  }
+  $("shBody").innerHTML = svg + `<p class="lead">${lead}</p><table class="vt">${table}</table>`;
+  $("sheet").classList.add("show"); $("shClose").focus();
+}
+function closeSheet(){ $("sheet").classList.remove("show"); }
+
+function toggle(d){
+  if(answered) return;
+  d = norm(Math.round(d*2)/2);
+  const i = placed.findIndex(q => angDist(q,d) < TOGGLE);
+  if(i >= 0) placed.splice(i,1); else placed.push(d);
+  drawPoints();
+}
+
+function check(mode){
+  if(answered) return;
+  const p = task();
+  if(mode === "points" && placed.length === 0){
+    flashHint(specialOn() ? "Merkitse ensin pisteet ympyrälle, tai valitse Ei ratkaisuja tai Jokainen piste." : "Merkitse ensin pisteet ympyrälle.");
+    return;
+  }
+  answered = true;
+  if(mode !== "points") placed = [];
+  const sols = p.all ? [] : p.sols;
+  const bad = placed.filter(d => !sols.some(s => angDist(s,d) <= TOL));
+  const missed = sols.filter(s => !placed.some(d => angDist(s,d) <= TOL));
+  let ok;
+  if(p.all) ok = mode === "all";
+  else if(mode === "all") ok = false;
+  else if(mode === "none") ok = sols.length === 0;
+  else ok = bad.length === 0 && missed.length === 0;
+  if(ok) score++;
+
+  drawAim(); drawGuide(p); drawPoints({bad, missed});
+  updateHud();
+  showFeedback(p, ok, mode, bad, missed);
+}
+
+function showFeedback(p, ok, mode, bad, missed){
+  const title = $("fbTitle");
+  let head;
+  if(ok) head = "Oikein!";
+  else if(p.all) head = "Yhtälö on totta joka kulmalla";
+  else if(mode === "all") head = "Ei aivan jokainen piste";
+  else if(p.sols.length === 0) head = "Tällä yhtälöllä ei ole ratkaisuja";
+  else if(mode === "none") head = "Ratkaisuja on";
+  else if(bad.length && missed.length) head = "Osa pisteistä väärin, osa puuttuu";
+  else if(bad.length) head = bad.length === 1 ? "Mukana on yksi väärä piste" : `Mukana on ${bad.length} väärää pistettä`;
+  else head = missed.length === 1 ? "Yksi ratkaisu puuttuu" : `${missed.length} ratkaisua puuttuu`;
+  title.textContent = head;
+  title.className = ok ? "ok" : "bad";
+
+  let text = "";
+  const g = p.guide;
+  if(p.note) text += `<p>${p.note}</p>`;
+  else if(g.t === "h") text += `<p>${SIN}${A} on pisteen y-koordinaatti. Vaakasuora suora y = ${g.vh} osoittaa oikeat kohdat.</p>`;
+  else if(g.t === "v") text += `<p>${COS}${A} on pisteen x-koordinaatti. Pystysuora suora x = ${g.vh} osoittaa oikeat kohdat.</p>`;
+  else if(g.t === "tan") text += `<p>${TAN}${A} on säteen kulmakerroin. Suora origosta pisteeseen (1, ${g.vh}) leikkaa ympyrän kahdesti.</p>`;
+  if(p.all) text += `<p class="sols">Kaikki kulmat ovat ratkaisuja.</p>`;
+  else if(p.sols.length === 0) text += `<p class="sols">Ei ratkaisuja.</p>`;
+  else {
+    const list = p.sols.slice().sort((a,b) => norm(a)-norm(b)).map(d => angleText(d, p.unit));
+    text += `<p class="sols">${list.length === 1 ? "Ratkaisu" : "Ratkaisut"}: ${list.join(", ")}</p>`;
+  }
+  $("fbText").innerHTML = text;
+  $("next").textContent = idx === TASKS-1 ? "Katso tulos" : "Seuraava";
+  $("fb").hidden = false;
+  $("actions").hidden = true; $("subctrl").hidden = true;
+  $("hint").hidden = true; $("hintBtn").hidden = true;
+  $("next").focus({preventScroll:true});
+  $("fb").scrollIntoView({block:"nearest", behavior:"smooth"});
+}
+
+function next(){
+  if(!answered) return;
+  if(idx < TASKS-1){ idx++; showTask(); return; }
+  showOverlay();
+}
+
+function showOverlay(){
+  const btns = $("ovBtns"); btns.innerHTML = "";
+  const btn = (label, fn, primary) => { const b = document.createElement("button");
+    b.className = "btn" + (primary ? " primary" : ""); b.textContent = label; b.addEventListener("click", fn); btns.appendChild(b); return b; };
+  $("ovResult").textContent = `${score} / ${TASKS}`;
+  let first;
+  if(score >= PASS){
+    $("ovTitle").textContent = score === TASKS ? "Täydellinen taso! 🎉" : "Taso läpäisty! 🎉";
+    $("ovMsg").textContent = level < 6 ? "Seuraavalla tasolla on uudenlaisia yhtälöitä." : "Seuraavalla tasolla on sekoitus kaikista tasoista.";
+    first = btn("Seuraava taso", () => { level++; startLevel(); }, true);
+    btn("Pelaa taso uudestaan", startLevel);
+  } else {
+    $("ovTitle").textContent = score >= 3 ? "Melkein!" : "Harjoitellaan vielä";
+    $("ovMsg").textContent = `Seuraavalle tasolle pääset, kun vähintään ${PASS} tehtävää kuudesta menee oikein.`;
+    first = btn("Yritä tasoa uudestaan", startLevel, true);
+  }
+  const a = document.createElement("a"); a.href = COURSE_URL; a.className = "btn"; a.textContent = "Palaa kurssiin"; btns.appendChild(a);
+  $("overlay").classList.add("show"); first.focus();
+}
+
+/* ── input ──────────────────────────────────────────────────────────── */
+const stage = $("stage");
+function toSvg(e){
+  const m = stage.getScreenCTM(); if(!m) return null;
+  const p = new DOMPoint(e.clientX, e.clientY).matrixTransform(m.inverse());
+  return p;
+}
+function angleAt(e){
+  const p = toSvg(e); if(!p) return null;
+  if(Math.hypot(p.x, p.y) < R*0.18) return null;          // too close to the centre to aim
+  return norm(Math.atan2(-p.y, p.x) / D2R);
+}
+let down = false;
+stage.addEventListener("pointerdown", e => {
+  if(answered) return;
+  down = true; stage.setPointerCapture(e.pointerId);
+  const a = angleAt(e); if(a !== null){ aim = a; drawAim(); }
+  e.preventDefault();
+});
+stage.addEventListener("pointermove", e => {
+  if(answered) return;
+  if(e.pointerType !== "mouse" && !down) return;
+  const a = angleAt(e); if(a !== null){ aim = a; drawAim(); }
+});
+stage.addEventListener("pointerup", e => {
+  if(!down) return; down = false;
+  if(answered) return;
+  const a = angleAt(e);
+  if(a !== null){ aim = a; toggle(a); }
+  if(e.pointerType !== "mouse") aim = null;
+  drawAim();
+});
+stage.addEventListener("pointercancel", () => { down = false; });
+stage.addEventListener("pointerleave", e => { if(e.pointerType === "mouse" && !down){ aim = null; drawAim(); } });
+
+document.addEventListener("keydown", e => {
+  if($("sheet").classList.contains("show")){ if(e.key === "Escape") closeSheet(); return; }
+  if($("overlay").classList.contains("show")) return;
+  const k = e.key;
+  if(answered){
+    if(k === "Enter" && document.activeElement !== $("next")){ e.preventDefault(); next(); }
+    return;
+  }
+  if(k === "ArrowLeft" || k === "ArrowRight" || k === "ArrowUp" || k === "ArrowDown"){
+    const step = e.shiftKey ? 1 : 15, dir = (k === "ArrowLeft" || k === "ArrowUp") ? 1 : -1;
+    aim = norm((aim === null ? 0 : Math.round(aim / step) * step) + dir*step);
+    drawAim(); e.preventDefault();
+  } else if(k === " " && document.activeElement === stage){
+    if(aim === null) aim = 0;
+    toggle(aim); drawAim(); e.preventDefault();
+  } else if(k === "Enter" && (document.activeElement === stage || document.activeElement === document.body)){
+    e.preventDefault(); check("points");
+  } else if(k.toLowerCase() === "r" && !e.ctrlKey && !e.metaKey){
+    placed = []; drawPoints();
+  }
+});
+$("check").addEventListener("click", () => check("points"));
+$("none").addEventListener("click", () => check("none"));
+$("all").addEventListener("click", () => check("all"));
+$("next").addEventListener("click", next);
+$("hintBtn").addEventListener("click", giveHint);
+$("tri30").addEventListener("click", () => showTriangle(30));
+$("tri45").addEventListener("click", () => showTriangle(45));
+$("shClose").addEventListener("click", closeSheet);
+$("sheet").addEventListener("click", e => { if(e.target === $("sheet")) closeSheet(); });
+$("clear").addEventListener("click", () => { if(!answered){ placed = []; drawPoints(); } });
+
+startLevel();
+</script>
+</body>
+</html>
