@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fi">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Nonlinear IFS explorer</title>
+<title>Epälineaarinen IFS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&display=swap" rel="stylesheet">
@@ -104,6 +104,7 @@ summary .sub { font: italic 400 14px var(--serif); color: var(--muted); margin-l
 .row { display: grid; grid-template-columns: 1fr 74px; grid-template-rows: auto auto; column-gap: 8px; margin: 4px 0 6px; }
 .row label { grid-column: 1 / 3; font-size: 12px; color: var(--muted); }
 .row label b { font: italic 500 13px var(--serif); color: var(--ink); margin-right: 4px; }
+.row label b.tight { margin-right: 1px; }
 .row input[type=number] {
   width: 74px; font: 12px var(--sans); font-variant-numeric: tabular-nums; color: var(--ink);
   background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px;
@@ -150,6 +151,8 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height:
 }
 .sitenav a { color: var(--muted); text-decoration: none; border-radius: 4px; }
 .sitenav a:hover { color: var(--ink); text-decoration: underline; }
+.langseg { margin: -2px 0 10px; }
+.langseg button { padding: 3px 10px; font-size: 12px; }
 #btnInfo {
   background: var(--steel); color: #fff; border-color: var(--steel);
   font: 600 14px var(--sans); padding: 6px 12px 6px 7px;
@@ -183,50 +186,53 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
 </head>
 <body>
 <!-- site navigation: this page lives at games/artsy_math/fractals/ifs_explorer/index.html -->
-<nav class="sitenav" aria-label="Site">
-  <a href="../../../../#/artsy/fractals">← Back to Fractals</a>
-  <a href="../../../../#/">Home</a>
+<nav class="sitenav" aria-label="Site" data-i18n-aria="site">
+  <a href="../../../../#/artsy/fractals" data-i18n="back">← Back to Fractals</a>
+  <a href="../../../../#/" data-i18n="home">Home</a>
 </nav>
 <div class="app">
   <div class="stage">
     <div class="frame">
-      <canvas id="view" width="800" height="800" aria-label="Fractal image"></canvas>
+      <canvas id="view" width="800" height="800" aria-label="Fractal image" data-i18n-aria="fractalImage"></canvas>
       <div class="caption" id="caption"></div>
-      <div class="busy" id="busy">Rendering…</div>
+      <div class="busy" id="busy" data-i18n="rendering">Rendering…</div>
       <div class="status" id="status"></div>
     </div>
   </div>
 
   <aside class="panel">
     <div class="head">
-      <h1>Nonlinear IFS <small>x ↦ h(A<sub>n</sub>x + b<sub>n</sub>)</small></h1>
+      <h1><span data-i18n="title">Nonlinear IFS</span> <small>x ↦ h(A<sub>n</sub>x + b<sub>n</sub>)</small></h1>
+      <div class="seg langseg" id="langseg" role="group" aria-label="Kieli / Language">
+        <button data-lang="fi" lang="fi">FI</button><button data-lang="en" lang="en">EN</button>
+      </div>
       <div class="actions">
-        <button class="primary" id="btnIter">Show iteration</button>
-        <button id="btnUndo" title="Ctrl+Z">Undo</button>
-        <button id="btnRedo" title="Ctrl+Y">Redo</button>
-        <button id="btnSave">Save settings</button>
-        <label class="filebtn">Load settings<input type="file" id="fileLoad" accept=".json,application/json"></label>
-        <button id="btnPng">Save PNG</button>
-        <button id="btnInfo"><span class="i" aria-hidden="true">i</span>What is this?</button>
+        <button class="primary" id="btnIter" data-i18n="showIter">Show iteration</button>
+        <button id="btnUndo" title="Ctrl+Z" data-i18n="undo">Undo</button>
+        <button id="btnRedo" title="Ctrl+Y" data-i18n="redo">Redo</button>
+        <button id="btnSave" data-i18n="saveSettings">Save settings</button>
+        <label class="filebtn"><span data-i18n="loadSettings">Load settings</span><input type="file" id="fileLoad" accept=".json,application/json"></label>
+        <button id="btnPng" data-i18n="savePng">Save PNG</button>
+        <button id="btnInfo"><span class="i" aria-hidden="true">i</span><span data-i18n="whatIs">What is this?</span></button>
       </div>
     </div>
 
     <details open>
-      <summary>Classic fractals<span class="sub">each one starts with the iteration</span></summary>
+      <summary><span data-i18n="classics">Classic fractals</span><span class="sub" data-i18n="classicsSub">each one starts with the iteration</span></summary>
       <div class="body"><div class="presets" id="presets"></div></div>
     </details>
 
     <details open>
-      <summary>Affine maps<span class="sub">f<sub>n</sub>(x) = A<sub>n</sub>x + b<sub>n</sub></span></summary>
+      <summary><span data-i18n="affine">Affine maps</span><span class="sub">f<sub>n</sub>(x) = A<sub>n</sub>x + b<sub>n</sub></span></summary>
       <div class="body"><div class="grid2" id="maps"></div></div>
     </details>
 
     <details open>
-      <summary>Nonlinearity h</summary>
+      <summary><span data-i18n="nonlin">Nonlinearity h</span></summary>
       <div class="body">
-        <div class="line"><span>Form</span>
+        <div class="line"><span data-i18n="form">Form</span>
           <div class="seg" id="hform">
-            <button data-h="0">sin x₁, sin x₂</button><button data-h="1">crossed</button>
+            <button data-h="0">sin x₁, sin x₂</button><button data-h="1" data-i18n="crossed">crossed</button>
           </div>
         </div>
         <p class="formula" id="hformula"></p>
@@ -235,37 +241,37 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
     </details>
 
     <details open>
-      <summary>Rendering &amp; view</summary>
+      <summary><span data-i18n="renderView">Rendering &amp; view</span></summary>
       <div class="body">
         <div class="grid2" id="render"></div>
-        <div class="line"><span>Background</span>
-          <div class="seg" id="bgseg"><button data-bg="1">White</button><button data-bg="0">Black</button></div>
-          <span>Style</span>
-          <div class="seg" id="styleseg"><button data-f="1">Flame</button><button data-f="0">Dots</button></div>
+        <div class="line"><span data-i18n="background">Background</span>
+          <div class="seg" id="bgseg"><button data-bg="1" data-i18n="white">White</button><button data-bg="0" data-i18n="black">Black</button></div>
+          <span data-i18n="style">Style</span>
+          <div class="seg" id="styleseg"><button data-f="1" data-i18n="flame">Flame</button><button data-f="0" data-i18n="dots">Dots</button></div>
         </div>
-        <div class="line"><span>Smoothing</span>
+        <div class="line"><span data-i18n="smoothing">Smoothing</span>
           <div class="seg" id="ssseg"><button data-ss="1">1×</button><button data-ss="2">2×</button><button data-ss="3">3×</button></div>
-          <button id="btnSeeds">New seed points</button>
+          <button id="btnSeeds" data-i18n="newSeeds">New seed points</button>
         </div>
         <div class="grid2 view" id="viewsl"></div>
-        <div class="line"><button id="btnFit">Fit to picture</button>
-          <span>PNG size</span><input type="number" id="pngSize" value="2000" min="400" max="6000" step="100" style="width:80px">
+        <div class="line"><button id="btnFit" data-i18n="fit">Fit to picture</button>
+          <span data-i18n="pngSize">PNG size</span><input type="number" id="pngSize" value="2000" min="400" max="6000" step="100" style="width:80px">
         </div>
-        <p class="hint">Drag the picture to move it, scroll to zoom.</p>
+        <p class="hint" data-i18n="viewHint">Drag the picture to move it; scroll or pinch to zoom.</p>
       </div>
     </details>
 
     <details open>
-      <summary>Palette<span class="sub" id="palname"></span></summary>
+      <summary><span data-i18n="palette">Palette</span><span class="sub" id="palname"></span></summary>
       <div class="body">
         <canvas id="cube" width="840" height="630"></canvas>
         <canvas id="bar" width="840" height="120"></canvas>
         <ul class="stops" id="stops"></ul>
         <div class="line">
-          <button id="btnPalReset">Reset palette</button>
-          <button id="btnColours">Shuffle map colours</button>
+          <button id="btnPalReset" data-i18n="palReset">Reset palette</button>
+          <button id="btnColours" data-i18n="shuffle">Shuffle map colours</button>
         </div>
-        <p class="hint">In the cube, drag a vertex to recolour it and drag empty space to rotate. On the bar, drag a marker to move its stop, double-click to add one, right-click to delete.</p>
+        <p class="hint" data-i18n="palHint">In the cube, drag a vertex to recolour it and drag empty space to rotate. On the bar, drag a marker to move its stop, double-click to add one, right-click to delete.</p>
         <div class="pals" id="pals"></div>
       </div>
     </details>
@@ -273,8 +279,9 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
 </div>
 
 <dialog id="info" aria-labelledby="infoTitle">
-  <button class="close" id="infoClose" aria-label="Close">Close</button>
-  <h2 id="infoTitle">What is this?</h2>
+  <button class="close" id="infoClose" data-i18n="close">Close</button>
+  <h2 id="infoTitle" data-i18n="whatIs">What is this?</h2>
+  <div id="info-en" lang="en" hidden>
   <p>Ignoring the colours, the picture shows the <em>attractor</em> of the four maps $h\circ f_1,\dots,h\circ f_4$: the unique non-empty compact set $A\subset\mathbb{R}^2$ with $A=\Phi(A)$, where
   $$\Phi\colon\mathcal{K}(\mathbb{R}^2)\to\mathcal{K}(\mathbb{R}^2),\qquad \Phi(C)=\bigcup_{n=1}^{4} h\big(f_n(C)\big),$$
   and $\mathcal{K}(\mathbb{R}^2)$ is the space of non-empty compact subsets of the plane. This space is complete under the Hausdorff metric. If every $h\circ f_n$ is a contraction of $\mathbb{R}^2$, then $\Phi$ is a contraction of $\mathcal{K}(\mathbb{R}^2)$, so by the Banach fixed point theorem it has a unique fixed point $A$, and the iterates $\Phi^k(C)$ converge to $A$ from any starting set $C$. This is Hutchinson’s theorem (1981) [1]. The picture is drawn from $\Phi^k$ applied to a few random points, with $k$ set by the depth slider; “Show iteration” shows the same process starting from a square.</p>
@@ -284,6 +291,19 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
   <div class="refs">
     <p>[1] J. E. Hutchinson, “Fractals and self-similarity”, <em>Indiana University Mathematics Journal</em> 30 (1981), 713–747.</p>
     <p>[2] S. Draves and E. Reckase, <em>The Fractal Flame Algorithm</em>, 2008. <a href="http://flam3.com/flame.pdf" target="_blank" rel="noopener">http://flam3.com/flame.pdf</a></p>
+  </div>
+  </div>
+  <div id="info-fi" lang="fi" hidden>
+  <p>Värit pois lukien kuvassa näkyy neljän kuvauksen $h\circ f_1,\dots,h\circ f_4$ <em>attraktori</em>: se yksikäsitteinen epätyhjä kompakti joukko $A\subset\mathbb{R}^2$, jolle $A=\Phi(A)$, missä
+  $$\Phi\colon\mathcal{K}(\mathbb{R}^2)\to\mathcal{K}(\mathbb{R}^2),\qquad \Phi(C)=\bigcup_{n=1}^{4} h\big(f_n(C)\big),$$
+  ja $\mathcal{K}(\mathbb{R}^2)$ on tason epätyhjien kompaktien osajoukkojen avaruus. Tämä avaruus on täydellinen Hausdorffin metriikan suhteen. Jos jokainen $h\circ f_n$ on tason $\mathbb{R}^2$ kontraktio, niin $\Phi$ on avaruuden $\mathcal{K}(\mathbb{R}^2)$ kontraktio. Banachin kiintopistelauseen nojalla sillä on siis yksikäsitteinen kiintopiste $A$, ja iteraatit $\Phi^k(C)$ suppenevat kohti joukkoa $A$ mistä tahansa alkujoukosta $C$ lähtien. Tämä on Hutchinsonin lause (1981) [1]. Kuva piirretään soveltamalla kuvausta $\Phi^k$ muutamaan satunnaiseen pisteeseen; luvun $k$ valitsee syvyyden liukusäädin. ”Näytä iterointi” näyttää saman prosessin neliöstä alkaen.</p>
+  <p>Värit saadaan lisäämällä yksi ulottuvuus. Jokainen kuvaus laajennetaan joukkoon $\mathbb{R}^2\times[0,1]$ kaavalla
+  $$F_n(x,c)=\Big(h\big(f_n(x)\big),\ \tfrac12(c+c_n)\Big),$$
+  missä $c_n$ on kullekin kuvaukselle kiinnitetty väriarvo. Kuva on kuvausten $F_1,\dots,F_4$ attraktorin projektio tasolle, ja kukin piste väritetään sen yläpuolella olevan säikeen värikoordinaatin $c$ keskiarvolla. RGB-kuution käyrä muuntaa arvon $c$ varsinaiseksi väriksi, ja kirkkaus kertoo, kuinka tiheästi pisteet osuvat kuhunkin kohtaan. Väritys noudattaa fractal flame -algoritmia [2].</p>
+  <div class="refs">
+    <p>[1] J. E. Hutchinson, ”Fractals and self-similarity”, <em>Indiana University Mathematics Journal</em> 30 (1981), 713–747.</p>
+    <p>[2] S. Draves ja E. Reckase, <em>The Fractal Flame Algorithm</em>, 2008. <a href="http://flam3.com/flame.pdf" target="_blank" rel="noopener">http://flam3.com/flame.pdf</a></p>
+  </div>
   </div>
 </dialog>
 
@@ -329,6 +349,74 @@ function computeHist(job) {
   for (let k = 0; k < s.length; k += 2) rec(s[k], s[k + 1], 0.5, 0);
   return { cnt: cnt, csum: csum };
 }
+
+/* ============================ Language ============================ */
+const I18N = {
+  en: {
+    docTitle: "Nonlinear IFS explorer", title: "Nonlinear IFS", site: "Site", back: "← Back to Fractals", home: "Home",
+    fractalImage: "Fractal image", rendering: "Rendering…", showIter: "Show iteration", undo: "Undo", redo: "Redo",
+    saveSettings: "Save settings", loadSettings: "Load settings", savePng: "Save PNG", whatIs: "What is this?", close: "Close",
+    classics: "Classic fractals", classicsSub: "each one starts with the iteration", affine: "Affine maps",
+    nonlin: "Nonlinearity h", form: "Form", crossed: "crossed", renderView: "Rendering & view", background: "Background",
+    white: "White", black: "Black", style: "Style", flame: "Flame", dots: "Dots", smoothing: "Smoothing",
+    newSeeds: "New seed points", fit: "Fit to picture", pngSize: "PNG size",
+    viewHint: "Drag the picture to move it; scroll or pinch to zoom.", palette: "Palette", palReset: "Reset palette",
+    shuffle: "Shuffle map colours",
+    palHint: "In the cube, drag a vertex to recolour it and drag empty space to rotate. On the bar, drag a marker to move its stop, double-click to add one, right-click to delete.",
+    hx1: "coefficient of x₁", hsin: "coefficient of sin", hx2: "coefficient of x₂", seedsL: "Random seeds",
+    depthL: "Depth k of Cₖ", gammaL: "Gamma", brightL: "Brightness", heatL: "Heat", zoomL: "Zoom (log₂)",
+    xshiftL: "x shift", yshiftL: "y shift",
+    status: (n, t, x0, x1, y0, y1) => `${n} points in ${t} s. Visible: x from ${x0} to ${x1}, y from ${y0} to ${y1}.`,
+    singleThread: " Single thread.",
+    cap0: (cx, cy, side, steps) => `C₀: a square, centre (${cx}, ${cy}), side ${side}   (step 0/${steps})`,
+    capK: (k, km, steps, kk) => `C${k} = ⋃ h(fₙ(C${km})), n = 1…4   (step ${kk}/${steps})`,
+    settingsSaved: "Settings saved.", saveCancelled: "Save cancelled.", saveFailed: (m) => `Save failed: ${m}`,
+    loaded: (n) => `Loaded ${n}.`, loadFailed: (n, m) => `Could not load ${n}: ${m}.`, errNoParams: "no list of 28 parameters",
+    pngRendering: (sz, n) => `Rendering ${sz} × ${sz} PNG from ${n} points…`, pngSaved: (t) => `PNG saved (${t} s).`,
+    pngFailed: (m) => `PNG failed: ${m}`,
+    presets: {}, pals: {},
+  },
+  fi: {
+    docTitle: "Epälineaarinen IFS", title: "Epälineaarinen IFS", site: "Sivusto", back: "← Takaisin fraktaaleihin", home: "Etusivu",
+    fractalImage: "Fraktaalikuva", rendering: "Piirretään…", showIter: "Näytä iterointi", undo: "Kumoa", redo: "Tee uudelleen",
+    saveSettings: "Tallenna asetukset", loadSettings: "Lataa asetukset", savePng: "Tallenna PNG", whatIs: "Mikä tämä on?", close: "Sulje",
+    classics: "Klassiset fraktaalit", classicsSub: "jokainen alkaa iteroinnilla", affine: "Affiinit kuvaukset",
+    nonlin: "Epälineaarisuus h", form: "Muoto", crossed: "ristikkäinen", renderView: "Piirto ja näkymä", background: "Tausta",
+    white: "Valkoinen", black: "Musta", style: "Tyyli", flame: "Liekki", dots: "Pisteet", smoothing: "Pehmennys",
+    newSeeds: "Uudet alkupisteet", fit: "Sovita kuvaan", pngSize: "PNG-koko",
+    viewHint: "Siirrä kuvaa vetämällä; zoomaa rullalla tai kahdella sormella.", palette: "Väripaletti", palReset: "Palauta paletti",
+    shuffle: "Sekoita kuvausten värit",
+    palHint: "Kuutiossa: vedä pistettä muuttaaksesi sen väriä tai vedä tyhjää kohtaa kääntääksesi kuutiota. Palkissa: vedä merkkiä siirtääksesi sitä, kaksoisnapsauta lisätäksesi uuden ja napsauta oikealla poistaaksesi.",
+    hx1: "x₁:n kerroin", hsin: "sinin kerroin", hx2: "x₂:n kerroin", seedsL: "Satunnaiset alkupisteet",
+    depthL: "Syvyys k (joukko Cₖ)", gammaL: "Gamma", brightL: "Kirkkaus", heatL: "Hehku", zoomL: "Zoomaus (log₂)",
+    xshiftL: "x-siirto", yshiftL: "y-siirto",
+    status: (n, t, x0, x1, y0, y1) => `${n} pistettä, ${t} s. Näkyvä alue: x ${x0} … ${x1}, y ${y0} … ${y1}.`,
+    singleThread: " Yksi säie.",
+    cap0: (cx, cy, side, steps) => `C₀: neliö, keskipiste (${cx}; ${cy}), sivu ${side}   (vaihe 0/${steps})`,
+    capK: (k, km, steps, kk) => `C${k} = ⋃ h(fₙ(C${km})), n = 1…4   (vaihe ${kk}/${steps})`,
+    settingsSaved: "Asetukset tallennettu.", saveCancelled: "Tallennus peruttu.", saveFailed: (m) => `Tallennus epäonnistui: ${m}`,
+    loaded: (n) => `Ladattu: ${n}.`, loadFailed: (n, m) => `Tiedostoa ${n} ei voitu ladata: ${m}.`,
+    errNoParams: "tiedostosta puuttuu 28 parametrin lista",
+    pngRendering: (sz, n) => `Piirretään ${sz} × ${sz} PNG-kuvaa ${n} pisteestä…`, pngSaved: (t) => `PNG tallennettu (${t} s).`,
+    pngFailed: (m) => `PNG:n luonti epäonnistui: ${m}`,
+    presets: { "Fern": "Saniainen", "Dragon": "Lohikäärme", "Maple": "Vaahtera", "Squares": "Neliöt",
+               "Phoenix": "Feeniks", "Art blob": "Taideläiskä" },
+    pals: { "dark fire": "tumma tuli", "fire": "tuli", "ember": "hiillos", "solar": "aurinko",
+            "blue flame": "sininen liekki", "fern green": "saniaisenvihreä" },
+  },
+};
+let LANG = "fi";
+try { const l = localStorage.getItem("ifsLang"); if (l && I18N[l]) LANG = l; } catch (e) {}
+function t(key, ...args) {
+  const v = key in I18N[LANG] ? I18N[LANG][key] : I18N.en[key];
+  return typeof v === "function" ? v(...args) : (v === undefined ? key : v);
+}
+const locale = () => (LANG === "fi" ? "fi-FI" : "en-US");
+const fmtNum = (v, digits) => Number(v.toPrecision(digits)).toLocaleString(locale(), { maximumFractionDigits: 12 });
+const fmtFixed = (v, d) => v.toLocaleString(locale(), { minimumFractionDigits: d, maximumFractionDigits: d });
+const presetName = (n) => I18N[LANG].presets[n] || n;
+const palName = (n) => I18N[LANG].pals[n] || n;
+const esc = (x) => String(x).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 /* ============================ Data ============================ */
 const RES = 800;
@@ -587,8 +675,8 @@ function draw(dx = 0, dy = 0, scale = 1, cx = 0, cy = 0) {
   view.parentElement.style.setProperty("--cap", S.bg > 0.5 ? "#1b1b1f" : "#f2f2f4");
 }
 function updateStatus() {
-  const [x0, x1, y0, y1] = currentView(), f = (v) => Number(v.toPrecision(4));
-  $("status").textContent = `${nPoints.toLocaleString("en")} points in ${lastTime.toFixed(2)} s. Visible: x from ${f(x0)} to ${f(x1)}, y from ${f(y0)} to ${f(y1)}.` + (workers.length ? "" : " Single thread.");
+  const [x0, x1, y0, y1] = currentView(), f = (v) => fmtNum(v, 4);
+  $("status").textContent = t("status", nPoints.toLocaleString(locale()), fmtFixed(lastTime, 2), f(x0), f(x1), f(y0), f(y1)) + (workers.length ? "" : t("singleThread"));
 }
 
 /* ======================= "Show iteration" animation ======================= */
@@ -619,9 +707,13 @@ function animRaster() {
     if (ix >= 0 && ix < RES && iy >= 0 && iy < RES) { const j = iy*RES + ix; cnt[j]++; csum[j] += C[i]; }
   }
   anim.cnt = cnt; anim.csum = csum; animTone(); lastDrawnView = anim.view.slice();
-  const k = anim.step, [scx, scy, sh] = anim.sq, f = (v) => Number(v.toPrecision(3));
-  $("caption").textContent = k === 0 ? `C₀: a square, centre (${f(scx)}, ${f(scy)}), side ${f(2*sh)}   (step 0/${ANIM_STEPS})`
-    : `C${sub(k)} = ⋃ h(fₙ(C${sub(k-1)})), n = 1…4   (step ${k}/${ANIM_STEPS})`;
+  animCaption();
+}
+function animCaption() {
+  if (!anim) return;
+  const k = anim.step, [scx, scy, sh] = anim.sq, f = (v) => fmtNum(v, 3);
+  $("caption").textContent = k === 0 ? t("cap0", f(scx), f(scy), f(2*sh), ANIM_STEPS)
+    : t("capK", sub(k), sub(k-1), ANIM_STEPS, k);
 }
 function animTone() {
   const data = ictx.createImageData(RES, RES);
@@ -663,14 +755,17 @@ function animStep() {
 }
 
 /* ============================ Controls ============================ */
-function makeSlider(parent, { label, math, min, max, step, value, onInput, onChange, fmt }) {
+const sliderLabels = [];               // sliders whose label follows the language
+function makeSlider(parent, { label, labelKey, math, min, max, step, value, onInput, onChange, fmt }) {
   const row = document.createElement("div"); row.className = "row";
   const id = "s" + Math.random().toString(36).slice(2);
-  row.innerHTML = `<label for="${id}">${math ? `<b>${math}</b>` : ""}${label || ""}</label>`;
+  if (labelKey) label = t(labelKey);
+  row.innerHTML = `<label for="${id}">${math ? `<b${String(label || "")[0] === "[" ? ' class="tight"' : ""}>${math}</b>` : ""}${label || ""}</label>`;
   const r = document.createElement("input"); r.type = "range"; r.id = id; r.min = min; r.max = max; r.step = step / 10; r.value = value;
   const n = document.createElement("input"); n.type = "number"; n.min = min; n.max = max; n.step = step; n.value = fmt(value);
   n.setAttribute("aria-label", (math || "") + " " + (label || ""));
   row.append(r, n); parent.append(row);
+  if (labelKey) sliderLabels.push({ el: row.querySelector("label"), input: n, math, key: labelKey });
   const api = {
     get: () => Number(r.value),
     set: (v) => { r.value = v; n.value = fmt(Number(r.value)); },
@@ -687,33 +782,33 @@ window.addEventListener("pointercancel", () => { interacting = 0; });
 
 const f4 = (v) => (Math.round(v * 10000) / 10000).toString();
 const paramSl = [];
-const names = ["A[1,1]", "A[1,2]", "A[2,1]", "A[2,2]", "b[1]", "b[2]"];
+const names = ["[1,1]", "[1,2]", "[2,1]", "[2,2]", "[1]", "[2]"];   // entries of Aₙ, then of bₙ
 for (let n = 0; n < 4; n++) {
   const box = document.createElement("div"); box.className = "map";
   box.innerHTML = `<h3><i class="sw" style="background:${MAPCOL[n]}"></i>f${sub(n+1)}</h3>`;
   $("maps").append(box);
   for (let k = 0; k < 6; k++) {
     const i = 6*n + k, lim = k < 4 ? 1.5 : 10;
-    paramSl[i] = makeSlider(box, { math: `a${sub(i+1)}`, label: names[k], min: -lim, max: lim, step: 0.001, value: S.p[i], fmt: f4,
+    paramSl[i] = makeSlider(box, { math: `${k < 4 ? "A" : "b"}${sub(n+1)}`, label: names[k], min: -lim, max: lim, step: 0.001, value: S.p[i], fmt: f4,
       onInput: (v, done) => { S.p[i] = v; requestRender(done ? "full" : "preview"); } });
   }
 }
-const hnames = ["coefficient of x₁", "coefficient of sin", "coefficient of x₂", "coefficient of sin"];
+const hnames = ["hx1", "hsin", "hx2", "hsin"];
 for (let k = 0; k < 4; k++) {
   const i = 24 + k;
-  paramSl[i] = makeSlider($("hsliders"), { math: `a${sub(i+1)}`, label: hnames[k], min: -3, max: 3, step: 0.001, value: S.p[i], fmt: f4,
+  paramSl[i] = makeSlider($("hsliders"), { math: "abcd"[k], labelKey: hnames[k], min: -3, max: 3, step: 0.001, value: S.p[i], fmt: f4,
     onInput: (v, done) => { S.p[i] = v; requestRender(done ? "full" : "preview"); } });
 }
-const slSeeds = makeSlider($("render"), { label: "Random seeds", min: 1, max: 100, step: 1, value: S.nseeds, fmt: (v) => String(Math.round(v)),
+const slSeeds = makeSlider($("render"), { labelKey: "seedsL", min: 1, max: 100, step: 1, value: S.nseeds, fmt: (v) => String(Math.round(v)),
   onInput: (v, done) => { S.nseeds = Math.round(v); if (done) requestRender("full"); } });
-const slDepth = makeSlider($("render"), { label: "Depth k of Cₖ", min: 1, max: 11, step: 1, value: S.depth, fmt: (v) => String(Math.round(v)),
+const slDepth = makeSlider($("render"), { labelKey: "depthL", min: 1, max: 11, step: 1, value: S.depth, fmt: (v) => String(Math.round(v)),
   onInput: (v, done) => { S.depth = Math.round(v); if (done) requestRender("full"); } });
-const toneSl = (label, key, min, max) => makeSlider($("render"), { label, min, max, step: 0.01, value: S[key], fmt: (v) => v.toFixed(2),
+const toneSl = (labelKey, key, min, max) => makeSlider($("render"), { labelKey, min, max, step: 0.01, value: S[key], fmt: (v) => v.toFixed(2),
   onInput: (v, done) => { S[key] = v; if (anim) animTone(); else retone(!done); } });
-const slGamma = toneSl("Gamma", "gamma", 1, 5), slBright = toneSl("Brightness", "bright", 0.2, 3), slHeat = toneSl("Heat", "heat", 0, 1);
-const viewSl = (label, key, min, max) => makeSlider($("viewsl"), { label, min, max, step: 0.001, value: S[key], fmt: (v) => v.toFixed(3),
+const slGamma = toneSl("gammaL", "gamma", 1, 5), slBright = toneSl("brightL", "bright", 0.2, 3), slHeat = toneSl("heatL", "heat", 0, 1);
+const viewSl = (labelKey, key, min, max) => makeSlider($("viewsl"), { labelKey, min, max, step: 0.001, value: S[key], fmt: (v) => v.toFixed(3),
   onInput: (v, done) => { S[key] = v; if (done) requestRender("full"); else previewView(); } });
-const slZoom = viewSl("Zoom (log₂)", "zoom", -3, 12), slOffx = viewSl("x shift", "offx", -1.5, 1.5), slOffy = viewSl("y shift", "offy", -1.5, 1.5);
+const slZoom = viewSl("zoomL", "zoom", -3, 12), slOffx = viewSl("xshiftL", "offx", -1.5, 1.5), slOffy = viewSl("yshiftL", "offy", -1.5, 1.5);
 function syncViewSliders() { slZoom.set(S.zoom); slOffx.set(S.offx); slOffy.set(S.offy); }
 let lastDrawnView = null;
 function previewView() {   // instant preview of a view change: transform the current image
@@ -733,7 +828,7 @@ function syncAll() {
   document.querySelectorAll("#bgseg button").forEach(b => b.classList.toggle("on", Number(b.dataset.bg) === S.bg));
   document.querySelectorAll("#styleseg button").forEach(b => b.classList.toggle("on", Number(b.dataset.f) === S.flame));
   document.querySelectorAll("#ssseg button").forEach(b => b.classList.toggle("on", Number(b.dataset.ss) === S.ss));
-  $("hformula").textContent = S.hmode === 0 ? "h(x₁, x₂) = (a₂₅x₁ + a₂₆ sin x₁, a₂₇x₂ + a₂₈ sin x₂)" : "h(x₁, x₂) = (a₂₅x₁ + a₂₆ sin x₂, a₂₇x₂ + a₂₈ sin x₁)";
+  $("hformula").textContent = S.hmode === 0 ? "h(x₁, x₂) = (a x₁ + b sin x₁, c x₂ + d sin x₂)" : "h(x₁, x₂) = (a x₁ + b sin x₂, c x₂ + d sin x₁)";
   LUT = makeLut(S.palettes[S.pal][1]);
   buildPaletteButtons(); drawPaletteEditor();
 }
@@ -746,7 +841,7 @@ $("btnFit").onclick = () => { S.zoom = S.offx = S.offy = 0; syncViewSliders(); r
 $("btnColours").onclick = () => { S.mc = [0,1,2,3].map(() => Math.random()); requestRender("full"); };
 $("btnIter").onclick = () => startIteration();
 PRESETS.forEach(([name, hm, fn, extra, look]) => {
-  const b = document.createElement("button"); b.textContent = name;
+  const b = document.createElement("button"); b.textContent = presetName(name); b.dataset.preset = name;
   b.onclick = () => {
     if (extra && typeof extra === "object") {     // full saved settings (background kept)
       applySettings(extra, false, true);
@@ -900,13 +995,13 @@ function drawPaletteEditor() {
   }
   $("stops").innerHTML = order.map((i, n) => { const [t, c] = st[i];
     return `<li><i style="background:${rgb(c)}"></i>${n + 1}. t = ${t.toFixed(3)}, RGB (${c.map(v => v.toFixed(3)).join(", ")})</li>`; }).join("");
-  $("palname").textContent = S.palettes[S.pal][0];
+  $("palname").textContent = palName(S.palettes[S.pal][0]);
 }
 function buildPaletteButtons() {
   $("pals").innerHTML = "";
   S.palettes.forEach(([name, st], i) => {
     const b = document.createElement("button"); b.className = i === S.pal ? "on" : "";
-    b.innerHTML = `${name}<i style="background:${cssGradient(st)}"></i>`;
+    b.innerHTML = `${esc(palName(name))}<i style="background:${cssGradient(st)}"></i>`;
     b.onclick = () => { S.pal = i; syncAll(); anim ? animTone() : retone(false); };
     $("pals").append(b);
   });
@@ -1031,7 +1126,7 @@ $("btnSave").onclick = async () => {
     gamma: S.gamma, brightness: S.bright, heat: S.heat, seeds: S.nseeds, depth: S.depth, supersampling: S.ss,
     view: { frame: S.frame, zoom: S.zoom, x_shift: S.offx, y_shift: S.offy } };
   const r = await saveFile("ifs_params.json", new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
-  flash(r === "saved" ? "Settings saved." : r === "declined" ? "Save cancelled." : "Save " + r);
+  flash(r === "saved" ? t("settingsSaved") : r === "declined" ? t("saveCancelled") : t("saveFailed", r.replace(/^failed: /, "")));
 };
 function applySettings(d, withView, keepBackground) {
   S.p = d.params.map(Number); S.hmode = Number(d.hmode || 0);
@@ -1051,10 +1146,10 @@ $("fileLoad").onchange = async (e) => {
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
   try {
     const d = JSON.parse(await file.text());
-    if (!Array.isArray(d.params) || d.params.length !== 28) throw new Error("no list of 28 parameters");
+    if (!Array.isArray(d.params) || d.params.length !== 28) throw new Error(t("errNoParams"));
     applySettings(d, true);
-    syncAll(); requestRender("full"); flash(`Loaded ${file.name}.`);
-  } catch (err) { flash(`Could not load ${file.name}: ${err.message}.`); }
+    syncAll(); requestRender("full"); flash(t("loaded", file.name));
+  } catch (err) { flash(t("loadFailed", file.name, err.message)); }
 };
 $("btnPng").onclick = async () => {
   const size = clamp(Math.round(Number($("pngSize").value) || 2000), 400, 6000);
@@ -1068,7 +1163,7 @@ $("btnPng").onclick = async () => {
     const r0 = Math.floor(b * size / bands) * ss, r1 = Math.floor((b + 1) * size / bands) * ss;
     jobs.push({ p: S.p.slice(), mc: S.mc.slice(), hmode: S.hmode, depth: S.depth, N, row0: r0, row1: r1, view: v, seeds: sd });
   }
-  $("btnPng").disabled = true; flash(`Rendering ${size} × ${size} PNG from ${(ns * Math.pow(4, S.depth)).toLocaleString("en")} points…`);
+  $("btnPng").disabled = true; flash(t("pngRendering", size, (ns * Math.pow(4, S.depth)).toLocaleString(locale())));
   const t0 = performance.now();
   try {
     const res = await runJobs(jobs);
@@ -1083,20 +1178,20 @@ $("btnPng").onclick = async () => {
     octx.putImageData(data, 0, 0);
     const blob = await new Promise(r => out.toBlob(r, "image/png"));
     const st = await saveFile(`ifs_${size}px.png`, blob);
-    flash(st === "saved" ? `PNG saved (${((performance.now() - t0) / 1000).toFixed(1)} s).` : st === "declined" ? "Save cancelled." : "PNG " + st);
-  } catch (err) { flash("PNG failed: " + err.message); }
+    flash(st === "saved" ? t("pngSaved", fmtFixed((performance.now() - t0) / 1000, 1)) : st === "declined" ? t("saveCancelled") : t("pngFailed", st.replace(/^failed: /, "")));
+  } catch (err) { flash(t("pngFailed", err.message)); }
   $("btnPng").disabled = false;
 };
 
 /* ============================ Info popup ============================ */
-let infoTypeset = false;
-$("btnInfo").onclick = () => {
-  $("info").showModal();
-  if (!infoTypeset && window.MathJax && MathJax.typesetPromise) {
-    infoTypeset = true;
-    MathJax.typesetPromise([$("info")]).catch(() => { infoTypeset = false; });
+function typesetInfo() {            // typeset the visible language's text once
+  const blk = $("info-" + LANG);
+  if (!blk.dataset.ts && window.MathJax && MathJax.typesetPromise) {
+    blk.dataset.ts = "1";
+    MathJax.typesetPromise([blk]).catch(() => { delete blk.dataset.ts; });
   }
-};
+}
+$("btnInfo").onclick = () => { $("info").showModal(); typesetInfo(); };
 $("infoClose").onclick = () => $("info").close();
 $("info").addEventListener("click", (e) => { if (e.target === $("info")) $("info").close(); });   // click outside
 
@@ -1109,6 +1204,32 @@ function updateMini() {
 }
 window.addEventListener("scroll", updateMini, { passive: true });
 narrow.addEventListener("change", updateMini);
+
+/* ---- language switch ---- */
+function applyLang() {
+  document.documentElement.lang = LANG;
+  document.title = t("docTitle");
+  document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-aria]").forEach(el => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
+  for (const s of sliderLabels) {
+    const txt = t(s.key);
+    s.el.innerHTML = (s.math ? `<b>${s.math}</b>` : "") + esc(txt);
+    s.input.setAttribute("aria-label", (s.math || "") + " " + txt);
+  }
+  document.querySelectorAll("#presets button").forEach(b => { b.textContent = presetName(b.dataset.preset); });
+  document.querySelectorAll("#langseg button").forEach(b => b.classList.toggle("on", b.dataset.lang === LANG));
+  for (const l of Object.keys(I18N)) $("info-" + l).hidden = l !== LANG;
+  if ($("info").open) typesetInfo();
+  buildPaletteButtons(); drawPaletteEditor();
+  if (anim) animCaption();
+  if (lastTime) updateStatus();
+}
+document.querySelectorAll("#langseg button").forEach(b => b.onclick = () => {
+  LANG = b.dataset.lang;
+  try { localStorage.setItem("ifsLang", LANG); } catch (e) {}
+  applyLang();
+});
+applyLang();
 
 /* ============================ Start ============================ */
 (async () => {
