@@ -282,9 +282,9 @@ const CATALOG = [
     blurb: "Finnish upper-secondary curriculum, in Finnish.",
     courses: [
       {
-        id: "maa1-2",
-        title: "MAA 1–2",
-        blurb: "Funktiot ja yhtälöt",
+          id: "maa1-2",
+          title: "MAA 1–2",
+          blurb: "Funktiot ja yhtälöt",
           games: [
           { id: "game0", title: "Yhtälövaaka", blurb: "", game: "games/lukio/maa1-2/yhtalovaaka/" },
           { id: "game1", title: "Yhtälön ratkaisu 1", blurb: "", game: "games/lukio/maa1-2/yhtalo1/" },
@@ -292,30 +292,45 @@ const CATALOG = [
         ],
       },
       {
-        id: "maa3",
-        title: "MAA 3",
-        blurb: "Geometria",
-        games: [
-        ],
+          id: "maa3",
+          title: "MAA 3",
+          blurb: "Geometria",
+          games: [
+          ],
       },
       {
-        id: "maa5",
-        title: "MAA 5",
-        blurb: "Trigonometria",
-        games: [
-	{ id: "1-ympyra1", title: "Yksikköympyrä", blurb: "", game: "games/lukio/maa5//" },
-        ],
+          id: "maa5",
+          title: "MAA 5",
+          blurb: "Trigonometria",
+          games: [
+	      { id: "1-ympyra1", title: "Yksikköympyrä", blurb: "", game: "games/lukio/maa5//" },
+          ],
       },
-
+	
     ],
   },
-  {
-    id: "ib",
-    title: "IB math",
-    blurb: "International Baccalaureate, in English.",
-    courses: [
-    ],
-  },
+    {
+	id: "ib",
+	title: "IB math",
+	blurb: "International Baccalaureate, in English.",
+	courses: [
+	],
+    },
+    {
+	id: "artsy",
+	title: "Artsy Math",
+	blurb: "Play around with visualizations and the like",
+	courses: [
+	    {
+		id: "fractals",
+		title: "Fractals",
+		blurb: "Explore attractors and other fractals",
+		games: [
+		    {id: "ifs_explorer", title: "IFS explorer", blurb: "Iterated Function Systems and the Flame Algorithm", game: "games/artsy_math/fractals/ifs_explorer/"},
+		],
+	    },
+	],
+    },
 ];
 /* ════════════════════ end of the part you edit ════════════════════════ */
 

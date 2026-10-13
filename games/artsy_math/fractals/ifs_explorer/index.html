@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Nonlinear IFS explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #eceef1;
+  --panel: #f6f7f9;
+  --ink: #18202b;
+  --muted: #5a6472;
+  --rule: #d2d7de;
+  --well: #dfe3e8;
+  --accent: #9e1b2c;
+  --accent-ink: #ffffff;
+  --steel: #2d5a78;
+  --focus: #d9822b;
+  --track: #c5ccd5;
+  --sans: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  color-scheme: light dark;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #15191f; --panel: #1c2129; --ink: #e6e9ee; --muted: #9aa3b0;
+    --rule: #2f3743; --well: #252b35; --accent: #c9394b; --steel: #6f9fc2;
+    --track: #3a4350;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #15191f; --panel: #1c2129; --ink: #e6e9ee; --muted: #9aa3b0;
+  --rule: #2f3743; --well: #252b35; --accent: #c9394b; --steel: #6f9fc2;
+  --track: #3a4350;
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  height: 100%; margin: 0; background: var(--paper); color: var(--ink);
+  font: 14px/1.4 var(--sans); font-variant-numeric: tabular-nums;
+}
+.app { height: 100%; display: grid; grid-template-columns: minmax(0, 1fr) 460px; }
+
+/* ---------- stage ---------- */
+.stage { position: relative; display: grid; place-items: center; padding: 18px; min-height: 0; }
+.frame {
+  position: relative; width: min(100%, calc(100dvh - 36px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));
+  aspect-ratio: 1; background: var(--well); border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--rule);
+}
+#view { width: 100%; height: 100%; display: block; border-radius: 3px; touch-action: none; cursor: grab; }
+#view.dragging { cursor: grabbing; }
+.caption {
+  position: absolute; left: 14px; top: 12px; right: 14px; pointer-events: none;
+  font: italic 500 17px/1.3 var(--serif); color: var(--cap, #1b1b1f);
+}
+.status {
+  position: absolute; left: 14px; bottom: 10px; right: 14px; pointer-events: none;
+  font-size: 12px; color: var(--cap, #1b1b1f); opacity: .75;
+}
+.busy { position: absolute; right: 14px; top: 12px; font-size: 12px; color: var(--cap, #1b1b1f); opacity: 0; transition: opacity .2s; }
+.busy.on { opacity: .8; }
+
+/* ---------- panel ---------- */
+.panel { background: var(--panel); border-left: 1px solid var(--rule); overflow-y: auto; min-height: 0; }
+.head { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: 16px 20px 12px; border-bottom: 1px solid var(--rule); }
+h1 { margin: 0 0 10px; font: 600 24px/1.1 var(--serif); letter-spacing: -.01em; }
+h1 small { font: italic 400 15px var(--serif); color: var(--muted); margin-left: 6px; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+button, .filebtn {
+  font: 500 13px var(--sans); color: var(--ink); background: var(--well);
+  border: 1px solid var(--rule); border-radius: 5px; padding: 6px 10px; cursor: pointer;
+}
+button:hover, .filebtn:hover { border-color: var(--muted); }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.on { box-shadow: inset 0 0 0 2px var(--focus); }
+button:disabled { opacity: .45; cursor: default; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.filebtn input { display: none; }
+
+details { border-bottom: 1px solid var(--rule); }
+summary {
+  list-style: none; cursor: pointer; padding: 12px 20px; font: 600 15px var(--serif);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font: 400 16px var(--sans); color: var(--muted); }
+details[open] > summary::after { content: "−"; }
+summary .sub { font: italic 400 14px var(--serif); color: var(--muted); margin-left: 8px; flex: 1; }
+.body { padding: 0 20px 16px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
+.map { margin-bottom: 10px; }
+.map h3 { margin: 6px 0 2px; font: italic 500 15px var(--serif); display: flex; align-items: center; gap: 8px; }
+.map h3 i.sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+.row { display: grid; grid-template-columns: 1fr 74px; grid-template-rows: auto auto; column-gap: 8px; margin: 4px 0 6px; }
+.row label { grid-column: 1 / 3; font-size: 12px; color: var(--muted); }
+.row label b { font: italic 500 13px var(--serif); color: var(--ink); margin-right: 4px; }
+.row input[type=number] {
+  width: 74px; font: 12px var(--sans); font-variant-numeric: tabular-nums; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px;
+}
+input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height: 18px; }
+.view input[type=range] { accent-color: var(--steel); }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 5px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; background: transparent; padding: 5px 10px; }
+.seg button.on { background: var(--ink); color: var(--panel); box-shadow: none; }
+.line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.line > span { font-size: 12px; color: var(--muted); }
+
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.presets button { padding: 8px 6px; }
+.pals { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin-top: 10px; }
+.pals button { text-align: left; padding: 6px 8px 8px; }
+.pals button i { display: block; height: 8px; border-radius: 2px; margin-top: 5px; }
+#cube { width: 100%; aspect-ratio: 4 / 3; display: block; background: var(--well); border-radius: 4px; touch-action: none; }
+#bar { width: 100%; height: 60px; display: block; margin-top: 10px; touch-action: none; }
+.stops { font-size: 12px; color: var(--muted); margin: 6px 0 0; padding: 0; list-style: none; }
+.stops li { display: flex; align-items: center; gap: 8px; }
+.stops i { width: 12px; height: 10px; display: inline-block; border: 1px solid var(--rule); }
+.hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.formula { font: italic 400 14px var(--serif); color: var(--muted); margin: 0 0 6px; }
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; height: auto; }
+  .frame { width: min(100%, 92vw); }
+  .panel { border-left: 0; border-top: 1px solid var(--rule); overflow: visible; }
+  .head { position: static; }
+}
+@media (prefers-reduced-motion: reduce) { .busy { transition: none; } }
+#btnInfo {
+  background: var(--steel); color: #fff; border-color: var(--steel);
+  font: 600 14px var(--sans); padding: 6px 12px 6px 7px;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+#btnInfo:hover { filter: brightness(1.12); border-color: var(--steel); }
+#btnInfo .i {
+  width: 18px; height: 18px; border-radius: 50%; background: #fff; color: var(--steel);
+  display: inline-grid; place-items: center; font: italic 600 13px/1 var(--serif);
+}
+#info {
+  max-width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto;
+  padding: 22px 26px 18px; border: 1px solid var(--rule); border-radius: 8px;
+  background: var(--panel); color: var(--ink); box-shadow: 0 18px 50px rgba(0,0,0,.25);
+  font: 16px/1.55 var(--serif);
+}
+#info::backdrop { background: rgba(10, 14, 20, .45); }
+#info h2 { margin: 0 0 10px; font: 600 22px/1.2 var(--serif); }
+#info p { margin: 0 0 12px; }
+#info .refs { font-size: 14px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 10px; }
+#info .refs p { margin: 0 0 6px; padding-left: 2em; text-indent: -2em; }
+#info a { color: var(--steel); }
+#info .close { float: right; margin: -4px -8px 0 12px; font: 500 13px var(--sans); }
+#info mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; }
+</style>
+<script>
+window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] },
+                   svg: { fontCache: "global" }, startup: { typeset: false } };
+</script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
+</head>
+<body>
+<div class="app">
+  <div class="stage">
+    <div class="frame">
+      <canvas id="view" width="800" height="800" aria-label="Fractal image"></canvas>
+      <div class="caption" id="caption"></div>
+      <div class="busy" id="busy">Rendering…</div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div class="head">
+      <h1>Nonlinear IFS <small>x ↦ h(A<sub>n</sub>x + b<sub>n</sub>)</small></h1>
+      <div class="actions">
+        <button class="primary" id="btnIter">Show iteration</button>
+        <button id="btnUndo" title="Ctrl+Z">Undo</button>
+        <button id="btnRedo" title="Ctrl+Y">Redo</button>
+        <button id="btnSave">Save settings</button>
+        <label class="filebtn">Load settings<input type="file" id="fileLoad" accept=".json,application/json"></label>
+        <button id="btnPng">Save PNG</button>
+        <button id="btnInfo"><span class="i" aria-hidden="true">i</span>What is this?</button>
+      </div>
+    </div>
+
+    <details open>
+      <summary>Classic fractals<span class="sub">each one starts with the iteration</span></summary>
+      <div class="body"><div class="presets" id="presets"></div></div>
+    </details>
+
+    <details open>
+      <summary>Affine maps<span class="sub">f<sub>n</sub>(x) = A<sub>n</sub>x + b<sub>n</sub></span></summary>
+      <div class="body"><div class="grid2" id="maps"></div></div>
+    </details>
+
+    <details open>
+      <summary>Nonlinearity h</summary>
+      <div class="body">
+        <div class="line"><span>Form</span>
+          <div class="seg" id="hform">
+            <button data-h="0">sin x₁, sin x₂</button><button data-h="1">crossed</button>
+          </div>
+        </div>
+        <p class="formula" id="hformula"></p>
+        <div class="grid2" id="hsliders"></div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Rendering &amp; view</summary>
+      <div class="body">
+        <div class="grid2" id="render"></div>
+        <div class="line"><span>Background</span>
+          <div class="seg" id="bgseg"><button data-bg="1">White</button><button data-bg="0">Black</button></div>
+          <span>Style</span>
+          <div class="seg" id="styleseg"><button data-f="1">Flame</button><button data-f="0">Dots</button></div>
+        </div>
+        <div class="line"><span>Smoothing</span>
+          <div class="seg" id="ssseg"><button data-ss="1">1×</button><button data-ss="2">2×</button><button data-ss="3">3×</button></div>
+          <button id="btnSeeds">New seed points</button>
+        </div>
+        <div class="grid2 view" id="viewsl"></div>
+        <div class="line"><button id="btnFit">Fit to picture</button>
+          <span>PNG size</span><input type="number" id="pngSize" value="2000" min="400" max="6000" step="100" style="width:80px">
+        </div>
+        <p class="hint">Drag the picture to move it, scroll to zoom.</p>
+      </div>
+    </details>
+
+    <details open>
+      <summary>Palette<span class="sub" id="palname"></span></summary>
+      <div class="body">
+        <canvas id="cube" width="840" height="630"></canvas>
+        <canvas id="bar" width="840" height="120"></canvas>
+        <ul class="stops" id="stops"></ul>
+        <div class="line">
+          <button id="btnPalReset">Reset palette</button>
+          <button id="btnColours">Shuffle map colours</button>
+        </div>
+        <p class="hint">In the cube, drag a vertex to recolour it and drag empty space to rotate. On the bar, drag a marker to move its stop, double-click to add one, right-click to delete.</p>
+        <div class="pals" id="pals"></div>
+      </div>
+    </details>
+  </aside>
+</div>
+
+<dialog id="info" aria-labelledby="infoTitle">
+  <button class="close" id="infoClose" aria-label="Close">Close</button>
+  <h2 id="infoTitle">What is this?</h2>
+  <p>Ignoring the colours, the picture shows the <em>attractor</em> of the four maps $h\circ f_1,\dots,h\circ f_4$: the unique non-empty compact set $A\subset\mathbb{R}^2$ with $A=\Phi(A)$, where
+  $$\Phi\colon\mathcal{K}(\mathbb{R}^2)\to\mathcal{K}(\mathbb{R}^2),\qquad \Phi(C)=\bigcup_{n=1}^{4} h\big(f_n(C)\big),$$
+  and $\mathcal{K}(\mathbb{R}^2)$ is the space of non-empty compact subsets of the plane. This space is complete under the Hausdorff metric. If every $h\circ f_n$ is a contraction of $\mathbb{R}^2$, then $\Phi$ is a contraction of $\mathcal{K}(\mathbb{R}^2)$, so by the Banach fixed point theorem it has a unique fixed point $A$, and the iterates $\Phi^k(C)$ converge to $A$ from any starting set $C$. This is Hutchinson’s theorem (1981) [1]. The picture is drawn from $\Phi^k$ applied to a few random points, with $k$ set by the depth slider; “Show iteration” shows the same process starting from a square.</p>
+  <p>The colours come from adding one dimension. Each map is extended to $\mathbb{R}^2\times[0,1]$ by
+  $$F_n(x,c)=\Big(h\big(f_n(x)\big),\ \tfrac12(c+c_n)\Big),$$
+  where $c_n$ is a fixed colour value for each map. The picture is the attractor of $F_1,\dots,F_4$ projected to the plane, with each point coloured by the average of the colour coordinate $c$ over the fibre above it. The curve in the RGB cube translates $c$ into an actual colour, and the brightness shows how densely the points fall. This colouring follows the fractal flame algorithm [2].</p>
+  <div class="refs">
+    <p>[1] J. E. Hutchinson, “Fractals and self-similarity”, <em>Indiana University Mathematics Journal</em> 30 (1981), 713–747.</p>
+    <p>[2] S. Draves and E. Reckase, <em>The Fractal Flame Algorithm</em>, 2008. <a href="http://flam3.com/flame.pdf" target="_blank" rel="noopener">http://flam3.com/flame.pdf</a></p>
+  </div>
+</dialog>
+
+<script>
+"use strict";
+/* =====================================================================
+   Core computation (also runs inside Web Workers: must be self-contained)
+   ===================================================================== */
+function computeHist(job) {
+  // Depth-first traversal of all 4^depth compositions h∘f_{n_k}∘...∘h∘f_{n_1}
+  // applied to each seed; the leaves are binned into (count, colour-sum).
+  const p = job.p, mc = job.mc, hm = job.hmode, D = job.depth, N = job.N;
+  const r0 = job.row0, r1 = job.row1, rows = r1 - r0;
+  const cnt = new Float32Array(N * rows), csum = new Float32Array(N * rows);
+  const x0 = job.view[0], x1 = job.view[1], y0 = job.view[2], y1 = job.view[3];
+  const sx = N / (x1 - x0), sy = N / (y1 - y0);
+  const c25 = p[24], c26 = p[25], c27 = p[26], c28 = p[27];
+  function rec(x, y, c, d) {
+    for (let n = 0; n < 4; n++) {
+      const o = 6 * n;
+      const u = p[o] * x + p[o + 1] * y + p[o + 4];
+      const v = p[o + 2] * x + p[o + 3] * y + p[o + 5];
+      let nx, ny;
+      if (hm === 0) {
+        nx = c25 * u + (c26 !== 0 ? c26 * Math.sin(u) : 0);
+        ny = c27 * v + (c28 !== 0 ? c28 * Math.sin(v) : 0);
+      } else {
+        nx = c25 * u + (c26 !== 0 ? c26 * Math.sin(v) : 0);
+        ny = c27 * v + (c28 !== 0 ? c28 * Math.sin(u) : 0);
+      }
+      if (!(nx > -1e30 && nx < 1e30 && ny > -1e30 && ny < 1e30)) continue;
+      const nc = 0.5 * (c + mc[n]);
+      if (d + 1 === D) {
+        const ix = Math.floor((nx - x0) * sx), iy = Math.floor((y1 - ny) * sy);
+        if (ix >= 0 && ix < N && iy >= r0 && iy < r1) {
+          const i = (iy - r0) * N + ix;
+          cnt[i] += 1; csum[i] += nc;
+        }
+      } else rec(nx, ny, nc, d + 1);
+    }
+  }
+  const s = job.seeds;
+  for (let k = 0; k < s.length; k += 2) rec(s[k], s[k + 1], 0.5, 0);
+  return { cnt: cnt, csum: csum };
+}
+
+/* ============================ Data ============================ */
+const RES = 800;
+const DEFAULT_MC = [0.0, 0.35, 0.7, 1.0];
+const PALETTES0 = [
+  ["dark fire", [[0,[1,0.68,0.1]],[0.2,[0.98,0.5,0.03]],[0.45,[0.85,0.22,0]],[0.7,[0.62,0.06,0]],[0.88,[0.38,0.01,0]],[1,[0.18,0,0]]]],
+  ["fire", [[0,[0.03,0,0]],[0.2,[0.4,0.01,0]],[0.45,[0.85,0.12,0]],[0.7,[1,0.45,0.02]],[0.88,[1,0.78,0.25]],[1,[1,0.97,0.82]]]],
+  ["ember", [[0,[0.04,0,0.01]],[0.3,[0.5,0,0.03]],[0.6,[0.9,0.1,0.02]],[0.85,[1,0.4,0.05]],[1,[1,0.72,0.3]]]],
+  ["solar", [[0,[0.06,0.01,0]],[0.3,[0.65,0.2,0]],[0.6,[1,0.55,0.05]],[0.85,[1,0.85,0.35]],[1,[1,1,0.92]]]],
+  ["blue flame", [[0,[0,0,0.04]],[0.3,[0.05,0.1,0.5]],[0.6,[0.2,0.45,1]],[0.85,[0.6,0.8,1]],[1,[1,1,1]]]],
+  ["fern green", [[0,[0.16,0.45,0.08]],[0.35,[0.3,0.68,0.14]],[0.7,[0.52,0.85,0.25]],[1,[0.85,1,0.55]]]],
+];
+function ifs(maps, h) {
+  const p = new Array(28).fill(0);
+  maps.forEach(([A, b], n) => { for (let i = 0; i < 4; i++) p[6*n+i] = A[i]; p[6*n+4] = b[0]; p[6*n+5] = b[1]; });
+  const hh = h || [1, 0, 1, 0];
+  for (let i = 0; i < 4; i++) p[24+i] = hh[i];
+  return p;
+}
+function squared(f1, f2) {   // the 4 compositions f_i∘f_j of a 2-map IFS
+  const out = [];
+  for (const [Ai, bi] of [f1, f2]) for (const [Aj, bj] of [f1, f2]) {
+    const A = [Ai[0]*Aj[0]+Ai[1]*Aj[2], Ai[0]*Aj[1]+Ai[1]*Aj[3], Ai[2]*Aj[0]+Ai[3]*Aj[2], Ai[2]*Aj[1]+Ai[3]*Aj[3]];
+    const b = [Ai[0]*bj[0]+Ai[1]*bj[1]+bi[0], Ai[2]*bj[0]+Ai[3]*bj[1]+bi[1]];
+    out.push([A, b]);
+  }
+  return out;
+}
+const S3 = Math.sqrt(3);
+const PHOENIX = {"version":1,"params":[0.5341,0,0,0.58,0.131203,0,0.59,0,0,0.58,3.827203,1.7073170731707314,0.58,0,0,0.58,1.979203,-2.1,0.5,0,0,0.5,2.356194,-0.833333,0.8634146341463413,1.7208,1,2.1512],"hmode":1,"map_colours":[0,0.35,0.7,1],"palette":{"name":"fire","stops":[[0,[0.03,0,0]],[0.2,[0.4,0.01,0]],[0.45,[0.85,0.12,0]],[0.7,[1,0.45,0.02]],[0.88,[1,0.78,0.25]],[1,[1,0.97,0.82]]]},"background":0,"flame":true,"gamma":2.2,"brightness":1,"heat":0.5,"seeds":20,"depth":10,"supersampling":2,"view":{"frame":[3.6465381376743307,-0.7320215368270877,8.079698224525451],"zoom":-0.2,"x_shift":0.02752641219347734,"y_shift":-0.03387866116120278}};
+const ART = {"version":1,"params":[0.3333333333333333,0,0,0.3333333333333333,0,0,0.16666666666666666,-0.28867513459481287,0.28867513459481287,0.16666666666666666,0.3333333333333333,0,0.4797,0.28867513459481287,-0.28867513459481287,0.16666666666666666,0.5,0.28867513459481287,-0.8756,0,0,0.3333333333333333,0.6666666666666666,0,1,0,-2.0254,0.2589],"hmode":1,"map_colours":[0,0.35,0.7,1],"palette":{"name":"dark fire","stops":[[0,[1,0.68,0.1]],[0.2,[0.98,0.5,0.03]],[0.45,[0.85,0.22,0]],[0.7,[0.62,0.06,0]],[0.88,[0.38,0.01,0]],[1,[0.18,0,0]]]},"background":1,"flame":true,"gamma":2.2,"brightness":1,"heat":0.5,"seeds":20,"depth":10,"supersampling":2,"view":{"frame":[0.4999972779624695,0.1430256007523973,0.5330672279635689],"zoom":-0.8438561897747248,"x_shift":-0.20446301364866606,"y_shift":-0.29756316258189325}};
+const PRESETS = [
+  ["Sierpinski", 0, () => { const V=[[0,0],[1,0],[0.5,S3/2]]; const m=V.map(v=>[[0.5,0,0,0.5],[v[0]/2,v[1]/2]]); m.push(m[2]); return ifs(m); }, undefined, { ss: 1 }],
+  // Barnsley fern, rotated 45° clockwise (A' = R A Rᵀ, b' = R b), with a slightly
+  // wider stem (0 -> 0.03) and leaflets scaled by 1.1 so it looks fuller
+  ["Fern", 0, () => [0.095,0.065,0.065,0.095,0,0, 0.85,0.04,-0.04,0.85,1.13137,1.13137,
+                     0.2145,-0.2585,0.2805,0.2475,1.13137,1.13137, 0.3465,0.2255,0.2035,-0.2475,0.31113,0.31113, 1,0,1,0], "fern green",
+   { gamma: 5, bright: 1.4, ss: 1 }],   // the leaf tips get few points: brighten them
+  ["Koch", 0, () => { const c=1/6, s=S3/6; return ifs([[[1/3,0,0,1/3],[0,0]],[[c,-s,s,c],[1/3,0]],[[c,s,-s,c],[0.5,S3/6]],[[1/3,0,0,1/3],[2/3,0]]]); }],
+  ["Dragon", 0, () => ifs(squared([[0.5,-0.5,0.5,0.5],[0,0]], [[-0.5,-0.5,0.5,-0.5],[1,0]]))],
+  ["Lévy C", 0, () => ifs(squared([[0.5,-0.5,0.5,0.5],[0,0]], [[0.5,0.5,-0.5,0.5],[0.5,0.5]]))],
+  ["Maple", 0, () => ifs([[[0.14,0.01,0,0.51],[-0.08,-1.31]],[[0.43,0.52,-0.45,0.5],[1.49,-0.75]],[[0.45,-0.49,0.47,0.47],[-1.62,-0.74]],[[0.49,0,0,0.51],[0.02,1.62]]])],
+  ["Squares", 0, () => ifs([[[0.4,0,0,0.4],[0.6,0.6]],[[0.4,0,0,0.4],[0.6,-0.6]],[[0.4,0,0,0.4],[-0.6,0.6]],[[0.4,0,0,0.4],[-0.6,-0.6]]])],
+  // full saved settings (Save settings format): palette, background and view too
+  ["Phoenix", PHOENIX.hmode, () => PHOENIX.params.slice(), PHOENIX],
+  ["Art blob", ART.hmode, () => ART.params.slice(), ART],
+];
+const MAPCOL = ["#d9822b", "#3f86b8", "#4f9a55", "#c2557d"];
+
+/* ============================ State ============================ */
+const S = {
+  p: PHOENIX.params.slice(), hmode: PHOENIX.hmode, mc: DEFAULT_MC.slice(),
+  palettes: JSON.parse(JSON.stringify(PALETTES0)), pal: 1,   // fire
+  gamma: 2.2, bright: 1.0, heat: 0.5, bg: 0, flame: 1, ss: 2,
+  nseeds: 20, depth: 10, frame: [0, 0, 1], zoom: 0, offx: 0, offy: 0,
+};
+let seeds = randomSeeds(100);
+function randomSeeds(n) { const a = new Float64Array(2*n); for (let i = 0; i < a.length; i++) a[i] = Math.random(); return a; }
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const $ = (id) => document.getElementById(id);
+
+/* ============================ Palettes ============================ */
+function sortedStops(st) { return st.slice().sort((a, b) => a[0] - b[0]); }
+function makeLut(st) {
+  const s = sortedStops(st), n = 1024, lut = new Float32Array(3*n);
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1); let k = 0;
+    while (k < s.length - 1 && s[k+1][0] < t) k++;
+    let col;
+    if (t <= s[0][0]) col = s[0][1];
+    else if (k >= s.length - 1) col = s[s.length-1][1];
+    else { const [ta, ca] = s[k], [tb, cb] = s[k+1]; const w = tb > ta ? (t - ta) / (tb - ta) : 0; col = [0,1,2].map(j => ca[j] + w*(cb[j]-ca[j])); }
+    lut[3*i] = col[0]; lut[3*i+1] = col[1]; lut[3*i+2] = col[2];
+  }
+  return lut;
+}
+function colourAt(st, t) { const lut = makeLut(st); const i = Math.round(clamp(t,0,1)*1023); return [lut[3*i], lut[3*i+1], lut[3*i+2]]; }
+let LUT = makeLut(S.palettes[S.pal][1]);
+function cssGradient(st) { return "linear-gradient(90deg," + sortedStops(st).map(([t,c]) => `rgb(${c.map(v=>Math.round(v*255)).join(",")}) ${(t*100).toFixed(1)}%`).join(",") + ")"; }
+
+/* ============================ Workers ============================ */
+let workers = [];
+async function initWorkers() {
+  const n = clamp((navigator.hardwareConcurrency || 4) - 1, 1, 6);
+  try {
+    const src = computeHist.toString() + "\nonmessage = function (e) { const r = computeHist(e.data); postMessage(r, [r.cnt.buffer, r.csum.buffer]); };\npostMessage('ready');";
+    const url = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+    const ws = [];
+    for (let i = 0; i < n; i++) ws.push(new Worker(url));
+    await Promise.all(ws.map(w => new Promise((res, rej) => {
+      const t = setTimeout(() => rej(new Error("timeout")), 2000);
+      w.onmessage = (e) => { if (e.data === "ready") { clearTimeout(t); res(); } };
+      w.onerror = () => { clearTimeout(t); rej(new Error("worker error")); };
+    })));
+    workers = ws;
+  } catch (e) { workers = []; }   // fall back to the main thread
+}
+function runJob(w, job) {
+  return new Promise((res, rej) => {
+    w.onmessage = (e) => res(e.data);
+    w.onerror = (e) => rej(e);
+    w.postMessage(job);
+  });
+}
+const tick = () => new Promise(r => setTimeout(r, 0));
+async function runJobs(jobs) {
+  if (!workers.length) { const out = []; for (const j of jobs) { await tick(); out.push(computeHist(j)); } return out; }
+  const out = new Array(jobs.length); let next = 0;
+  await Promise.all(workers.map(async (w) => { while (next < jobs.length) { const i = next++; out[i] = await runJob(w, jobs[i]); } }));
+  return out;
+}
+
+/* ============================ View & auto-fit ============================ */
+function currentView() {
+  const [fcx, fcy, fh] = S.frame, h = fh / Math.pow(2, S.zoom);
+  const cx = fcx + S.offx * fh, cy = fcy + S.offy * fh;
+  return [cx - h, cx + h, cy - h, cy + h];
+}
+function setView(cx, cy, half) {
+  const [fcx, fcy, fh] = S.frame;
+  S.zoom = clamp(Math.log2(fh / Math.max(half, 1e-300)), -3, 12);
+  S.offx = clamp((cx - fcx) / fh, -1.5, 1.5); S.offy = clamp((cy - fcy) / fh, -1.5, 1.5);
+  syncViewSliders();
+}
+const atDefaultView = () => S.zoom === 0 && S.offx === 0 && S.offy === 0;
+function samplePoints(p, hmode, depth, nseed) {
+  const xs = [], ys = [];
+  const c25 = p[24], c26 = p[25], c27 = p[26], c28 = p[27];
+  function rec(x, y, d) {
+    for (let n = 0; n < 4; n++) {
+      const o = 6*n, u = p[o]*x + p[o+1]*y + p[o+4], v = p[o+2]*x + p[o+3]*y + p[o+5];
+      const nx = hmode === 0 ? c25*u + c26*Math.sin(u) : c25*u + c26*Math.sin(v);
+      const ny = hmode === 0 ? c27*v + c28*Math.sin(v) : c27*v + c28*Math.sin(u);
+      if (!(nx > -1e30 && nx < 1e30 && ny > -1e30 && ny < 1e30)) continue;
+      if (d + 1 === depth) { xs.push(nx); ys.push(ny); } else rec(nx, ny, d + 1);
+    }
+  }
+  for (let k = 0; k < nseed; k++) rec(seeds[2*k], seeds[2*k+1], 0);
+  return [xs, ys];
+}
+function pct(arr, q) { const a = Float64Array.from(arr).sort(); return a[Math.min(a.length - 1, Math.floor(q / 100 * (a.length - 1)))]; }
+function fitFrame() {   // square box around the attractor (8% padding)
+  const [xs, ys] = samplePoints(S.p, S.hmode, Math.min(S.depth, 8), 2);
+  if (xs.length < 10) return [0, 0, 1];
+  // Without sine terms the maps are affine and every sampled point lies in the
+  // attractor, so use the exact extent.  A finite depth stops short of extreme
+  // points such as the fern's tip (the fixed point of a strongly contracting
+  // map is only approached geometrically), so the fixed points of the maps and
+  // their images are added too.  With sine terms, ignore the outermost 0.2% so
+  // stray points don't inflate the box.
+  const affine = S.p[25] === 0 && S.p[27] === 0, q = affine ? 0 : 0.2;
+  if (affine) {
+    const p = S.p, g = (n, x, y) => [p[6*n]*x + p[6*n+1]*y + p[6*n+4], p[6*n+2]*x + p[6*n+3]*y + p[6*n+5]];
+    let pts = [];
+    for (let n = 0; n < 4; n++) {        // fixed point of x -> c(Ax + b), c = diag(a25, a27)
+      const a = p[24]*p[6*n], b = p[24]*p[6*n+1], c = p[26]*p[6*n+2], d = p[26]*p[6*n+3];
+      const e = p[24]*p[6*n+4], f = p[26]*p[6*n+5], det = (1 - a)*(1 - d) - b*c;
+      if (Math.abs(det) > 1e-9) pts.push([((1 - d)*e + b*f) / det, (c*e + (1 - a)*f) / det]);
+    }
+    for (let k = 0; k < 3; k++) {         // and their images under up to 3 maps
+      const nxt = [];
+      for (const [x, y] of pts) for (let n = 0; n < 4; n++) { const [u, v] = g(n, x, y); nxt.push([p[24]*u, p[26]*v]); }
+      pts = pts.concat(nxt);
+    }
+    for (const [x, y] of pts) if (isFinite(x) && isFinite(y)) { xs.push(x); ys.push(y); }
+  }
+  const lx = pct(xs, q), hx = pct(xs, 100 - q), ly = pct(ys, q), hy = pct(ys, 100 - q);
+  const half = Math.max(hx - lx, hy - ly, 1e-9) / 2 * 1.08;
+  return [(lx + hx) / 2, (ly + hy) / 2, half];
+}
+
+/* ============================ Tone mapping ============================ */
+function toneRef(cnt) {
+  let n = 0; for (let i = 0; i < cnt.length; i++) if (cnt[i] > 0) n++;
+  if (!n) return 0;
+  const a = new Float32Array(n); let j = 0;
+  for (let i = 0; i < cnt.length; i++) if (cnt[i] > 0) a[j++] = cnt[i];
+  a.sort(); return a[Math.floor(0.98 * (n - 1))];
+}
+// histogram (N x rows, N = out*ss) -> RGBA bytes (out x rows/ss)
+function tone(cnt, csum, N, rows, ss, ref, out, outOffset) {
+  const W = N / ss, H = rows / ss, lut = LUT, inv = 1 / S.gamma, bg = S.bg, heat = S.heat, br = S.bright;
+  const lref = ref > 0 ? Math.log1p(ref) : 1, k2 = 1 / (ss * ss);
+  for (let oy = 0; oy < H; oy++) for (let ox = 0; ox < W; ox++) {
+    let r = 0, g = 0, b = 0;
+    for (let dy = 0; dy < ss; dy++) for (let dx = 0; dx < ss; dx++) {
+      const i = (oy*ss + dy) * N + ox*ss + dx, c = cnt[i];
+      if (!S.flame) { const v = c > 0 ? 1 - bg : bg; r += v; g += v; b += v; continue; }
+      if (c <= 0) { r += bg; g += bg; b += bg; continue; }
+      let a = Math.min(1, br * Math.log1p(c) / lref); a = Math.pow(a, inv);
+      const idx = clamp((1 - heat) * (csum[i] / c) + heat * a, 0, 1), L = 3 * Math.round(idx * 1023);
+      r += lut[L]*a + bg*(1-a); g += lut[L+1]*a + bg*(1-a); b += lut[L+2]*a + bg*(1-a);
+    }
+    const o = outOffset + 4 * (oy * W + ox);
+    out[o] = r*k2*255; out[o+1] = g*k2*255; out[o+2] = b*k2*255; out[o+3] = 255;
+  }
+}
+
+/* ============================ Rendering ============================ */
+const view = $("view"), vctx = view.getContext("2d");
+const img = document.createElement("canvas"); img.width = img.height = RES;
+const ictx = img.getContext("2d");
+let hist = null;           // {cnt, csum, N, ss, ref, lo:{cnt,csum,ref}}
+let pending = null, rendering = false, lastTime = 0, nPoints = 0;
+let pan = null, wheelTimer = null;
+
+function requestRender(kind) {
+  if (anim) stopAnim();
+  pending = kind; if (!rendering) pump();
+}
+async function pump() {
+  rendering = true; $("busy").classList.add("on");
+  while (pending) { const k = pending; pending = null; await render(k); }
+  rendering = false; $("busy").classList.remove("on");
+}
+async function render(kind) {
+  const t0 = performance.now();
+  if (atDefaultView()) S.frame = fitFrame();
+  const preview = kind === "preview";
+  const depth = preview ? Math.min(S.depth, 7) : S.depth;
+  let ns = preview ? Math.max(1, Math.min(S.nseeds, Math.floor(250000 / Math.pow(4, depth)))) : S.nseeds;
+  const ss = preview ? 1 : S.ss, N = RES * ss, v = currentView();
+  const W = Math.max(1, Math.min(workers.length || 1, ns));
+  const jobs = [];
+  for (let w = 0; w < W; w++) {
+    const idx = []; for (let k = w; k < ns; k += W) idx.push(k);
+    const sd = new Float64Array(2 * idx.length); idx.forEach((k, i) => { sd[2*i] = seeds[2*k]; sd[2*i+1] = seeds[2*k+1]; });
+    jobs.push({ p: S.p.slice(), mc: S.mc.slice(), hmode: S.hmode, depth, N, row0: 0, row1: N, view: v, seeds: sd });
+  }
+  const res = await runJobs(jobs);
+  const cnt = res[0].cnt, csum = res[0].csum;
+  for (let r = 1; r < res.length; r++) { const a = res[r].cnt, b = res[r].csum; for (let i = 0; i < cnt.length; i++) { cnt[i] += a[i]; csum[i] += b[i]; } }
+  hist = { cnt, csum, N, ss, ref: toneRef(cnt), lo: null };
+  if (ss > 1) {   // summed down to screen resolution, for fast live re-toning
+    const lc = new Float32Array(RES*RES), ls = new Float32Array(RES*RES);
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const j = ((y/ss)|0)*RES + ((x/ss)|0), i = y*N + x; lc[j] += cnt[i]; ls[j] += csum[i]; }
+    hist.lo = { cnt: lc, csum: ls, ref: toneRef(lc) };
+  }
+  retone(false);
+  lastDrawnView = currentView();
+  lastTime = (performance.now() - t0) / 1000; nPoints = ns * Math.pow(4, depth);
+  updateStatus();
+}
+function retone(fast) {
+  if (!hist) return;
+  const data = ictx.createImageData(RES, RES);
+  if (fast && hist.lo) tone(hist.lo.cnt, hist.lo.csum, RES, RES, 1, hist.lo.ref, data.data, 0);
+  else tone(hist.cnt, hist.csum, hist.N, hist.N, hist.ss, hist.ref, data.data, 0);
+  ictx.putImageData(data, 0, 0);
+  draw();
+}
+function draw(dx = 0, dy = 0, scale = 1, cx = 0, cy = 0) {
+  const b = Math.round(S.bg * 255);
+  vctx.fillStyle = `rgb(${b},${b},${b})`; vctx.fillRect(0, 0, RES, RES);
+  vctx.save(); vctx.translate(cx + dx, cy + dy); vctx.scale(scale, scale); vctx.drawImage(img, -cx, -cy); vctx.restore();
+  view.parentElement.style.setProperty("--cap", S.bg > 0.5 ? "#1b1b1f" : "#f2f2f4");
+}
+function updateStatus() {
+  const [x0, x1, y0, y1] = currentView(), f = (v) => Number(v.toPrecision(4));
+  $("status").textContent = `${nPoints.toLocaleString("en")} points in ${lastTime.toFixed(2)} s. Visible: x from ${f(x0)} to ${f(x1)}, y from ${f(y0)} to ${f(y1)}.` + (workers.length ? "" : " Single thread.");
+}
+
+/* ======================= "Show iteration" animation ======================= */
+let anim = null;
+const ANIM_STEPS = 8, ANIM_DELAY = 500;
+function stopAnim() { if (anim) { clearTimeout(anim.timer); anim = null; $("caption").textContent = ""; } }
+function applyMaps(P, C, p, hm, mc) {
+  const m = P.length / 2, Q = new Float64Array(8*m), D = new Float32Array(4*m);
+  const c25 = p[24], c26 = p[25], c27 = p[26], c28 = p[27];
+  let k = 0;
+  for (let n = 0; n < 4; n++) {
+    const o = 6*n;
+    for (let i = 0; i < m; i++) {
+      const x = P[2*i], y = P[2*i+1], u = p[o]*x + p[o+1]*y + p[o+4], v = p[o+2]*x + p[o+3]*y + p[o+5];
+      const nx = hm === 0 ? c25*u + c26*Math.sin(u) : c25*u + c26*Math.sin(v);
+      const ny = hm === 0 ? c27*v + c28*Math.sin(v) : c27*v + c28*Math.sin(u);
+      if (!(nx > -1e30 && nx < 1e30 && ny > -1e30 && ny < 1e30)) continue;
+      Q[2*k] = nx; Q[2*k+1] = ny; D[k] = 0.5 * (C[i] + mc[n]); k++;
+    }
+  }
+  return [Q.subarray(0, 2*k), D.subarray(0, k)];
+}
+function animRaster() {
+  const [x0, x1, y0, y1] = anim.view, sx = RES / (x1 - x0), sy = RES / (y1 - y0);
+  const cnt = new Float32Array(RES*RES), csum = new Float32Array(RES*RES), P = anim.P, C = anim.C;
+  for (let i = 0; i < C.length; i++) {
+    const ix = Math.floor((P[2*i] - x0) * sx), iy = Math.floor((y1 - P[2*i+1]) * sy);
+    if (ix >= 0 && ix < RES && iy >= 0 && iy < RES) { const j = iy*RES + ix; cnt[j]++; csum[j] += C[i]; }
+  }
+  anim.cnt = cnt; anim.csum = csum; animTone(); lastDrawnView = anim.view.slice();
+  const k = anim.step, [scx, scy, sh] = anim.sq, f = (v) => Number(v.toPrecision(3));
+  $("caption").textContent = k === 0 ? `C₀: a square, centre (${f(scx)}, ${f(scy)}), side ${f(2*sh)}   (step 0/${ANIM_STEPS})`
+    : `C${sub(k)} = ⋃ h(fₙ(C${sub(k-1)})), n = 1…4   (step ${k}/${ANIM_STEPS})`;
+}
+function animTone() {
+  const data = ictx.createImageData(RES, RES);
+  tone(anim.cnt, anim.csum, RES, RES, 1, toneRef(anim.cnt), data.data, 0);
+  ictx.putImageData(data, 0, 0); draw();
+}
+const sub = (k) => String(k).split("").map(d => "₀₁₂₃₄₅₆₇₈₉"[d]).join("");
+function pixelsToPoints(ix, iy, v) {   // 2 jittered points in every given pixel
+  const px = (v[1] - v[0]) / RES, P = new Float64Array(4 * ix.length);
+  for (let i = 0; i < ix.length; i++) for (let s = 0; s < 2; s++) {
+    P[4*i + 2*s] = v[0] + (ix[i] + Math.random()) * px; P[4*i + 2*s + 1] = v[3] - (iy[i] + Math.random()) * px;
+  }
+  return P;
+}
+function startIteration(finalView) {
+  stopAnim(); pending = null;
+  S.frame = fitFrame(); S.zoom = -0.2; S.offx = 0; S.offy = 0; syncViewSliders();
+  const v = currentView(), [scx, scy, fh] = S.frame, sh = fh / 1.08, px = (v[1] - v[0]) / RES;
+  const ix = [], iy = [];
+  for (let y = 0; y < RES; y++) { const cy = v[3] - (y + 0.5) * px; if (Math.abs(cy - scy) > sh) continue;
+    for (let x = 0; x < RES; x++) { const cx = v[0] + (x + 0.5) * px; if (Math.abs(cx - scx) <= sh) { ix.push(x); iy.push(y); } } }
+  const P = pixelsToPoints(ix, iy, v);
+  anim = { step: 0, view: v, sq: [scx, scy, sh], P, C: new Float32Array(P.length / 2).fill(0.5), timer: 0, finalView: finalView || null };
+  animRaster(); updateStatus();
+  anim.timer = setTimeout(animStep, ANIM_DELAY);
+}
+function animStep() {
+  if (!anim) return;
+  if (anim.step >= ANIM_STEPS) {
+    const fv = anim.finalView; anim = null; $("caption").textContent = "";
+    if (fv) applyView(fv);            // a preset's own saved framing
+    requestRender("full"); return;
+  }
+  const ix = [], iy = [], cs = [];
+  for (let j = 0; j < anim.cnt.length; j++) if (anim.cnt[j] > 0) { ix.push(j % RES); iy.push((j / RES) | 0); const c = anim.csum[j] / anim.cnt[j]; cs.push(c, c); }
+  [anim.P, anim.C] = applyMaps(pixelsToPoints(ix, iy, anim.view), Float32Array.from(cs), S.p, S.hmode, S.mc);
+  anim.step++; animRaster();
+  anim.timer = setTimeout(animStep, ANIM_DELAY);
+}
+
+/* ============================ Controls ============================ */
+function makeSlider(parent, { label, math, min, max, step, value, onInput, onChange, fmt }) {
+  const row = document.createElement("div"); row.className = "row";
+  const id = "s" + Math.random().toString(36).slice(2);
+  row.innerHTML = `<label for="${id}">${math ? `<b>${math}</b>` : ""}${label || ""}</label>`;
+  const r = document.createElement("input"); r.type = "range"; r.id = id; r.min = min; r.max = max; r.step = step / 10; r.value = value;
+  const n = document.createElement("input"); n.type = "number"; n.min = min; n.max = max; n.step = step; n.value = fmt(value);
+  n.setAttribute("aria-label", (math || "") + " " + (label || ""));
+  row.append(r, n); parent.append(row);
+  const api = {
+    get: () => Number(r.value),
+    set: (v) => { r.value = v; n.value = fmt(Number(r.value)); },
+  };
+  r.addEventListener("pointerdown", () => { interacting++; });
+  r.addEventListener("input", () => { n.value = fmt(Number(r.value)); onInput(Number(r.value), false); });
+  r.addEventListener("change", () => { onInput(Number(r.value), true); if (onChange) onChange(); });
+  n.addEventListener("change", () => { const v = clamp(Number(n.value), min, max); if (!isFinite(v)) return api.set(api.get()); r.value = v; n.value = fmt(v); onInput(v, true); });
+  return api;
+}
+let interacting = 0;
+window.addEventListener("pointerup", () => { interacting = 0; });
+window.addEventListener("pointercancel", () => { interacting = 0; });
+
+const f4 = (v) => (Math.round(v * 10000) / 10000).toString();
+const paramSl = [];
+const names = ["A[1,1]", "A[1,2]", "A[2,1]", "A[2,2]", "b[1]", "b[2]"];
+for (let n = 0; n < 4; n++) {
+  const box = document.createElement("div"); box.className = "map";
+  box.innerHTML = `<h3><i class="sw" style="background:${MAPCOL[n]}"></i>f${sub(n+1)}</h3>`;
+  $("maps").append(box);
+  for (let k = 0; k < 6; k++) {
+    const i = 6*n + k, lim = k < 4 ? 1.5 : 10;
+    paramSl[i] = makeSlider(box, { math: `a${sub(i+1)}`, label: names[k], min: -lim, max: lim, step: 0.001, value: S.p[i], fmt: f4,
+      onInput: (v, done) => { S.p[i] = v; requestRender(done ? "full" : "preview"); } });
+  }
+}
+const hnames = ["coefficient of x₁", "coefficient of sin", "coefficient of x₂", "coefficient of sin"];
+for (let k = 0; k < 4; k++) {
+  const i = 24 + k;
+  paramSl[i] = makeSlider($("hsliders"), { math: `a${sub(i+1)}`, label: hnames[k], min: -3, max: 3, step: 0.001, value: S.p[i], fmt: f4,
+    onInput: (v, done) => { S.p[i] = v; requestRender(done ? "full" : "preview"); } });
+}
+const slSeeds = makeSlider($("render"), { label: "Random seeds", min: 1, max: 100, step: 1, value: S.nseeds, fmt: (v) => String(Math.round(v)),
+  onInput: (v, done) => { S.nseeds = Math.round(v); if (done) requestRender("full"); } });
+const slDepth = makeSlider($("render"), { label: "Depth k of Cₖ", min: 1, max: 11, step: 1, value: S.depth, fmt: (v) => String(Math.round(v)),
+  onInput: (v, done) => { S.depth = Math.round(v); if (done) requestRender("full"); } });
+const toneSl = (label, key, min, max) => makeSlider($("render"), { label, min, max, step: 0.01, value: S[key], fmt: (v) => v.toFixed(2),
+  onInput: (v, done) => { S[key] = v; if (anim) animTone(); else retone(!done); } });
+const slGamma = toneSl("Gamma", "gamma", 1, 5), slBright = toneSl("Brightness", "bright", 0.2, 3), slHeat = toneSl("Heat", "heat", 0, 1);
+const viewSl = (label, key, min, max) => makeSlider($("viewsl"), { label, min, max, step: 0.001, value: S[key], fmt: (v) => v.toFixed(3),
+  onInput: (v, done) => { S[key] = v; if (done) requestRender("full"); else previewView(); } });
+const slZoom = viewSl("Zoom (log₂)", "zoom", -3, 12), slOffx = viewSl("x shift", "offx", -1.5, 1.5), slOffy = viewSl("y shift", "offy", -1.5, 1.5);
+function syncViewSliders() { slZoom.set(S.zoom); slOffx.set(S.offx); slOffy.set(S.offy); }
+let lastDrawnView = null;
+function previewView() {   // instant preview of a view change: transform the current image
+  if (!lastDrawnView) return;
+  const [a0, a1, , b1] = lastDrawnView, v = currentView(), s = (a1 - a0) / (v[1] - v[0]);
+  const dx = (a0 - v[0]) / (v[1] - v[0]) * RES, dy = (v[3] - b1) / (v[1] - v[0]) * RES;
+  const b = Math.round(S.bg * 255);
+  vctx.fillStyle = `rgb(${b},${b},${b})`; vctx.fillRect(0, 0, RES, RES);
+  vctx.drawImage(img, dx, dy, RES * s, RES * s);
+}
+
+function syncAll() {
+  for (let i = 0; i < 28; i++) paramSl[i].set(S.p[i]);
+  slSeeds.set(S.nseeds); slDepth.set(S.depth); slGamma.set(S.gamma); slBright.set(S.bright); slHeat.set(S.heat);
+  syncViewSliders();
+  document.querySelectorAll("#hform button").forEach(b => b.classList.toggle("on", Number(b.dataset.h) === S.hmode));
+  document.querySelectorAll("#bgseg button").forEach(b => b.classList.toggle("on", Number(b.dataset.bg) === S.bg));
+  document.querySelectorAll("#styleseg button").forEach(b => b.classList.toggle("on", Number(b.dataset.f) === S.flame));
+  document.querySelectorAll("#ssseg button").forEach(b => b.classList.toggle("on", Number(b.dataset.ss) === S.ss));
+  $("hformula").textContent = S.hmode === 0 ? "h(x₁, x₂) = (a₂₅x₁ + a₂₆ sin x₁, a₂₇x₂ + a₂₈ sin x₂)" : "h(x₁, x₂) = (a₂₅x₁ + a₂₆ sin x₂, a₂₇x₂ + a₂₈ sin x₁)";
+  LUT = makeLut(S.palettes[S.pal][1]);
+  buildPaletteButtons(); drawPaletteEditor();
+}
+document.querySelectorAll("#hform button").forEach(b => b.onclick = () => { S.hmode = Number(b.dataset.h); syncAll(); requestRender("full"); });
+document.querySelectorAll("#bgseg button").forEach(b => b.onclick = () => { S.bg = Number(b.dataset.bg); syncAll(); anim ? animTone() : retone(false); });
+document.querySelectorAll("#styleseg button").forEach(b => b.onclick = () => { S.flame = Number(b.dataset.f); syncAll(); anim ? animTone() : retone(false); });
+document.querySelectorAll("#ssseg button").forEach(b => b.onclick = () => { S.ss = Number(b.dataset.ss); syncAll(); requestRender("full"); });
+$("btnSeeds").onclick = () => { seeds = randomSeeds(100); requestRender("full"); };
+$("btnFit").onclick = () => { S.zoom = S.offx = S.offy = 0; syncViewSliders(); requestRender("full"); };
+$("btnColours").onclick = () => { S.mc = [0,1,2,3].map(() => Math.random()); requestRender("full"); };
+$("btnIter").onclick = () => startIteration();
+PRESETS.forEach(([name, hm, fn, extra, look]) => {
+  const b = document.createElement("button"); b.textContent = name;
+  b.onclick = () => {
+    if (extra && typeof extra === "object") {     // full saved settings (background kept)
+      applySettings(extra, false, true);
+      S.pal = S.palettes.findIndex(q => q[0] === "fire");   // fire for every preset except Fern
+      syncAll(); startIteration(extra.view);
+    } else {
+      S.p = fn(); S.hmode = hm;
+      // the preset's own palette (Fern), otherwise fire
+      const i = S.palettes.findIndex(q => q[0] === (typeof extra === "string" ? extra : "fire"));
+      if (i >= 0) S.pal = i;
+      // the preset's own gamma / brightness (Fern), otherwise the defaults
+      S.gamma = look && look.gamma !== undefined ? look.gamma : 2.2;
+      S.bright = look && look.bright !== undefined ? look.bright : 1.0;
+      S.ss = look && look.ss !== undefined ? look.ss : 2;
+      syncAll(); startIteration();
+    }
+  };
+  $("presets").append(b);
+});
+
+/* ---- pan and zoom on the picture ---- */
+const toCanvas = (clientDx) => clientDx * RES / view.clientWidth;
+view.addEventListener("pointerdown", (e) => {
+  if (e.button !== 0) return;
+  view.setPointerCapture(e.pointerId); view.classList.add("dragging");
+  pan = { x: e.clientX, y: e.clientY, dx: 0, dy: 0 };
+});
+view.addEventListener("pointermove", (e) => {
+  if (!pan) return;
+  pan.dx = toCanvas(e.clientX - pan.x); pan.dy = toCanvas(e.clientY - pan.y); draw(pan.dx, pan.dy);
+});
+function endPan() {
+  if (!pan) return;
+  view.classList.remove("dragging");
+  const { dx, dy } = pan; pan = null;
+  if (Math.abs(dx) + Math.abs(dy) < 1) { draw(); return; }
+  const [x0, x1, y0, y1] = currentView(), per = (x1 - x0) / RES;
+  setView((x0 + x1) / 2 - dx * per, (y0 + y1) / 2 + dy * per, (x1 - x0) / 2);
+  requestRender("full");
+}
+view.addEventListener("pointerup", endPan);
+view.addEventListener("pointercancel", endPan);
+view.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  const rect = view.getBoundingClientRect(), mx = (e.clientX - rect.left) * RES / rect.width, my = (e.clientY - rect.top) * RES / rect.height;
+  const f = Math.pow(0.8, -Math.sign(e.deltaY)), [x0, x1, y0, y1] = currentView();
+  const cx = x0 + mx / RES * (x1 - x0), cy = y1 - my / RES * (y1 - y0);
+  setView(cx + ((x0 + x1) / 2 - cx) * f, cy + ((y0 + y1) / 2 - cy) * f, (x1 - x0) / 2 * f);
+  if (anim) stopAnim();
+  previewView();
+  clearTimeout(wheelTimer); wheelTimer = setTimeout(() => requestRender("full"), 180);
+}, { passive: false });
+
+/* ============================ Palette editor ============================ */
+const cube = $("cube"), cctx = cube.getContext("2d"), bar = $("bar"), bctx = bar.getContext("2d");
+const ed = { yaw: -0.6, pitch: 0.42, drag: null, hover: null, lastBarClick: 0 };
+const stops = () => S.palettes[S.pal][1];
+function rot() {
+  const cy = Math.cos(ed.yaw), sy = Math.sin(ed.yaw), cp = Math.cos(ed.pitch), sp = Math.sin(ed.pitch);
+  // Rx(pitch) * Ry(yaw)
+  return [[cy, 0, sy], [sp*sy, cp, -sp*cy], [-cp*sy, sp, cp*cy]];
+}
+function proj(c, R) {
+  const W = cube.width, H = cube.height, s = Math.min(W, H) / 2 / 0.92;
+  const v = [c[0] - 0.5, c[1] - 0.5, c[2] - 0.5];
+  const q = R.map(r => r[0]*v[0] + r[1]*v[1] + r[2]*v[2]);
+  return [W/2 + s*q[0], H/2 - s*q[1], q[2]];
+}
+const rgb = (c) => `rgb(${c.map(v => Math.round(clamp(v,0,1)*255)).join(",")})`;
+function gradLine(ctx, a, b, R, width, n, under) {
+  const pa = proj(a, R), pb = proj(b, R);
+  if (under) { ctx.strokeStyle = under; ctx.lineWidth = width + 4; ctx.beginPath(); ctx.moveTo(pa[0], pa[1]); ctx.lineTo(pb[0], pb[1]); ctx.stroke(); }
+  ctx.lineWidth = width;
+  for (let k = 0; k < n; k++) {
+    const t0 = k / n, t1 = (k + 1) / n, p0 = a.map((v, j) => v + (b[j]-v)*t0), p1 = a.map((v, j) => v + (b[j]-v)*t1);
+    const q0 = proj(p0, R), q1 = proj(p1, R);
+    ctx.strokeStyle = rgb(p0.map((v, j) => (v + p1[j]) / 2));
+    ctx.beginPath(); ctx.moveTo(q0[0], q0[1]); ctx.lineTo(q1[0], q1[1]); ctx.stroke();
+  }
+}
+const barGeom = () => ({ x: 16, w: bar.width - 32, y: 6, h: 64 });
+function drawPaletteEditor() {
+  const R = rot(), W = cube.width, H = cube.height, st = stops();
+  const dark = getComputedStyle(document.documentElement).getPropertyValue("--well");
+  cctx.clearRect(0, 0, W, H);
+  cctx.lineCap = "round";
+  const corners = []; for (let r = 0; r < 2; r++) for (let g = 0; g < 2; g++) for (let b = 0; b < 2; b++) corners.push([r, g, b]);
+  for (const a of corners) for (const b of corners) {
+    const d = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
+    if (d[0] + d[1] + d[2] === 1 && Math.abs(d[0]) + Math.abs(d[1]) + Math.abs(d[2]) === 1) gradLine(cctx, a, b, R, 3, 16, "rgba(120,125,140,.45)");
+  }
+  cctx.font = "500 22px Public Sans, sans-serif"; cctx.fillStyle = "rgba(120,125,140,.95)";
+  const lab = { "0,0,0": "black", "1,0,0": "R", "0,1,0": "G", "0,0,1": "B", "1,1,0": "Y", "1,0,1": "M", "0,1,1": "C", "1,1,1": "white" };
+  for (const c of corners) { const q = proj(c, R); cctx.fillText(lab[c.join(",")], q[0] + 10, q[1] - 8); }
+  const order = st.map((_, i) => i).sort((i, j) => st[i][0] - st[j][0]);
+  cctx.strokeStyle = "rgba(120,125,140,.6)"; cctx.lineWidth = 1.5;
+  for (const i of order) { const c = st[i][1], a = proj(c, R), b = proj([c[0], 0, c[2]], R); cctx.beginPath(); cctx.moveTo(a[0], a[1]); cctx.lineTo(b[0], b[1]); cctx.stroke(); }
+  for (let k = 0; k + 1 < order.length; k++) gradLine(cctx, st[order[k]][1], st[order[k+1]][1], R, 8, 12, "rgba(240,240,245,.95)");
+  const byDepth = order.slice().sort((i, j) => proj(st[i][1], R)[2] - proj(st[j][1], R)[2]);
+  for (const i of byDepth) {
+    const q = proj(st[i][1], R), hot = ed.hover === i || (ed.drag && ed.drag.i === i);
+    cctx.fillStyle = rgb(st[i][1]); cctx.beginPath(); cctx.arc(q[0], q[1], 16, 0, 7); cctx.fill();
+    cctx.lineWidth = hot ? 6 : 4; cctx.strokeStyle = hot ? "#e0a800" : "#f4f4f6"; cctx.stroke();
+    cctx.fillStyle = "rgba(120,125,140,1)"; cctx.fillText(String(order.indexOf(i) + 1), q[0] + 20, q[1] - 16);
+  }
+  // bar
+  const g = barGeom(); bctx.clearRect(0, 0, bar.width, bar.height);
+  for (let x = 0; x < g.w; x++) { const L = 3 * Math.round(x / (g.w - 1) * 1023); bctx.fillStyle = rgb([LUT[L], LUT[L+1], LUT[L+2]]); bctx.fillRect(g.x + x, g.y, 1, g.h); }
+  bctx.strokeStyle = "rgba(120,125,140,.7)"; bctx.lineWidth = 2; bctx.strokeRect(g.x, g.y, g.w, g.h);
+  for (const i of order) {
+    const x = g.x + st[i][0] * g.w, y = g.y + g.h + 4, hot = ed.hover === i;
+    bctx.beginPath(); bctx.moveTo(x, y); bctx.lineTo(x - 13, y + 26); bctx.lineTo(x + 13, y + 26); bctx.closePath();
+    bctx.fillStyle = rgb(st[i][1]); bctx.fill(); bctx.lineWidth = hot ? 5 : 3; bctx.strokeStyle = hot ? "#e0a800" : "#f4f4f6"; bctx.stroke();
+    bctx.lineWidth = 1.5; bctx.strokeStyle = "rgba(90,95,110,.9)"; bctx.stroke();
+  }
+  $("stops").innerHTML = order.map((i, n) => { const [t, c] = st[i];
+    return `<li><i style="background:${rgb(c)}"></i>${n + 1}. t = ${t.toFixed(3)}, RGB (${c.map(v => v.toFixed(3)).join(", ")})</li>`; }).join("");
+  $("palname").textContent = S.palettes[S.pal][0];
+}
+function buildPaletteButtons() {
+  $("pals").innerHTML = "";
+  S.palettes.forEach(([name, st], i) => {
+    const b = document.createElement("button"); b.className = i === S.pal ? "on" : "";
+    b.innerHTML = `${name}<i style="background:${cssGradient(st)}"></i>`;
+    b.onclick = () => { S.pal = i; syncAll(); anim ? animTone() : retone(false); };
+    $("pals").append(b);
+  });
+}
+function evPos(e, c) { const r = c.getBoundingClientRect(); return [(e.clientX - r.left) * c.width / r.width, (e.clientY - r.top) * c.height / r.height]; }
+function vertexAt(pos) {
+  const R = rot(); let best = null, bd = 26;
+  stops().forEach(([, c], i) => { const q = proj(c, R), d = Math.hypot(q[0] - pos[0], q[1] - pos[1]); if (d < bd) { best = i; bd = d; } });
+  return best;
+}
+function markerAt(pos) {
+  const g = barGeom(); if (pos[1] < g.y + g.h - 6) return null;
+  let best = null, bd = 18;
+  stops().forEach(([t], i) => { const d = Math.abs(g.x + t * g.w - pos[0]); if (d < bd) { best = i; bd = d; } });
+  return best;
+}
+function paletteChanged(fast) {
+  LUT = makeLut(stops());
+  drawPaletteEditor();
+  if (anim) animTone(); else retone(fast);
+  if (!fast) { stops().sort((a, b) => a[0] - b[0]); buildPaletteButtons(); drawPaletteEditor(); }
+}
+cube.addEventListener("pointerdown", (e) => {
+  const pos = evPos(e, cube), i = vertexAt(pos);
+  if (e.button === 2) { if (i !== null && stops().length > 2) { stops().splice(i, 1); ed.hover = null; paletteChanged(false); } return; }
+  cube.setPointerCapture(e.pointerId); interacting++;
+  ed.drag = i !== null ? { kind: "vertex", i, x: e.clientX, y: e.clientY } : { kind: "rotate", x: e.clientX, y: e.clientY };
+});
+cube.addEventListener("pointermove", (e) => {
+  if (!ed.drag) { const h = vertexAt(evPos(e, cube)); if (h !== ed.hover) { ed.hover = h; drawPaletteEditor(); } return; }
+  const k = cube.width / cube.getBoundingClientRect().width, dx = (e.clientX - ed.drag.x) * k, dy = (e.clientY - ed.drag.y) * k;
+  ed.drag.x = e.clientX; ed.drag.y = e.clientY;
+  if (ed.drag.kind === "rotate") { ed.yaw += dx * 0.01; ed.pitch = clamp(ed.pitch + dy * 0.01, -1.5, 1.5); drawPaletteEditor(); return; }
+  const R = rot(), s = Math.min(cube.width, cube.height) / 2 / 0.92, d = [dx / s, -dy / s, 0];
+  const w = [0, 1, 2].map(j => R[0][j]*d[0] + R[1][j]*d[1] + R[2][j]*d[2]);   // R^T d
+  const c = stops()[ed.drag.i][1]; for (let j = 0; j < 3; j++) c[j] = clamp(c[j] + w[j], 0, 1);
+  ed.moved = true; paletteChanged(true);
+});
+cube.addEventListener("pointerup", () => { if (ed.drag && ed.moved) paletteChanged(false); ed.drag = null; ed.moved = false; });
+cube.addEventListener("contextmenu", (e) => e.preventDefault());
+bar.addEventListener("contextmenu", (e) => e.preventDefault());
+bar.addEventListener("pointerdown", (e) => {
+  const pos = evPos(e, bar), i = markerAt(pos), g = barGeom();
+  if (e.button === 2) { if (i !== null && stops().length > 2) { stops().splice(i, 1); ed.hover = null; paletteChanged(false); } return; }
+  if (i !== null) { bar.setPointerCapture(e.pointerId); interacting++; ed.drag = { kind: "marker", i }; return; }
+  if (pos[1] <= g.y + g.h) {
+    const now = performance.now();
+    if (now - ed.lastBarClick < 400) { const t = clamp((pos[0] - g.x) / g.w, 0, 1); stops().push([t, colourAt(stops(), t)]); ed.lastBarClick = 0; paletteChanged(false); }
+    else ed.lastBarClick = now;
+  }
+});
+bar.addEventListener("pointermove", (e) => {
+  const pos = evPos(e, bar), g = barGeom();
+  if (!ed.drag || ed.drag.kind !== "marker") { const h = markerAt(pos); if (h !== ed.hover) { ed.hover = h; drawPaletteEditor(); } return; }
+  stops()[ed.drag.i][0] = clamp((pos[0] - g.x) / g.w, 0, 1); ed.moved = true; paletteChanged(true);
+});
+bar.addEventListener("pointerup", () => { if (ed.drag && ed.moved) paletteChanged(false); ed.drag = null; ed.moved = false; });
+$("btnPalReset").onclick = () => {
+  const orig = PALETTES0.find(q => q[0] === S.palettes[S.pal][0]);
+  if (orig) { S.palettes[S.pal][1] = JSON.parse(JSON.stringify(orig[1])); paletteChanged(false); }
+};
+
+/* ============================ Undo / redo ============================ */
+// Undoable: a1..a28, h-form, map colours, palettes, gamma, brightness, heat.
+// View, depth, seeds and background are not; a step that changed the view
+// together with the parameters (presets, Load, Show iteration) restores it.
+const undoPart = () => JSON.stringify({ p: S.p, h: S.hmode, mc: S.mc, pal: S.pal, pals: S.palettes, g: S.gamma, b: S.bright, ht: S.heat });
+const viewPart = () => ({ frame: S.frame.slice(), zoom: S.zoom, offx: S.offx, offy: S.offy });
+let committed = null, changedAt = 0; const undoStack = [], redoStack = [];
+function snap(flag) { return { u: undoPart(), v: viewPart(), flag }; }
+function sameView(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+setInterval(() => {
+  if (interacting || ed.drag || pan) return;
+  const cur = snap(false);
+  if (!committed) { committed = cur; return; }
+  if (cur.u === committed.u) { committed.v = cur.v; changedAt = 0; return; }
+  if (!changedAt) { changedAt = performance.now(); return; }
+  if (performance.now() - changedAt < 400) return;
+  undoStack.push(committed); if (undoStack.length > 200) undoStack.shift(); redoStack.length = 0;
+  committed = { u: cur.u, v: cur.v, flag: !sameView(cur.v, committed.v) }; changedAt = 0;
+}, 100);
+function restore(target) {
+  const u = JSON.parse(target.u), before = JSON.stringify([S.p, S.hmode, S.mc]);
+  S.p = u.p; S.hmode = u.h; S.mc = u.mc; S.pal = u.pal; S.palettes = u.pals; S.gamma = u.g; S.bright = u.b; S.heat = u.ht;
+  if (target.flag) Object.assign(S, { frame: target.v.frame, zoom: target.v.zoom, offx: target.v.offx, offy: target.v.offy });
+  syncAll();
+  if (target.flag || before !== JSON.stringify([S.p, S.hmode, S.mc])) requestRender("full"); else { if (anim) stopAnim(); retone(false); }
+}
+function undo(redo) {
+  let target = null; const cur = snap(false);
+  if (redo) { if (redoStack.length) { if (committed) undoStack.push(committed); target = redoStack.pop(); } }
+  else if (committed && cur.u !== committed.u) { const flag = !sameView(cur.v, committed.v); redoStack.push({ ...cur, flag }); target = { ...committed, flag }; }
+  else if (undoStack.length) { redoStack.push(committed); const prev = undoStack.pop(); target = { ...prev, flag: committed.flag }; }
+  if (!target) return;
+  restore(target); committed = snap(target.flag); changedAt = 0;
+}
+$("btnUndo").onclick = () => undo(false);
+$("btnRedo").onclick = () => undo(true);
+window.addEventListener("keydown", (e) => {
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const k = e.key.toLowerCase();
+  if (k === "z" || k === "y") { e.preventDefault(); if (document.activeElement) document.activeElement.blur(); undo(k === "y" || e.shiftKey); }
+});
+
+/* ============================ Files ============================ */
+let downloads = null;
+(async () => { try { if (window.claude && window.claude.use) downloads = await window.claude.use("downloads"); } catch (e) { downloads = null; } })();
+async function saveFile(filename, blob) {
+  if (downloads) {
+    try { await downloads.save({ filename, data: blob }); return "saved"; }
+    catch (e) { return e && e.code === "declined" ? "declined" : "failed: " + (e && e.message || e); }
+  }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = filename;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  return "saved";
+}
+function flash(msg) { const el = $("status"); el.textContent = msg; clearTimeout(flash.t); flash.t = setTimeout(updateStatus, 3500); }
+$("btnSave").onclick = async () => {
+  const st = sortedStops(S.palettes[S.pal][1]);
+  const data = { version: 1, params: S.p, hmode: S.hmode, map_colours: S.mc,
+    palette: { name: S.palettes[S.pal][0], stops: st }, background: S.bg, flame: !!S.flame,
+    gamma: S.gamma, brightness: S.bright, heat: S.heat, seeds: S.nseeds, depth: S.depth, supersampling: S.ss,
+    view: { frame: S.frame, zoom: S.zoom, x_shift: S.offx, y_shift: S.offy } };
+  const r = await saveFile("ifs_params.json", new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+  flash(r === "saved" ? "Settings saved." : r === "declined" ? "Save cancelled." : "Save " + r);
+};
+function applySettings(d, withView, keepBackground) {
+  S.p = d.params.map(Number); S.hmode = Number(d.hmode || 0);
+  if (d.map_colours) S.mc = d.map_colours.map(Number);
+  if (d.palette) {
+    const st = d.palette.stops.map(([t, c]) => [Number(t), c.map(Number)]);
+    const i = S.palettes.findIndex(q => q[0] === d.palette.name);
+    if (i >= 0) { S.palettes[i][1] = st; S.pal = i; } else { S.palettes.push([d.palette.name, st]); S.pal = S.palettes.length - 1; }
+  }
+  if (d.background !== undefined && !keepBackground) S.bg = Number(d.background) > 0.5 ? 1 : 0;
+  if (d.flame !== undefined) S.flame = d.flame ? 1 : 0;
+  for (const [k, key] of [["gamma","gamma"],["brightness","bright"],["heat","heat"],["seeds","nseeds"],["depth","depth"],["supersampling","ss"]]) if (d[k] !== undefined) S[key] = Number(d[k]);
+  if (withView && d.view) applyView(d.view);
+}
+function applyView(v) { S.frame = v.frame.map(Number); S.zoom = Number(v.zoom); S.offx = Number(v.x_shift); S.offy = Number(v.y_shift); syncViewSliders(); }
+$("fileLoad").onchange = async (e) => {
+  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+  try {
+    const d = JSON.parse(await file.text());
+    if (!Array.isArray(d.params) || d.params.length !== 28) throw new Error("no list of 28 parameters");
+    applySettings(d, true);
+    syncAll(); requestRender("full"); flash(`Loaded ${file.name}.`);
+  } catch (err) { flash(`Could not load ${file.name}: ${err.message}.`); }
+};
+$("btnPng").onclick = async () => {
+  const size = clamp(Math.round(Number($("pngSize").value) || 2000), 400, 6000);
+  const ss = size <= 2500 ? 2 : 1, N = size * ss, v = currentView();
+  let ns = Math.round(S.nseeds * Math.pow(size / RES, 2));
+  ns = Math.max(1, Math.min(ns, Math.floor(3e8 / Math.pow(4, S.depth))));
+  const sd = new Float64Array(2 * ns); sd.set(seeds.subarray(0, Math.min(200, 2 * ns)));
+  for (let i = 200; i < 2 * ns; i++) sd[i] = Math.random();
+  const bands = Math.max(1, workers.length || 1) * (ss === 1 && size > 3000 ? 2 : 1), jobs = [];
+  for (let b = 0; b < bands; b++) {
+    const r0 = Math.floor(b * size / bands) * ss, r1 = Math.floor((b + 1) * size / bands) * ss;
+    jobs.push({ p: S.p.slice(), mc: S.mc.slice(), hmode: S.hmode, depth: S.depth, N, row0: r0, row1: r1, view: v, seeds: sd });
+  }
+  $("btnPng").disabled = true; flash(`Rendering ${size} × ${size} PNG from ${(ns * Math.pow(4, S.depth)).toLocaleString("en")} points…`);
+  const t0 = performance.now();
+  try {
+    const res = await runJobs(jobs);
+    let total = 0; res.forEach(r => { for (let i = 0; i < r.cnt.length; i++) if (r.cnt[i] > 0) total++; });
+    const all = new Float32Array(total); let j = 0;
+    res.forEach(r => { for (let i = 0; i < r.cnt.length; i++) if (r.cnt[i] > 0) all[j++] = r.cnt[i]; });
+    all.sort(); const ref = total ? all[Math.floor(0.98 * (total - 1))] : 0;
+    const out = document.createElement("canvas"); out.width = out.height = size;
+    const octx = out.getContext("2d"), data = octx.createImageData(size, size);
+    let off = 0;
+    res.forEach((r, b) => { const rows = jobs[b].row1 - jobs[b].row0; tone(r.cnt, r.csum, N, rows, ss, ref, data.data, off); off += 4 * size * rows / ss; });
+    octx.putImageData(data, 0, 0);
+    const blob = await new Promise(r => out.toBlob(r, "image/png"));
+    const st = await saveFile(`ifs_${size}px.png`, blob);
+    flash(st === "saved" ? `PNG saved (${((performance.now() - t0) / 1000).toFixed(1)} s).` : st === "declined" ? "Save cancelled." : "PNG " + st);
+  } catch (err) { flash("PNG failed: " + err.message); }
+  $("btnPng").disabled = false;
+};
+
+/* ============================ Info popup ============================ */
+let infoTypeset = false;
+$("btnInfo").onclick = () => {
+  $("info").showModal();
+  if (!infoTypeset && window.MathJax && MathJax.typesetPromise) {
+    infoTypeset = true;
+    MathJax.typesetPromise([$("info")]).catch(() => { infoTypeset = false; });
+  }
+};
+$("infoClose").onclick = () => $("info").close();
+$("info").addEventListener("click", (e) => { if (e.target === $("info")) $("info").close(); });   // click outside
+
+/* ============================ Start ============================ */
+(async () => {
+  applySettings(PHOENIX, true, true);   // background stays at the default (black)
+  syncAll();
+  await initWorkers();
+  requestRender("full");
+})();
+</script>
+</body>
+</html>
