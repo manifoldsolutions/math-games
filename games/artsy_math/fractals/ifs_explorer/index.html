@@ -134,6 +134,9 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height:
   .head { position: static; }
 }
 @media (prefers-reduced-motion: reduce) { .busy { transition: none; } }
+.sitenav { display: flex; justify-content: space-between; gap: 12px; margin: -4px 0 10px; font: 500 13px var(--sans); }
+.sitenav a { color: var(--muted); text-decoration: none; border-radius: 4px; }
+.sitenav a:hover { color: var(--ink); text-decoration: underline; }
 #btnInfo {
   background: var(--steel); color: #fff; border-color: var(--steel);
   font: 600 14px var(--sans); padding: 6px 12px 6px 7px;
@@ -178,6 +181,11 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
 
   <aside class="panel">
     <div class="head">
+      <!-- site navigation: this page lives at games/artsy_math/fractals/ifs_explorer/index.html -->
+      <nav class="sitenav" aria-label="Site">
+        <a href="../../../../#/artsy/fractals">← Back to Fractals</a>
+        <a href="../../../../#/">Home</a>
+      </nav>
       <h1>Nonlinear IFS <small>x ↦ h(A<sub>n</sub>x + b<sub>n</sub>)</small></h1>
       <div class="actions">
         <button class="primary" id="btnIter">Show iteration</button>
@@ -191,7 +199,7 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
     </div>
 
     <details open>
-      <summary>Sample fractals<span class="sub"></span></summary>
+      <summary>Classic fractals<span class="sub">each one starts with the iteration</span></summary>
       <div class="body"><div class="presets" id="presets"></div></div>
     </details>
 
