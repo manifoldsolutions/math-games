@@ -228,6 +228,9 @@
     a.card:hover{ transform: none; }
   }
   @keyframes rise{ from{ opacity:0; transform: translateY(6px);} to{ opacity:1; transform:none; } }
+  .card .title, .lead h2 { white-space: pre-line; }
+  .card .blurb, .lead h2 { white-space: pre-line; }
+</style>
 </style>
 </head>
 <body>
@@ -318,13 +321,13 @@ const CATALOG = [
     },
     {
 	id: "artsy",
-	title: "Artsy Math",
-	blurb: "Play around with visualizations and the like",
+	title: "Matikkataiteilua\nArtsy Math",
+	blurb: "Visualisointeja\nVisualizations",
 	courses: [
 	    {
 		id: "fractals",
-		title: "Fractals",
-		blurb: "Explore attractors and other fractals",
+		title: "Fraktaaleja\nFractals",
+		blurb: "Attraktoreita ja fraktaaleja\nAttractors and fractals",
 		games: [
 		    {id: "ifs_explorer", title: "IFS explorer", blurb: "Iterated Function Systems and the Flame Algorithm", game: "games/artsy_math/fractals/ifs_explorer/"},
 		],
