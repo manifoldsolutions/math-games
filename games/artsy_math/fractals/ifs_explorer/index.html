@@ -132,11 +132,18 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height:
 @media (max-width: 900px) {
   body { height: auto; }
   .app { grid-template-columns: 1fr; height: auto; flex: none; }
-  .frame { width: min(100%, 92vw); }
+  .frame { width: min(100%, 92vw); transition: width .25s ease; }
   .panel { border-left: 0; border-top: 1px solid var(--rule); overflow: visible; }
   .head { position: static; }
+  /* the picture stays pinned at the top while the tools scroll under it;
+     once the page is scrolled it shrinks to half its width */
+  .stage { position: sticky; top: 0; z-index: 3; background: var(--paper); padding: 10px 18px; }
+  body.mini .frame { width: min(50%, 46vw); }
+  body.mini .status { display: none; }
+  body.mini .caption { font-size: 12px; left: 8px; top: 6px; right: 8px; }
+  body.mini .busy { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .busy { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .busy, .frame { transition: none; } }
 .sitenav {
   flex: none; height: var(--barh); display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 0 20px; background: var(--panel); border-bottom: 1px solid var(--rule); font: 500 14px var(--sans);
@@ -205,7 +212,7 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
     </div>
 
     <details open>
-      <summary>Sample fractals<span class="sub"></span></summary>
+      <summary>Classic fractals<span class="sub">each one starts with the iteration</span></summary>
       <div class="body"><div class="presets" id="presets"></div></div>
     </details>
 
@@ -1092,6 +1099,16 @@ $("btnInfo").onclick = () => {
 };
 $("infoClose").onclick = () => $("info").close();
 $("info").addEventListener("click", (e) => { if (e.target === $("info")) $("info").close(); });   // click outside
+
+/* ---- narrow layout: shrink the pinned picture once the page is scrolled ---- */
+const narrow = window.matchMedia("(max-width: 900px)");
+function updateMini() {
+  // hysteresis, so the layout change caused by shrinking can't flip it back
+  const y = window.scrollY, mini = document.body.classList.contains("mini");
+  document.body.classList.toggle("mini", narrow.matches && (mini ? y > 4 : y > 40));
+}
+window.addEventListener("scroll", updateMini, { passive: true });
+narrow.addEventListener("change", updateMini);
 
 /* ============================ Start ============================ */
 (async () => {
