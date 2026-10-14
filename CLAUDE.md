@@ -9,6 +9,7 @@ framework, no npm: plain HTML/CSS/JS. Every game is one self-contained
 ```
 index.html                         main page; the CATALOG array near the bottom lists everything
 assets/theme.css                   shared look for the whole site (colours, fonts, header, dialogs, buttons)
+assets/celebrate.js                shared streamers + confetti: celebrate({x, y}); usage in its header comment
 games/<category>/<course>/<game>/index.html
 ```
 
@@ -18,6 +19,9 @@ games/<category>/<course>/<game>/index.html
 - Adding a game: create its folder, then add an entry to the right course in
   `CATALOG` in `index.html` (`game: null` shows it as "Coming soon").
 - Catalog ids become URL parts: short, lowercase, digits and hyphens only.
+- Shared JS goes in `assets/` too, loaded with a plain `<script src>` before the
+  game's own script (no modules). Yhtälövaaka and Yksikköympyrä use
+  `assets/celebrate.js`; a game must not define its own `celebrate` function.
 
 ## Look and feel ("Techno" theme)
 
