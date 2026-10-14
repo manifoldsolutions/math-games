@@ -29,226 +29,238 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;450;500;600&display=swap" rel="stylesheet">
+<!-- shared site look (the games use the same file) -->
+<link rel="stylesheet" href="assets/theme.css">
 
 <style>
-  :root{
-    --bg:        #eceef3;
-    --surface:   #ffffff;
-    --ink:       #14162b;
-    --muted:     #5b6079;
-    --line:      #d6d9e4;
-    --accent:    #4a3ecf;
-    --accent-ink:#3a30a8;
-    --accent-wash:#ecebfa;
-    --radius: 14px;
-    --maxw: 1040px;
-    --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-    --display: "Space Grotesk", var(--sans);
-  }
+  /* Main-page layout only. Colours and fonts come from assets/theme.css. */
+  :root{ --maxw:1040px; }
 
-  *{ box-sizing: border-box; }
-
-  html, body{ margin:0; }
-
-  body{
-    background: var(--bg);
-    color: var(--ink);
-    font-family: var(--sans);
-    font-weight: 450;
-    line-height: 1.5;
-    -webkit-font-smoothing: antialiased;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  a{ color: inherit; }
+  body{ line-height:1.5; min-height:100vh; display:flex; flex-direction:column; }
 
   .wrap{
-    width: 100%;
-    max-width: var(--maxw);
-    margin-inline: auto;
-    padding-inline: clamp(20px, 5vw, 44px);
+    width:100%;
+    max-width:var(--maxw);
+    margin-inline:auto;
+    padding-inline:clamp(20px, 5vw, 44px);
   }
 
   /* ── Hero ──────────────────────────────────────────────── */
   .hero{
-    position: relative;
-    overflow: hidden;
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
+    position:relative;
+    overflow:hidden;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(8,7,15,.85), rgba(8,7,15,.35));
+  }
+  .hero::after{                       /* neon horizon line under the hero */
+    content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px;
+    background:linear-gradient(90deg, transparent, var(--magenta) 20%, var(--accent) 60%, transparent);
+    box-shadow:0 0 12px rgba(255,61,242,.6);
   }
   .hero .wrap{
-    position: relative;
-    z-index: 1;
-    padding-block: clamp(38px, 8vw, 72px) clamp(30px, 6vw, 52px);
+    position:relative;
+    z-index:1;
+    padding-block:clamp(40px, 9vw, 84px) clamp(32px, 7vw, 60px);
   }
   .mark{
-    font-family: var(--display);
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    font-size: 15px;
-    color: var(--accent-ink);
-    display: inline-flex;
-    align-items: center;
-    gap: 9px;
+    font-family:var(--ui);
+    font-weight:600;
+    letter-spacing:.04em;
+    font-size:15px;
+    color:var(--accent-ink);
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
   }
-  .mark svg{ display:block; }
+  .mark svg{ display:block; filter:var(--glow-cyan); }
   .hero h1{
-    font-family: var(--display);
-    font-weight: 600;
-    letter-spacing: -0.025em;
-    font-size: clamp(34px, 6.5vw, 58px);
-    line-height: 1.02;
-    margin: 20px 0 0;
-    max-width: 16ch;
+    font-family:var(--display);
+    font-weight:800;
+    letter-spacing:.02em;
+    font-size:clamp(28px, 7vw, 60px);
+    line-height:1.08;
+    margin:22px 0 0;
+    max-width:16ch;
+    text-shadow:0 0 18px rgba(0,229,255,.35);
   }
   .hero p{
-    color: var(--muted);
-    font-size: clamp(15px, 2.2vw, 18px);
-    margin: 16px 0 0;
-    max-width: 52ch;
+    color:var(--muted);
+    font-size:clamp(15px, 2.2vw, 18px);
+    margin:16px 0 0;
+    max-width:52ch;
   }
-  /* faint manifold mesh behind the hero */
+  .hero p:empty{ display:none; }
+
+  /* neon manifold mesh behind the hero: draws itself in once on load */
   .mesh{
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    width: 100%; height: 100%;
-    opacity: .5;
-    pointer-events: none;
-    mask-image: linear-gradient(105deg, #000 30%, transparent 78%);
-    -webkit-mask-image: linear-gradient(105deg, #000 30%, transparent 78%);
+    position:absolute; inset:0; z-index:0;
+    width:100%; height:100%;
+    pointer-events:none;
+    mask-image:linear-gradient(100deg, transparent 8%, #000 45%, #000 85%, transparent);
+    -webkit-mask-image:linear-gradient(100deg, transparent 8%, #000 45%, #000 85%, transparent);
   }
-  .mesh path{ stroke: var(--accent); stroke-width: 1; fill: none; opacity: .28; }
+  .mesh path{ fill:none; stroke-width:1.2; vector-effect:non-scaling-stroke; }
+  .mesh .h path{ stroke:var(--accent);  opacity:.55; }
+  .mesh .v path{ stroke:var(--magenta); opacity:.45; }
+  .mesh .h{ filter:var(--glow-cyan); }
+  .mesh .v{ filter:var(--glow-magenta); }
+  .mesh path{ stroke-dasharray:1200; stroke-dashoffset:1200; animation:draw 1.6s cubic-bezier(.3,.6,.2,1) forwards; }
+  .mesh .v path{ animation-delay:.35s; }
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
+  @media (max-width:600px){ .mesh{ opacity:.6; } }   /* the heading covers the mesh on phones */
 
   /* ── Breadcrumb ────────────────────────────────────────── */
   .crumb{
-    font-family: var(--display);
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--muted);
-    padding-block: 22px 4px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
+    font-family:var(--ui);
+    font-size:14px;
+    font-weight:500;
+    letter-spacing:.03em;
+    color:var(--muted);
+    padding-block:24px 4px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
   }
-  .crumb a{ text-decoration: none; color: var(--muted); border-radius: 4px; }
-  .crumb a:hover{ color: var(--accent-ink); }
-  .crumb .sep{ color: var(--line); }
-  .crumb .here{ color: var(--ink); }
+  .crumb a{ text-decoration:none; color:var(--muted); border-radius:var(--radius); }
+  .crumb a:hover{ color:var(--accent-ink); }
+  .crumb a:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .crumb .sep{ color:var(--magenta); opacity:.7; }
+  .crumb .here{ color:var(--ink); }
 
   /* ── Content ───────────────────────────────────────────── */
-  main{ flex: 1; padding-bottom: 64px; }
-  .lead{ margin: 6px 0 26px; }
+  main{ flex:1; padding-bottom:64px; }
+  .lead{ margin:6px 0 26px; }
   .lead h2{
-    font-family: var(--display);
-    font-weight: 600;
-    letter-spacing: -0.02em;
-    font-size: clamp(22px, 3.4vw, 30px);
-    margin: 0;
+    font-family:var(--display);
+    font-weight:700;
+    letter-spacing:.04em;
+    font-size:clamp(20px, 3.2vw, 28px);
+    color:var(--accent-ink);
+    text-shadow:var(--glow-text);
+    margin:0;
   }
-  .lead p{ color: var(--muted); margin: 8px 0 0; max-width: 56ch; }
+  .lead p{ color:var(--muted); margin:8px 0 0; max-width:56ch; }
 
   .grid{
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(240px, 1fr));
+    gap:16px;
   }
 
+  /* cards: dark panels with HUD corner brackets that light up on hover */
   .card{
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    text-decoration: none;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    padding: 22px 22px 20px;
-    min-height: 150px;
-    transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    text-decoration:none;
+    background:rgba(18,15,36,.82);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:22px 22px 20px;
+    min-height:150px;
+    transition:border-color .16s ease, transform .16s ease, box-shadow .16s ease, background .16s ease;
   }
-  .card .glyph{ color: var(--accent); }
+  .card::before, .card::after{
+    content:""; position:absolute; width:14px; height:14px; pointer-events:none;
+    border-color:var(--accent); border-style:solid; opacity:.55;
+    transition:opacity .16s ease, width .16s ease, height .16s ease;
+  }
+  .card::before{ top:-1px; left:-1px; border-width:2px 0 0 2px; }
+  .card::after{ bottom:-1px; right:-1px; border-width:0 2px 2px 0; border-color:var(--magenta); }
+  .card .glyph{ color:var(--accent); filter:var(--glow-cyan); }
   .card .title{
-    font-family: var(--display);
-    font-weight: 600;
-    font-size: 20px;
-    letter-spacing: -0.015em;
-    margin-top: 2px;
+    font-family:var(--ui);
+    font-weight:700;
+    font-size:21px;
+    letter-spacing:.01em;
+    margin-top:2px;
+    color:var(--ink);
   }
-  .card .blurb{ color: var(--muted); font-size: 14.5px; }
+  .card .blurb{ color:var(--muted); font-size:14.5px; }
   .card .meta{
-    margin-top: auto;
-    padding-top: 12px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--accent-ink);
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    margin-top:auto;
+    padding-top:12px;
+    font-size:12.5px;
+    font-weight:600;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--accent-ink);
+    display:flex;
+    align-items:center;
+    gap:6px;
   }
   a.card:hover{
-    border-color: var(--accent);
-    transform: translateY(-2px);
-    box-shadow: 0 10px 24px -16px rgba(74,62,207,.55);
+    border-color:rgba(0,229,255,.6);
+    background:rgba(26,22,54,.92);
+    transform:translateY(-2px);
+    box-shadow:0 0 22px rgba(0,229,255,.22), inset 0 0 18px rgba(0,229,255,.06);
   }
-  a.card:focus-visible{
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
+  a.card:hover::before, a.card:hover::after{ opacity:1; width:22px; height:22px; }
+  a.card:focus-visible{ outline:2px solid var(--magenta); outline-offset:3px; }
 
   /* disabled "coming soon" card */
-  .card.soon{ opacity: .62; cursor: default; }
-  .card.soon .meta{ color: var(--muted); }
+  .card.soon{ opacity:.55; cursor:default; border-style:dashed; }
+  .card.soon::before, .card.soon::after{ display:none; }
+  .card.soon .meta{ color:var(--muted); }
 
   /* empty state — a category with no courses, or a course with no games */
   .empty{
-    border: 1px dashed var(--line);
-    border-radius: var(--radius);
-    padding: 44px 24px;
-    text-align: center;
-    color: var(--muted);
-    font-family: var(--display);
-    font-weight: 500;
-    font-size: 16px;
+    border:1px dashed rgba(255,61,242,.45);
+    border-radius:var(--radius);
+    padding:44px 24px;
+    text-align:center;
+    color:var(--muted);
+    font-family:var(--ui);
+    font-weight:500;
+    letter-spacing:.04em;
+    font-size:16px;
+    background:rgba(18,15,36,.5);
   }
 
   footer{
-    border-top: 1px solid var(--line);
-    color: var(--muted);
-    font-size: 13px;
+    border-top:1px solid var(--line);
+    color:var(--muted);
+    font-size:13px;
+    background:rgba(8,7,15,.6);
   }
-  footer .wrap{ padding-block: 20px; }
+  footer .wrap{ padding-block:20px; }
 
-  .view{ animation: rise .28s ease both; }
+  .view{ animation:rise .28s ease both; }
+  @keyframes rise{ from{ opacity:0; transform:translateY(6px);} to{ opacity:1; transform:none; } }
   @media (prefers-reduced-motion: reduce){
-    .view{ animation: none; }
-    a.card:hover{ transform: none; }
+    .view{ animation:none; }
+    a.card:hover{ transform:none; }
+    .mesh path{ animation:none; stroke-dashoffset:0; }
   }
-  @keyframes rise{ from{ opacity:0; transform: translateY(6px);} to{ opacity:1; transform:none; } }
-  .card .title, .lead h2 { white-space: pre-line; }
-  .card .blurb, .lead h2 { white-space: pre-line; }
-</style>
+  .card .title, .card .blurb, .lead h2{ white-space:pre-line; }
 </style>
 </head>
 <body>
 
   <header class="hero">
-    <svg class="mesh" viewBox="0 0 800 300" preserveAspectRatio="xMinYMid slice" aria-hidden="true">
-      <!-- a lightly warped grid — a nod to "manifold" -->
-      <path d="M0,60 C160,30 320,90 480,55 C620,26 720,72 800,48"/>
-      <path d="M0,110 C160,84 320,140 480,104 C620,76 720,122 800,98"/>
-      <path d="M0,160 C160,136 320,190 480,154 C620,128 720,172 800,150"/>
-      <path d="M0,210 C160,188 320,240 480,206 C620,180 720,224 800,202"/>
-      <path d="M0,260 C160,240 320,290 480,258 C620,232 720,276 800,256"/>
-      <path d="M60,0 C40,90 96,150 60,300"/>
-      <path d="M180,0 C158,92 214,150 180,300"/>
-      <path d="M300,0 C280,90 336,152 300,300"/>
-      <path d="M420,0 C400,92 456,150 420,300"/>
-      <path d="M540,0 C520,90 576,152 540,300"/>
-      <path d="M660,0 C640,92 696,150 660,300"/>
+    <svg class="mesh" viewBox="0 0 800 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <!-- a warped grid — a nod to "manifold" -->
+      <g class="h">
+        <path d="M0,40 C160,10 320,70 480,35 C620,6 720,52 800,28"/>
+        <path d="M0,90 C160,62 320,120 480,84 C620,56 720,102 800,78"/>
+        <path d="M0,140 C160,114 320,170 480,134 C620,108 720,152 800,130"/>
+        <path d="M0,190 C160,166 320,220 480,186 C620,160 720,204 800,182"/>
+        <path d="M0,240 C160,218 320,270 480,238 C620,212 720,256 800,236"/>
+        <path d="M0,290 C160,270 320,320 480,288 C620,264 720,306 800,288"/>
+      </g>
+      <g class="v">
+        <path d="M60,0 C40,90 96,150 60,300"/>
+        <path d="M150,0 C128,92 184,150 150,300"/>
+        <path d="M240,0 C220,90 276,152 240,300"/>
+        <path d="M330,0 C310,92 366,150 330,300"/>
+        <path d="M420,0 C400,92 456,150 420,300"/>
+        <path d="M510,0 C490,90 546,152 510,300"/>
+        <path d="M600,0 C580,92 636,150 600,300"/>
+        <path d="M690,0 C670,90 726,152 690,300"/>
+        <path d="M780,0 C760,92 816,150 780,300"/>
+      </g>
     </svg>
     <div class="wrap">
       <span class="mark">

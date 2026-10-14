@@ -1,0 +1,218 @@
+/* ══════════════════════════════════════════════════════════════════════
+   MATIKKAPELIT — shared theme ("Techno")
+   ──────────────────────────────────────────────────────────────────────
+   One file for the look of the whole site. Change the tokens below and
+   every page that links this file changes with it.
+
+   IN A GAME  (games/<category>/<course>/<game>/index.html)
+     1. In <head>, before the game's own <style>:
+          <link rel="stylesheet" href="../../../../assets/theme.css">
+     2. Give the body the class "game":   <body class="game">
+     3. Delete the game's own :root { … } block and any rules it repeats
+        from here (header, .hud, .overlay/.win, buttons …). Everything the
+        game draws itself stays in the game. The token names are the same
+        ones the games already use (--bg, --surface, --green-ink, …), so
+        game-specific rules keep working and simply pick up the new colours.
+
+   ON THE MAIN PAGE
+     <link rel="stylesheet" href="assets/theme.css">   (no body class)
+
+   WHAT'S IN HERE
+     tokens · page background · game header (.back .title .hud)
+     status row with lives (.statusrow .lives) · equation colours
+     (.xterm .cterm .pterm .op .eq) · buttons (.btn .op-btn) · .hint
+     .subctrl · result dialog (.overlay > .win) with score table
+     SVG helpers (.neon, .neon-magenta)
+   ══════════════════════════════════════════════════════════════════════ */
+
+@import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap");
+
+/* ── tokens ───────────────────────────────────────────────────────────── */
+:root{
+  color-scheme: dark;
+
+  /* surfaces and text */
+  --bg:#08070f;          /* page */
+  --surface:#120f24;     /* dialogs, cards */
+  --surface-2:#1a1636;   /* raised / hover */
+  --ink:#e8f7ff;         /* main text */
+  --muted:#8a93c6;       /* secondary text */
+  --line:#2a2552;        /* hairlines, quiet borders */
+
+  /* neon roles: cyan = things you interact with, magenta = highlights */
+  --accent:#00e5ff;  --accent-ink:#5ef1ff;
+  --magenta:#ff3df2; --magenta-ink:#ff7cf7;
+  --red:#ff3d6e;     /* danger, errors, lost lives */
+
+  /* maths colours — used the same way in every game */
+  --green:#39ff9e; --green-ink:#7dffbf; --green-wash:#06291a;   /* x, variables */
+  --brown:#ffe14d; --brown-ink:#ffe86e; --brown-wash:#2a2408;   /* constants   */
+  --gold:#ffe14d;
+  /* negative constants / balloons use --magenta / --magenta-ink */
+
+  /* glow: use on whole groups, not on hundreds of small shapes */
+  --glow-cyan:drop-shadow(0 0 5px rgba(0,229,255,.65));
+  --glow-magenta:drop-shadow(0 0 5px rgba(255,61,242,.7));
+  --glow-text:0 0 10px rgba(0,229,255,.55);
+
+  /* confetti etc. — read from JS with
+     getComputedStyle(document.documentElement).getPropertyValue("--party-colors") */
+  --party-colors:#00e5ff,#ff3df2,#ffe14d,#39ff9e,#a78bff,#ffffff,#ff7cf7;
+
+  /* shape and type */
+  --radius:4px;
+  --ui:"Chakra Petch", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --math:"Chakra Petch", system-ui, sans-serif;
+  --display:"Orbitron", "Chakra Petch", system-ui, sans-serif;
+}
+
+/* ── base ─────────────────────────────────────────────────────────────── */
+*{ box-sizing:border-box; }
+html,body{ margin:0; }
+[hidden]{ display:none !important; }
+body{
+  color:var(--ink); font-family:var(--ui);
+  -webkit-font-smoothing:antialiased;
+  /* faint magenta grid over a deep violet glow */
+  background:
+    linear-gradient(rgba(255,61,242,.06) 1px, transparent 1px) 0 0/28px 28px,
+    linear-gradient(90deg, rgba(255,61,242,.06) 1px, transparent 1px) 0 0/28px 28px,
+    radial-gradient(90% 60% at 50% 30%, #1a1240 0%, var(--bg) 70%) fixed,
+    var(--bg);
+}
+a{ color:inherit; }
+::selection{ background:rgba(0,229,255,.35); }
+
+/* ── game page frame ──────────────────────────────────────────────────── */
+body.game{ min-height:100dvh; display:flex; flex-direction:column; }
+.game header{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px clamp(16px,4vw,28px); border-bottom:1px solid var(--line);
+  background:rgba(8,7,15,.9);
+}
+.game .back{ font-family:var(--ui); font-weight:500; font-size:14px; color:var(--muted); text-decoration:none; }
+.game .back:hover{ color:var(--accent-ink); }
+.game .title{
+  font-family:var(--display); font-weight:800; font-size:17px; letter-spacing:.06em; text-transform:uppercase;
+  line-height:1.15; text-align:center;            /* long names wrap neatly on phones */
+  color:var(--accent-ink); text-shadow:var(--glow-text);
+}
+.game .hud{ display:flex; gap:18px; font-family:var(--ui); font-size:14px; color:var(--muted); }
+.game .hud b{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+
+/* status row under the header: lives on the left, a counter on the right */
+.statusrow{
+  width:min(820px,100%); display:flex; justify-content:space-between; align-items:center;
+  padding:10px clamp(16px,4vw,28px) 0; font-family:var(--ui); font-size:14px; color:var(--muted);
+}
+.statusrow b{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+
+/* lives: <span class="lives"> with one <svg> per life; add .lost to a spent
+   one and .just-lost for the shake. Draw cups with .life-cup / .life-rim. */
+.lives{ display:flex; gap:6px; align-items:center; }
+.lives svg{ width:34px; height:19px; overflow:visible; }
+.life-cup{ fill:none; stroke:var(--accent); stroke-width:1.8; stroke-linejoin:round; }
+.life-rim{ stroke:var(--accent); stroke-width:2.4; stroke-linecap:round; }
+.lives svg:not(.lost){ filter:var(--glow-cyan); }
+.lives .lost .life-cup{ stroke:var(--red); }
+.lives .lost{ opacity:.45; }
+.lives .just-lost{ animation:mp-shake .6s ease; }
+@keyframes mp-shake{ 0%,100%{ transform:none } 20%{ transform:translateX(-4px) } 40%{ transform:translateX(4px) } 60%{ transform:translateX(-3px) } 80%{ transform:translateX(2px) } }
+
+/* ── equation colours ─────────────────────────────────────────────────── */
+.xterm{ color:var(--green-ink); }                 /* x terms */
+.cterm{ color:var(--brown-ink); }                 /* positive constants */
+.pterm{ color:var(--magenta-ink); }               /* negative constants (balloons) */
+.op{ color:var(--muted); margin:0 .14em; }
+.eq{ color:var(--ink); margin:0 .3em; }
+.eq.off{ color:var(--red); text-shadow:0 0 10px rgba(255,61,110,.6); }   /* < or > when unbalanced */
+
+/* ── text under the board ─────────────────────────────────────────────── */
+.hint{ text-align:center; color:var(--muted); font-size:13px; padding:4px 16px 8px; min-height:2.6em; max-width:520px; }
+.hint.warn{ color:var(--red); font-weight:600; }
+
+.subctrl{ display:flex; gap:18px; justify-content:center; padding:6px 0 22px; font-family:var(--ui); font-size:13px; }
+.subctrl button{
+  background:none; border:none; color:var(--muted); cursor:pointer; font:inherit;
+  padding:4px 6px; border-radius:var(--radius); letter-spacing:.04em;
+}
+.subctrl button:hover{ color:var(--accent-ink); }
+.subctrl button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+/* ── buttons ──────────────────────────────────────────────────────────── */
+/* general:  <button class="btn">  /  <a class="btn primary">            */
+.btn, .win .btns a, .win .btns button{
+  font-family:var(--ui); font-weight:600; font-size:14px; cursor:pointer;
+  letter-spacing:.08em; text-transform:uppercase; text-decoration:none;
+  padding:11px 18px; border-radius:var(--radius); border:1px solid var(--line);
+  color:var(--ink); background:transparent;
+  transition:border-color .12s ease, box-shadow .12s ease;
+}
+.btn:hover, .win .btns a:hover, .win .btns button:hover{ border-color:var(--accent); }
+.btn.primary, .win .btns .primary{
+  background:var(--accent); border-color:var(--accent); color:var(--bg); font-weight:700;
+  box-shadow:0 0 14px rgba(0,229,255,.5);
+}
+.btn:focus-visible, .win .btns :focus-visible{ outline:2px solid var(--magenta); outline-offset:3px; }
+
+/* game controls (big operation buttons, e.g. +x  −1):
+   <button class="op-btn x">  x = variable, c = constant, n = neutral */
+.op-btn{
+  font-family:var(--math); font-weight:600; font-size:clamp(17px,4.4vw,21px);
+  min-width:64px; padding:12px 18px; border-radius:var(--radius); cursor:pointer;
+  background:var(--surface); border:1px solid var(--line); color:var(--ink);
+  transition:transform .1s ease, box-shadow .12s ease, border-color .12s ease;
+}
+.op-btn:hover{ transform:translateY(-1px); border-color:var(--accent); box-shadow:0 0 12px rgba(0,229,255,.35); }
+.op-btn:active{ transform:none; }
+.op-btn:focus-visible{ outline:2px solid var(--magenta); outline-offset:2px; }
+.op-btn.x{ color:var(--green-ink); border-color:rgba(57,255,158,.45); background:var(--green-wash); }
+.op-btn.x:hover{ box-shadow:0 0 12px rgba(57,255,158,.45); }
+.op-btn.c{ color:var(--brown-ink); border-color:rgba(255,225,77,.45); background:var(--brown-wash); }
+.op-btn.c:hover{ box-shadow:0 0 12px rgba(255,225,77,.4); }
+.op-btn.n{ color:var(--accent-ink); }
+.op-btn[disabled]{ opacity:.4; cursor:default; transform:none; box-shadow:none; }
+
+/* ── result dialog ────────────────────────────────────────────────────── */
+/* <div class="overlay show"><div class="win">
+     <h2>…</h2> <div class="result">…</div> <p>…</p>
+     <div class="score">label value label value …</div>
+     <div class="btns"><button class="primary">…</button> <a href>…</a></div>
+   </div></div> */
+.overlay{
+  position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+  background:rgba(4,3,10,.62); padding:20px; z-index:10;
+}
+.overlay.show{ display:flex; }
+.win{
+  background:var(--surface); border:1px solid var(--accent); border-radius:var(--radius);
+  padding:30px 30px 24px; width:min(420px,92vw); text-align:center;
+  box-shadow:0 0 36px rgba(0,229,255,.22);
+}
+.win h2{
+  font-family:var(--display); font-weight:800; font-size:24px; letter-spacing:.06em; text-transform:uppercase;
+  color:var(--accent-ink); text-shadow:0 0 12px rgba(0,229,255,.5); margin:0 0 6px;
+}
+.win .result{ font-family:var(--math); font-weight:600; font-size:30px; margin:10px 0 4px; }
+.win p{ color:var(--muted); margin:10px 0 20px; }
+.win .score{
+  display:grid; grid-template-columns:1fr auto; gap:5px 18px; text-align:left;
+  max-width:300px; margin:-6px auto 20px; font-family:var(--ui); font-size:14px; color:var(--muted);
+}
+.win .score:empty{ display:none; }
+.win .score .v{ text-align:right; color:var(--ink); font-variant-numeric:tabular-nums; }
+.win .score .tot{ border-top:1px solid var(--line); padding-top:6px; color:var(--ink); font-weight:600; }
+.win .bigscore{
+  font-family:var(--display); font-weight:700; font-size:30px; color:var(--brown-ink);
+  text-shadow:0 0 12px rgba(255,225,77,.45); margin:8px 0 0;
+}
+.win .btns{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* ── SVG helpers for drawings ─────────────────────────────────────────── */
+.neon{ stroke:var(--accent); fill:none; filter:var(--glow-cyan); }
+.neon-magenta{ stroke:var(--magenta); fill:none; filter:var(--glow-magenta); }
+
+@media (prefers-reduced-motion: reduce){
+  .lives .just-lost{ animation:none; }
+  .op-btn:hover{ transform:none; }
+}

@@ -32,71 +32,12 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
+<!-- shared site look: colours, fonts, header, lives, buttons, dialogs -->
+<link rel="stylesheet" href="../../../../assets/theme.css">
 
 <style>
-  /* ── TECHNO theme: near-black, neon outlines, a faint grid ─────────────
-     Glow is kept to the scale, the cups and the shelf (one filter per cup,
-     not per item) so it stays easy on the eyes and on older phones. */
-  :root{
-    --bg:#08070f; --surface:#120f24; --surface-2:#1a1636; --ink:#e8f7ff; --muted:#8a93c6; --line:#2a2552;
-    --accent:#00e5ff; --accent-ink:#5ef1ff;          /* cyan: interface */
-    --magenta:#ff3df2; --magenta-ink:#ff7cf7;         /* magenta: balloons, highlights */
-    --green:#39ff9e; --green-ink:#7dffbf; --green-wash:#06291a;   /* x */
-    --brown:#ffe14d; --brown-ink:#ffe86e; --brown-wash:#2a2408;   /* constants */
-    --gold:#ffe14d;
-    --red:#ff3d6e;
-    --glow-cyan:drop-shadow(0 0 5px rgba(0,229,255,.65));
-    --glow-magenta:drop-shadow(0 0 5px rgba(255,61,242,.7));
-    --radius:4px;
-    --ui:"Chakra Petch", system-ui, sans-serif;
-    --math:"Chakra Petch", system-ui, sans-serif;
-    --display:"Orbitron", "Chakra Petch", system-ui, sans-serif;
-  }
-  *{ box-sizing:border-box; }
-  html,body{ margin:0; height:100%; }
-  body{
-    color:var(--ink); font-family:var(--ui);
-    min-height:100dvh; display:flex; flex-direction:column;
-    -webkit-font-smoothing:antialiased;
-    background:
-      linear-gradient(rgba(255,61,242,.06) 1px, transparent 1px) 0 0/28px 28px,
-      linear-gradient(90deg, rgba(255,61,242,.06) 1px, transparent 1px) 0 0/28px 28px,
-      radial-gradient(90% 60% at 50% 30%, #1a1240 0%, var(--bg) 70%) fixed,
-      var(--bg);
-  }
-
-  header{
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    padding:14px clamp(16px,4vw,28px); border-bottom:1px solid var(--line);
-    background:rgba(8,7,15,.9);
-  }
-  .back{ font-family:var(--ui); font-weight:500; font-size:14px; color:var(--muted); text-decoration:none; }
-  .back:hover{ color:var(--accent-ink); }
-  .title{
-    font-family:var(--display); font-weight:800; font-size:17px; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--accent-ink); text-shadow:0 0 10px rgba(0,229,255,.55);
-  }
-  .hud{ display:flex; gap:18px; font-family:var(--ui); font-size:14px; color:var(--muted); }
-  .hud b{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
-
+  /* Only what is specific to this game. Everything else comes from assets/theme.css. */
   main{ flex:1; display:flex; flex-direction:column; align-items:center; }
-
-  /* lives (small cups) and the move counter, above the scale */
-  .statusrow{
-    width:min(820px,100%); display:flex; justify-content:space-between; align-items:center;
-    padding:10px clamp(16px,4vw,28px) 0; font-family:var(--ui); font-size:14px; color:var(--muted);
-  }
-  .statusrow b{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
-  .lives{ display:flex; gap:6px; align-items:center; }
-  .lives svg{ width:34px; height:19px; overflow:visible; }
-  .life-cup{ fill:none; stroke:var(--accent); stroke-width:1.8; stroke-linejoin:round; }
-  .life-rim{ stroke:var(--accent); stroke-width:2.4; stroke-linecap:round; }
-  .lives svg:not(.lost){ filter:var(--glow-cyan); }
-  .lives .lost .life-cup{ stroke:var(--red); fill:none; }
-  .lives .lost{ opacity:.45; }
-  .lives .just-lost{ animation:lose .6s ease; }
-  @keyframes lose{ 0%,100%{ transform:none } 20%{ transform:translateX(-4px) } 40%{ transform:translateX(4px) } 60%{ transform:translateX(-3px) } 80%{ transform:translateX(2px) } }
 
   /* ── stage ── */
   .stage-wrap{ width:min(820px,100%); padding:8px 8px 0; }
@@ -117,7 +58,6 @@
   .target .bowl-rim{ stroke:var(--magenta); }
   .target > .cup-scale{ filter:var(--glow-magenta) !important; }
   .shelf{ stroke:var(--magenta); stroke-width:6; stroke-linecap:round; filter:var(--glow-magenta); }
-  [hidden]{ display:none !important; }
   .shelf-label{ font-family:var(--ui); font-size:26px; fill:var(--muted); text-anchor:middle; }
   .supply{ cursor:grab; }
   .dragging{ cursor:grabbing; }
@@ -125,6 +65,7 @@
   .return-ring.on{ opacity:1; stroke-width:4; fill:rgba(255,61,242,.12); }
   .held{ filter:drop-shadow(0 0 10px rgba(0,229,255,.8)); pointer-events:none; }
 
+  /* ── items ── */
   .item{ cursor:grab; }
   .box-body{ fill:var(--green-wash); stroke:var(--green); stroke-width:3.5; }
   .box-lid{ stroke:var(--green); stroke-width:3; opacity:.6; }
@@ -135,12 +76,11 @@
   .balloon-knot{ fill:#ffb8fb; }
   .balloon-shine{ fill:#fff; opacity:.5; }
   .bstring{ fill:none; stroke:#ffb8fb; stroke-width:1.3; opacity:.7; }
-  .pterm{ color:var(--magenta-ink); }
   .item:hover .box-body{ fill:#0b3d26; }
   .item:hover .gem-body{ fill:#fff07a; }
   .open-lid{ fill:var(--green-wash); stroke:var(--green); stroke-width:3.5; }
 
-  /* ── equation readout ── */
+  /* ── equation under the scale ── */
   .readout{
     font-family:var(--math); font-weight:600; font-size:clamp(26px,6.5vw,40px);
     display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline;
@@ -148,11 +88,6 @@
   }
   .readout .lhs{ text-align:right; }
   .readout .rhs{ text-align:left; }
-  .xterm{ color:var(--green-ink); }
-  .cterm{ color:var(--brown-ink); }
-  .op{ color:var(--muted); margin:0 .14em; }
-  .eq{ color:var(--ink); margin:0 .3em; }
-  .eq.off{ color:var(--red); text-shadow:0 0 10px rgba(255,61,110,.6); }
 
   .legend{
     display:flex; gap:22px; justify-content:center; align-items:center;
@@ -161,65 +96,12 @@
   .legend span{ display:inline-flex; align-items:center; gap:6px; }
   .legend svg{ width:20px; height:20px; overflow:visible; }
 
-  .hint{ text-align:center; color:var(--muted); font-size:13px; padding:4px 16px 8px; min-height:2.6em; max-width:520px; }
-  .hint.warn{ color:var(--red); font-weight:600; }
-
-  .subctrl{
-    display:flex; gap:18px; justify-content:center; padding:6px 0 22px;
-    font-family:var(--ui); font-size:13px;
-  }
-  .subctrl button{
-    background:none; border:none; color:var(--muted); cursor:pointer; font:inherit;
-    padding:4px 6px; border-radius:var(--radius); letter-spacing:.04em;
-  }
-  .subctrl button:hover{ color:var(--accent-ink); }
-  .subctrl button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-
-  /* ── overlay ── */
-  .overlay{
-    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-    background:rgba(4,3,10,.62); padding:20px; z-index:10;
-  }
-  .overlay.show{ display:flex; }
-  .win{
-    background:var(--surface); border:1px solid var(--accent); border-radius:var(--radius);
-    padding:30px 30px 24px; width:min(420px,92vw); text-align:center;
-    box-shadow:0 0 36px rgba(0,229,255,.22);
-  }
-  .win h2{
-    font-family:var(--display); font-weight:800; font-size:24px; letter-spacing:.06em; text-transform:uppercase;
-    color:var(--accent-ink); text-shadow:0 0 12px rgba(0,229,255,.5); margin:0 0 6px;
-  }
-  .win .result{ font-family:var(--math); font-weight:600; font-size:30px; margin:10px 0 4px; }
+  /* ── what the box held, in the win dialog ── */
   .win .gems{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin:8px auto 0; max-width:260px; }
   .win .gems svg{ width:22px; height:24px; overflow:visible; }
-  .win p{ color:var(--muted); margin:10px 0 20px; }
-  .win .score{
-    display:grid; grid-template-columns:1fr auto; gap:5px 18px; text-align:left;
-    max-width:300px; margin:-6px auto 20px; font-family:var(--ui); font-size:14px; color:var(--muted);
-  }
-  .win .score:empty{ display:none; }
-  .win .score .v{ text-align:right; color:var(--ink); font-variant-numeric:tabular-nums; }
-  .win .score .tot{ border-top:1px solid var(--line); padding-top:6px; color:var(--ink); font-weight:600; }
-  .win .bigscore{
-    font-family:var(--display); font-weight:700; font-size:30px; color:var(--brown-ink);
-    text-shadow:0 0 12px rgba(255,225,77,.45); margin:8px 0 0;
-  }
-  .win .btns{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
-  .win .btns a, .win .btns button{
-    font-family:var(--ui); font-weight:600; font-size:14px; cursor:pointer; letter-spacing:.08em; text-transform:uppercase;
-    padding:11px 18px; border-radius:var(--radius); border:1px solid var(--line);
-    text-decoration:none; color:var(--ink); background:transparent;
-  }
-  .win .btns a:hover, .win .btns button:hover{ border-color:var(--accent); }
-  .win .btns .primary{
-    background:var(--accent); border-color:var(--accent); color:#08070f; font-weight:700;
-    box-shadow:0 0 14px rgba(0,229,255,.5);
-  }
-  .win .btns :focus-visible{ outline:2px solid var(--magenta); outline-offset:3px; }
 </style>
 </head>
-<body>
+<body class="game">
 
   <header>
     <a class="back" href="../../../../#/lukio/maa1-2">← Takaisin</a>
@@ -873,7 +755,10 @@ function startFireworks(){ if(celebrated || !motion) return; celebrated=true; ce
    Drawn on a temporary full-screen canvas just below the win card (it lets
    clicks through); it keeps falling behind the card for a moment and then
    removes itself. */
-const PARTY_COLORS=["#00e5ff","#ff3df2","#ffe14d","#39ff9e","#a78bff","#ffffff","#ff7cf7"];
+// confetti colours come from the shared theme (assets/theme.css → --party-colors)
+const PARTY_COLORS=(getComputedStyle(document.documentElement).getPropertyValue("--party-colors")||"")
+  .split(",").map(c=>c.trim()).filter(Boolean);
+if(!PARTY_COLORS.length) PARTY_COLORS.push("#00e5ff","#ff3df2","#ffe14d","#39ff9e","#a78bff","#ffffff");
 function celebrate(){
   const cv=document.createElement("canvas");
   cv.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9";
