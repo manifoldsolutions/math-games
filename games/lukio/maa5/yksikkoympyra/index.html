@@ -9,18 +9,26 @@
      GAME: Yksikköympyrä (unit circle equations)
      Self-contained. Suggested home: games/lukio/<course>/yksikkoympyra/index.html
      An equation about the angle α is shown above the unit circle. The player
-     marks EVERY point on the circle where the equation holds, then checks.
+     marks EVERY point on the circle where the equation holds; the task is
+     solved the moment all solutions are marked and no wrong point is left.
      Aim: hover with the mouse, or drag with a finger (a ray follows).
      Place: click, or lift the finger. Placing on an existing point removes it.
      From level 3 there are also "Ei ratkaisuja" and "Jokainen piste" answers.
      A placed point counts if it is within TOL degrees of a solution.
-     6 tasks per level, 5 correct to pass. Levels 1–6 have their own themes,
-     level 7+ mixes levels 3–6.
-     Help: "Vihje" gives a method hint, then hints about the placed points
-     (3rd press also draws the helper line). From level 3 two buttons show
+     Levels 0–7, 6 tasks each. Level 0 shows the angle while aiming; levels
+     1–6 have their own themes, level 7 mixes levels 3–6.
+     Help: "Vihje", one step per press: memory triangle (where it helps),
+     method hint, hint about the placed points, then the helper line. After
+     the last step "Näytä ratkaisu" appears. From level 3 two buttons show
      the memory triangles (30°–60° and 45°) with their sin/cos/tan values.
+     Scoring (like Yhtälövaaka), 3 lives. Each solved task gives
+       (50 + 100·solutions/clicks + 50·(5 s + 2 s·clicks)/time − 30·hints) × level
+     (level 0 counts as ×1; time points have no cap). A wrong "Ei ratkaisuja"
+     / "Jokainen piste" costs a life and 100 × level points; "Näytä ratkaisu"
+     costs a life and gives no points. The third lost life is Game Over.
+     Finishing level 7 gives 1000 + 500 per life left.
      Keys: ← / → turn the ray 15° (Shift: 1°), Space = place/remove,
-           Enter = check / next, r = clear points
+           Enter = next, r = clear points
      ════════════════════════════════════════════════════════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,6 +91,13 @@
   .ray{ stroke:var(--accent); stroke-width:4; stroke-linecap:round; filter:var(--glow-cyan); }
   .ghost{ fill:var(--surface); stroke:var(--accent); stroke-width:3.5; }
   .origin{ fill:var(--ink); }
+  /* level 0: the angle is shown while aiming, and next to placed points */
+  .angarc{ fill:none; stroke:var(--magenta); stroke-width:3; }
+  .anglabel{
+    font-family:var(--math); font-weight:600; font-size:32px; fill:var(--magenta-ink);
+    stroke:var(--bg); stroke-width:7; paint-order:stroke; stroke-linejoin:round;
+  }
+  .anglabel.small{ font-size:22px; fill:var(--accent-ink); }
 
   .pt{ fill:var(--accent); stroke:var(--surface); stroke-width:4; }
   .pt.ok{ fill:var(--green); }
@@ -112,6 +127,7 @@
   .hint{ padding:6px 16px; }
   .hint.tip{ color:var(--accent-ink); font-size:14px; line-height:1.55; }
   .hint .frac{ font-size:.8em; }
+  .hint .trilink{ color:var(--accent-ink); text-decoration:underline; text-underline-offset:3px; }
 
   .tools{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; padding:8px 0 0; }
   .chip{
@@ -150,6 +166,18 @@
   .fb .sols{ font-family:var(--math); font-size:18px; line-height:1.9; }
   .fb .row{ display:flex; justify-content:flex-end; margin-top:8px; }
   .fb .frac{ font-size:.72em; }
+  .fb .score{
+    display:grid; grid-template-columns:1fr auto; gap:4px 18px; max-width:320px;
+    margin:10px 0 0; font-size:14px; color:var(--muted);
+  }
+  .fb .score:empty{ display:none; }
+  .fb .score .v{ text-align:right; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .fb .score .tot{ border-top:1px solid var(--line); padding-top:5px; color:var(--ink); font-weight:600; }
+  .fb .score .tot.v{ color:var(--brown-ink); }
+
+  .statusrow{ width:min(560px,100%); }
+  .btn.shake{ animation:mp-shake .5s ease; border-color:var(--red); }
+  @media (prefers-reduced-motion: reduce){ .btn.shake{ animation:none; } }
 
   .subctrl{ padding-top:4px; }
 </style>
@@ -159,10 +187,14 @@
   <header>
     <a class="back" href="../../../../#/lukio/maa5">← Takaisin</a>
     <span class="title">Yksikköympyrä</span>
-    <span class="hud"><span>Taso: <b id="level">1</b></span><span>Tehtävä: <b id="task">1/6</b></span><span>Oikein: <b id="score">0</b></span></span>
+    <span class="hud"><span>Taso: <b id="level">0/7</b></span><span>Tehtävä: <b id="task">1/6</b></span><span>Pisteet: <b id="score">0</b></span></span>
   </header>
 
   <main>
+    <div class="statusrow">
+      <span class="lives" id="lives" aria-label="Elämät"></span>
+      <span>Klikkaukset: <b id="clicks">0</b></span>
+    </div>
     <div class="readout" id="readout" aria-live="polite"></div>
 
     <div class="stage-wrap">
@@ -193,12 +225,13 @@
     <div class="actions" id="actions">
       <button class="btn" id="none">Ei ratkaisuja</button>
       <button class="btn" id="all">Jokainen piste</button>
-      <button class="btn primary" id="check">Tarkista</button>
+      <button class="btn" id="giveup" hidden>Näytä ratkaisu</button>
     </div>
 
     <div class="fb" id="fb" hidden aria-live="polite">
       <h3 id="fbTitle"></h3>
       <div id="fbText"></div>
+      <div class="score" id="fbScore"></div>
       <div class="row"><button class="btn primary" id="next">Seuraava</button></div>
     </div>
 
@@ -212,6 +245,7 @@
       <h2 id="ovTitle"></h2>
       <div class="result" id="ovResult"></div>
       <p id="ovMsg"></p>
+      <div class="score" id="ovScore"></div>
       <div class="btns" id="ovBtns"></div>
     </div>
   </div>
@@ -230,8 +264,17 @@ const $ = id => document.getElementById(id);
 const R = 300;                 // circle radius in SVG units
 const TOL = 5;                 // a point counts if it is this close (degrees) to a solution
 const TOGGLE = 7;              // clicking this close to a placed point removes it
-const TASKS = 6, PASS = 5;
+const TASKS = 6, MAX_LEVEL = 7;
 const D2R = Math.PI/180;
+
+/* scoring: one run = levels 0…MAX_LEVEL with 3 lives (same idea as Yhtälövaaka) */
+const LIVES = 3;
+const PTS_SOLVE = 50, PTS_CLICKS = 100, PTS_TIME = 50, HINT_COST = 30;
+const TIME_BASE = 5, TIME_PER_CLICK = 2;         // reference time = 5 s + 2 s per click made
+const MISTAKE_PENALTY = 100;                     // × level, for a wrong "Ei ratkaisuja" / "Jokainen piste"
+const BONUS_FINISH = 1000, BONUS_LIFE = 500;
+const mult = () => Math.max(1, level);           // level 0 scores like level 1
+const fmt = n => Math.round(n).toLocaleString("fi-FI");
 const COURSE_URL = "../../../../#/lukio/maa5";
 
 /* ── math typesetting ───────────────────────────────────────────────── */
@@ -247,35 +290,47 @@ const PM = "&thinsp;±&thinsp;";
 const pi = (n,d) => d ? fr(n+"π", d) : n+"π";
 
 /* a task: equation, solutions (degrees), what to draw when checking, how to print answers */
-const P = (html, sols, guide, o={}) => ({html, sols, guide, unit:o.unit||"both", note:o.note||"", all:!!o.all, hint:o.hint||"", inv:o.inv||""});
+const P = (html, sols, guide, o={}) => ({html, sols, guide, unit:o.unit||"both", note:o.note||"", all:!!o.all, hint:o.hint||"", inv:o.inv||"", split:o.split||""});
 const NONE = [];
 
+/* levels 0–2: "split" breaks a hard angle into easy parts for the first hint;
+   radians are split in radians, never converted to degrees */
+const HALF = " ja π on tasan puoli kierrosta", FULL = " ja 2π on täysi kierros";
+// degrees: whole quarter turns plus 30°, 45° or 60° (150° = 90° + 60°); easy angles get none
+function degSplit(d){
+  const q = Math.floor(d/90)*90, r = d - q;
+  if(d === 270) return "270° = 180° + 90°";
+  return q > 0 && [30,45,60].includes(r) ? `${d}° = ${q}° + ${r}°` : "";
+}
 const BANK = {
+0: [ // angles in degrees, the angle is shown while aiming
+  ...[30,90,45,120,180,270,210,135,300,60,330,225,150,240,315].map(d => P(eq(A,`${d}°`), [d], {t:"rays"}, {unit:"deg", split:degSplit(d)})),
+],
 1: [ // angles in degrees
   P(eq(A,"60°"), [60], {t:"rays"}, {unit:"deg"}),
-  P(eq(A,"135°"), [135], {t:"rays"}, {unit:"deg"}),
+  P(eq(A,"135°"), [135], {t:"rays"}, {unit:"deg", split:"135° = 90° + 45°"}),
   P(eq(A,"−45°"), [315], {t:"rays"}, {unit:"deg", note:"Negatiivinen kulma kierretään myötäpäivään, joten −45° on sama piste kuin 315°."}),
   P(eq(A,"±30°"), [30,330], {t:"rays"}, {unit:"deg", note:"± tarkoittaa kahta kulmaa: 30° ja −30°. Kulma −30° on sama piste kuin 330°."}),
   P(eq(A,"90°"+PM+"45°"), [45,135], {t:"rays"}, {unit:"deg"}),
   P(eq(A,"180°"+PM+"60°"), [120,240], {t:"rays"}, {unit:"deg"}),
-  P(eq(A,"390°"), [30], {t:"rays"}, {unit:"deg", note:"390° = 360° + 30°: täysi kierros ja vielä 30°."}),
-  P(eq(A,"−270°"), [90], {t:"rays"}, {unit:"deg", note:"Kolme neljännestä myötäpäivään päätyy samaan pisteeseen kuin yksi neljännes vastapäivään."}),
-  P(eq(A,"±150°"), [150,210], {t:"rays"}, {unit:"deg"}),
-  P(eq(A,"270°"+PM+"30°"), [240,300], {t:"rays"}, {unit:"deg"}),
+  P(eq(A,"390°"), [30], {t:"rays"}, {unit:"deg", split:"390° = 360° + 30°", note:"390° = 360° + 30°: täysi kierros ja vielä 30°."}),
+  P(eq(A,"−270°"), [90], {t:"rays"}, {unit:"deg", split:"270° = 180° + 90°, ja miinus tarkoittaa myötäpäivään", note:"Kolme neljännestä myötäpäivään päätyy samaan pisteeseen kuin yksi neljännes vastapäivään."}),
+  P(eq(A,"±150°"), [150,210], {t:"rays"}, {unit:"deg", split:"150° = 90° + 60°"}),
+  P(eq(A,"270°"+PM+"30°"), [240,300], {t:"rays"}, {unit:"deg", split:"270° = 180° + 90°"}),
 ],
 2: [ // angles in radians
   P(eq(A,pi("",3)), [60], {t:"rays"}, {unit:"rad", note:`${pi("",3)} on kuudesosa täydestä kierroksesta 2π.`}),
   P(eq(A,"−"+pi("",4)), [315], {t:"rays"}, {unit:"rad", note:`Kulma −${pi("",4)} kierretään myötäpäivään, joten se on sama piste kuin ${pi(7,4)}.`}),
-  P(eq(A,pi(3,2)), [270], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,pi(3,2)), [270], {t:"rays"}, {unit:"rad", split:`${pi(3,2)} = π + ${pi("",2)}${HALF}`}),
   P(eq(A,"2π"+PM+pi("",2)), [90,270], {t:"rays"}, {unit:"rad", note:`2π on täysi kierros, joten tämä on sama kuin ±${pi("",2)}.`}),
   P(eq(A,"π"+PM+pi("",6)), [150,210], {t:"rays"}, {unit:"rad"}),
-  P(eq(A,"±"+pi(5,6)), [150,210], {t:"rays"}, {unit:"rad"}),
-  P(eq(A,pi(7,6)), [210], {t:"rays"}, {unit:"rad"}),
-  P(eq(A,"−"+pi(2,3)), [240], {t:"rays"}, {unit:"rad"}),
-  P(eq(A,pi(5,4)), [225], {t:"rays"}, {unit:"rad"}),
+  P(eq(A,"±"+pi(5,6)), [150,210], {t:"rays"}, {unit:"rad", split:`${pi(5,6)} = π − ${pi("",6)}${HALF}`}),
+  P(eq(A,pi(7,6)), [210], {t:"rays"}, {unit:"rad", split:`${pi(7,6)} = π + ${pi("",6)}${HALF}`}),
+  P(eq(A,"−"+pi(2,3)), [240], {t:"rays"}, {unit:"rad", split:`${pi(2,3)} = π − ${pi("",3)}${HALF}`}),
+  P(eq(A,pi(5,4)), [225], {t:"rays"}, {unit:"rad", split:`${pi(5,4)} = π + ${pi("",4)}${HALF}`}),
   P(eq(A,pi("",2)+PM+pi("",3)), [30,150], {t:"rays"}, {unit:"rad"}),
-  P(eq(A,pi(11,6)), [330], {t:"rays"}, {unit:"rad"}),
-  P(eq(A,"3π"), [180], {t:"rays"}, {unit:"rad", note:"3π = 2π + π: täysi kierros ja vielä puolikas."}),
+  P(eq(A,pi(11,6)), [330], {t:"rays"}, {unit:"rad", split:`${pi(11,6)} = 2π − ${pi("",6)}${FULL}`}),
+  P(eq(A,"3π"), [180], {t:"rays"}, {unit:"rad", split:`3π = 2π + π${FULL}`, note:"3π = 2π + π: täysi kierros ja vielä puolikas."}),
 ],
 3: [ // sine and cosine values
   P(eq(SIN+A,fr(1,2)), [30,150], {t:"h", v:.5, vh:fr(1,2)}),
@@ -338,7 +393,8 @@ const BANK = {
 ],
 };
 const LEVEL_INTRO = {
-  1:"Kulma α mitataan positiiviselta x-akselilta vastapäivään. Merkitse ympyrälle kaikki kohdat, joissa yhtälö on totta, ja paina Tarkista.",
+  0:"Kulma α mitataan positiiviselta x-akselilta vastapäivään. Liikuta sädettä: näet kulman suuruuden. Merkitse ympyrälle kohta, jossa yhtälö on totta.",
+  1:"Nyt kulmaa ei enää näytetä. Merkitse ympyrälle kaikki kohdat, joissa yhtälö on totta.",
   2:"Nyt kulmat ovat radiaaneina. Täysi kierros on 2π ja puoli kierrosta π.",
   3:"cos α on pisteen x-koordinaatti ja sin α sen y-koordinaatti. Jos ratkaisuja ei ole, paina Ei ratkaisuja.",
   4:"tan α on säteen kulmakerroin. Pystysuoralla apuviivalla x = 1 se näkyy korkeutena.",
@@ -377,8 +433,11 @@ function angleText(d, unit){
 }
 
 /* ── state ──────────────────────────────────────────────────────────── */
-let level = 1, tasks = [], idx = 0, score = 0, placed = [], aim = null, answered = false;
+let level = 0, tasks = [], idx = 0, placed = [], aim = null, answered = false;
+let score = 0, levelScore = 0, lives = LIVES;
+let clicks = 0, hintsUsed = 0, taskStart = 0, lastWin = null, lastPenalty = 0, gameOver = false;
 const task = () => tasks[idx];
+const showAngle = () => level === 0;
 const tanOn = () => level >= 4;
 const specialOn = () => level >= 3;
 
@@ -421,20 +480,32 @@ function drawAim(){
       h += `<line class="tanseg" x1="${R}" y1="0" x2="${R}" y2="${f1(-R*t)}"/>`;
     }
   }
+  if(showAngle() && aim > 0.5){
+    const r = 62, q = {x: r*c, y: -r*s};
+    h += `<path class="angarc" d="M${r},0 A${r},${r} 0 ${aim > 180 ? 1 : 0} 0 ${f1(q.x)},${f1(q.y)}"/>`;
+  }
   h += `<line class="ray" x1="0" y1="0" x2="${f1(px*1.2)}" y2="${f1(py*1.2)}"/>`;
   h += `<circle class="ghost" cx="${f1(px)}" cy="${f1(py)}" r="12"/>`;
+  if(showAngle()) h += angleLabel(aim, R + 58, "");
   layer.innerHTML = h;
 }
 
+/* the angle in whole degrees, outside the circle (level 0) */
+function angleLabel(d, r, cls){
+  const c = Math.cos(d*D2R), s = Math.sin(d*D2R);
+  return `<text class="anglabel ${cls}" x="${f1(r*c)}" y="${f1(-r*s)}" text-anchor="middle" dominant-baseline="central">${Math.round(norm(d)) % 360}°</text>`;
+}
 function drawPoints(result){
   let h = "";
-  for(const d of placed){
+  placed.forEach((d, i) => {
     const p = pt(d);
     const cls = !result ? "" : result.bad.includes(d) ? " bad pop" : " ok pop";
-    h += `<circle class="pt${cls}" cx="${f1(p.x)}" cy="${f1(p.y)}" r="14"/>`;
+    const delay = result ? ` style="animation-delay:${i*90}ms"` : "";      // a solved task lights up point by point
+    h += `<circle class="pt${cls}"${delay} cx="${f1(p.x)}" cy="${f1(p.y)}" r="14"/>`;
     if(result && result.bad.includes(d))
       h += `<path class="xmark" d="M${f1(p.x-5)},${f1(p.y-5)} L${f1(p.x+5)},${f1(p.y+5)} M${f1(p.x+5)},${f1(p.y-5)} L${f1(p.x-5)},${f1(p.y+5)}"/>`;
-  }
+    if(showAngle() && !result) h += angleLabel(d, R - 46, "small");
+  });
   if(result) for(const d of result.missed){
     const p = pt(d);
     h += `<circle class="miss" cx="${f1(p.x)}" cy="${f1(p.y)}" r="17"/>`;
@@ -467,33 +538,44 @@ function drawGuide(p){
 }
 
 /* ── task flow ──────────────────────────────────────────────────────── */
+function newRun(){ level = 0; score = 0; lives = LIVES; gameOver = false; startLevel(); }
 function startLevel(){
   const pool = level <= 6 ? BANK[level] : [3,4,5,6].flatMap(k => BANK[k]);
   tasks = shuffle(pool).slice(0, TASKS);
-  idx = 0; score = 0;
+  idx = 0; levelScore = 0;
   $("overlay").classList.remove("show");
   drawStatic();
   showTask();
 }
 function showTask(){
-  placed = []; answered = false;
+  placed = []; answered = false; aim = null;
+  clicks = 0; hintsUsed = 0; hintStep = 0; lastWin = null; taskStart = performance.now();
+  clearTimeout(hintTimer); clearTimeout(almostTimer);
   $("readout").innerHTML = task().html;
   $("guide").innerHTML = "";
   drawPoints(); drawAim();
   $("fb").hidden = true;
-  $("actions").hidden = false; $("subctrl").hidden = false; $("hint").hidden = false;
+  $("actions").hidden = !specialOn(); $("subctrl").hidden = false; $("hint").hidden = false;
   $("none").hidden = $("all").hidden = !specialOn();
+  $("giveup").hidden = true;
   $("tri30").hidden = $("tri45").hidden = !specialOn();
-  $("hintBtn").hidden = false; hintStep = 0;
+  $("hintBtn").hidden = false;
   setHint(LEVEL_INTRO[Math.min(level,7)]);
   updateHud();
 }
-function updateHud(){
-  $("level").textContent = level;
+
+/* life icons: a small unit circle with its radius; a lost one turns red and fades */
+const LIFE_ICON = `<circle class="life-cup" cx="20" cy="11" r="9"/><line class="life-rim" x1="20" y1="11" x2="26.4" y2="4.6"/>`;
+function updateHud(justLost){
+  $("level").textContent = `${level}/${MAX_LEVEL}`;
   $("task").textContent = `${idx+1}/${TASKS}`;
-  $("score").textContent = score;
+  $("score").textContent = fmt(score);
+  $("clicks").textContent = clicks;
+  $("lives").innerHTML = Array.from({length:LIVES}, (_,i) =>
+    `<svg viewBox="0 0 40 22" class="${i < lives ? "" : "lost"}${justLost && i === lives ? " just-lost" : ""}">${LIFE_ICON}</svg>`).join("");
+  $("lives").setAttribute("aria-label", `Elämät: ${lives}/${LIVES}`);
 }
-let hintTimer = null;
+let hintTimer = null, almostTimer = null;
 function setHint(msg, warn=false){
   const el = $("hint"); el.textContent = msg; el.classList.toggle("warn", warn); el.classList.remove("tip");
 }
@@ -501,12 +583,47 @@ function flashHint(msg){
   setHint(msg, true); clearTimeout(hintTimer);
   hintTimer = setTimeout(() => { if(!answered) setHint(LEVEL_INTRO[Math.min(level,7)]); }, 2400);
 }
+function tipHint(html){
+  clearTimeout(hintTimer);
+  const el = $("hint"); el.innerHTML = html; el.classList.remove("warn"); el.classList.add("tip");
+}
 
-/* ── hints: 1st press = method, then the current state, 3rd press also draws the helper line ── */
+/* ── hints ───────────────────────────────────────────────────────────
+   One step per press: memory triangle (only where it helps), method,
+   the placed points, and finally the helper line. If the player already
+   has part of the answer and nothing wrong, the hint goes straight to
+   the placed points. After the last step "Näytä ratkaisu" appears. */
 let hintStep = 0;
+const near = (a,b) => angDist(a,b) < 1e-6;
+
+/* which memory triangle helps: 30 (√3, ½), 45 (√2/2), or 0. Only where
+   the solutions are special angles that the triangle shows directly. */
+function triKind(p){
+  if(!specialOn() || p.all || !p.sols || !p.sols.length) return 0;
+  if(!["h","v","hh","vv","tan","tanray"].includes(p.guide.t)) return 0;
+  const off = p.sols.filter(d => !near(d % 90, 0));            // angles not on an axis
+  if(!off.length) return 0;
+  if(off.every(d => near(d % 30, 0))) return 30;
+  if(off.every(d => near(d % 45, 0))) return 45;
+  return 0;
+}
+function hintSteps(p){
+  const steps = [];
+  if(triKind(p)) steps.push("tri");
+  steps.push("method", "state");
+  if(["h","v","hh","vv","tan","tanray","axes"].includes(p.guide.t)) steps.push("guide");
+  return steps;
+}
+function triHint(p){
+  const k = triKind(p);
+  const name = k === 30 ? "tasasivuista muistikolmiota" : "tasakylkistä muistikolmiota";
+  return `Tutki <a href="#" class="trilink" data-tri="${k}">${name}</a>!`;
+}
 function methodHint(p){
-  if(p.hint) return p.hint;
   const g = p.guide;
+  const pm = g.t === "rays" && p.html.includes("±") ? " Merkki ± tarkoittaa kahta kulmaa." : "";
+  if(p.hint) return p.hint + pm;
+  if(p.split) return `Huomaa, että ${p.split}.` + pm;
   const range = p.inv === "sin" ? `${inv("sin")} antaa vain yhden kulman, väliltä −90° … 90°. `
               : p.inv === "cos" ? `${inv("cos")} antaa vain yhden kulman, väliltä 0° … 180°. ` : "";
   if(g.t === "h") return range + `${SIN}${A} on pisteen y-koordinaatti. Etsi ympyrältä pisteet, joiden y-koordinaatti on ${g.vh}.`;
@@ -519,45 +636,91 @@ function methodHint(p){
       : `Säde nousee ${g.vh} yksikköä, kun x kasvaa yhdellä. Käytä ruudukkoa tai muistikolmiota.`);
   }
   if(g.t === "rays"){
-    const pm = p.html.includes("±") ? " Merkki ± tarkoittaa kahta kulmaa." : "";
-    if(p.unit === "rad") return `Muunna asteiksi: π = 180°, joten esimerkiksi ${pi("",6)} = 30° ja ${pi("",4)} = 45°.` + pm;
+    if(level === 0) return "Liikuta sädettä ja seuraa kulman lukemaa. Kulma kasvaa vastapäivään, ja neljännes kierrosta on 90°.";
+    if(p.unit === "rad") return `π on puoli kierrosta ja 2π täysi kierros. Esimerkiksi ${pi("",2)} on neljännes kierrosta ja ${pi("",6)} kolmasosa siitä.` + pm;
     return "Aloita positiiviselta x-akselilta. Positiivinen kulma kierretään vastapäivään, negatiivinen myötäpäivään. Neljännes kierrosta on 90°." + pm;
   }
   return "Mieti, missä kohdissa ympyrää yhtälö on totta.";
 }
+
+/* where solution b lies seen from solution a */
+function relation(a, b, preferOpposite){
+  const s = norm(a + b), d = norm(b - a);
+  const opp = near(d, 180) ? "opp" : null;
+  if(preferOpposite && opp) return opp;
+  if(near(s, 0)) return "x";
+  if(near(s, 180)) return "y";
+  if(near(s, 90)) return "yx";
+  if(near(s, 270)) return "y-x";
+  return opp;
+}
+const REL_TEXT = {
+  x:"peilikuva x-akselin suhteen", y:"peilikuva y-akselin suhteen",
+  yx:"peilikuva suoran y = x suhteen", "y-x":"peilikuva suoran y = −x suhteen",
+};
+/* the reason sentence, only when it is what makes the two angles alike */
+function reason(p, rel){
+  const g = p.guide, rad = p.unit === "rad", h = rad ? "π" : "180°";
+  if((g.t === "h" || g.t === "hh") && rel === "y") return ` Sini on sama kulmilla ${A} ja ${h} − ${A}.`;
+  if((g.t === "v" || g.t === "vv") && rel === "x") return ` Kosini on sama kulmilla ${A} ja −${A}.`;
+  if(g.t === "tan" && rel === "opp") return ` Tangentti on sama kulmilla ${A} ja ${A} + ${h}.`;
+  return "";
+}
 function symHint(p){
-  const g = p.guide, n = p.sols.length;
-  if(p.inv || g.t === "tanray") return "";
-  if(g.t === "h" || g.t === "hh") return ` Sini on sama kulmilla ${A} ja 180° − ${A}: peilaa piste y-akselin yli.`;
-  if(g.t === "v" || g.t === "vv") return ` Kosini on sama kulmilla ${A} ja −${A}: peilaa piste x-akselin yli.`;
-  if(g.t === "tan") return ` Tangentti on sama kulmilla ${A} ja ${A} + 180°: katso origon toiselle puolelle.`;
-  if(g.t === "rays" && n >= 3){
+  const n = p.sols.length;
+  if(p.inv || p.guide.t === "tanray") return "";
+  if(n === 2){
+    const rel = relation(p.sols[0], p.sols[1], p.guide.t === "tan");
+    if(!rel) return "";
+    const where = rel === "opp" ? `origon toisella puolella, ${p.unit === "rad" ? "π" : "180°"} päässä siitä` : `sen ${REL_TEXT[rel]}`;
+    return reason(p, rel) + ` Kun löydät yhden ratkaisun, toinen on ${where}.`;
+  }
+  if(p.guide.t === "rays" && n >= 3){
     const s = p.sols.map(norm).sort((a,b) => a-b), gap = 360/n;
     if(s.every((d,i) => Math.abs(norm(s[(i+1)%n] - d) - gap) < 1e-6)) return ` Ratkaisut ovat ympyrällä tasaisin välein.`;
     return ` Ratkaisut sijoittuvat ympyrälle symmetrisesti.`;
   }
   return "";
 }
+const isOk = (p, d) => p.sols.some(s => angDist(s,d) <= TOL);
+const badPoints = p => placed.filter(d => !isOk(p, d));
+const missingSols = p => p.sols.filter(s => !placed.some(d => angDist(s,d) <= TOL));
+/* the player has part of the answer and nothing wrong */
+const onTrack = p => !p.all && p.sols.length > 0 && placed.length > 0 && !badPoints(p).length && missingSols(p).length > 0;
+
 function stateHint(p){
   if(p.all) return "Kokeile muutamaa kulmaa, vaikkapa 0°, 90° ja 30°. Onko yhtälö totta niillä kaikilla?";
   if(p.sols.length === 0) return "Voiko yhtälö olla totta millään kulmalla? Mieti, mitä arvoja vasen puoli voi saada.";
-  const bad = placed.filter(d => !p.sols.some(s => angDist(s,d) <= TOL));
-  const missing = p.sols.filter(s => !placed.some(d => angDist(s,d) <= TOL)).length;
-  const n = p.sols.length;
+  const bad = badPoints(p), missing = missingSols(p), n = p.sols.length;
   if(bad.length) return bad.length === 1 ? "Yksi merkitsemistäsi pisteistä ei ole ratkaisu." : `${bad.length} merkitsemääsi pistettä ei ole ratkaisuja.`;
   if(placed.length === 0) return (n === 1 ? "Ratkaisuja on vain yksi." : `Ratkaisuja on ${n}.`) + symHint(p);
-  if(missing) return (missing === 1 ? "Hyvä alku! Yksi ratkaisu puuttuu vielä." : `Hyvä alku! Ratkaisuja puuttuu vielä ${missing}.`) + symHint(p);
-  return "Kaikki ratkaisut on löydetty. Paina Tarkista.";
+  if(n === 2 && missing.length === 1 && !p.inv && p.guide.t !== "tanray"){
+    const found = p.sols.find(s => !missing.includes(s));
+    const rel = relation(found, missing[0], p.guide.t === "tan");
+    if(rel){
+      const where = rel === "opp"
+        ? `se on origon toisella puolella, ${p.unit === "rad" ? "π" : "180°"} päässä löytämästäsi pisteestä`
+        : `se on löytämäsi pisteen ${REL_TEXT[rel]}`;
+      return `Olet jo löytänyt yhden oikean ratkaisun. Toinen ratkaisu löytyy symmetrisesti: ${where}.` + reason(p, rel);
+    }
+  }
+  return (missing.length === 1 ? "Hyvä alku! Yksi ratkaisu puuttuu vielä." : `Hyvä alku! Ratkaisuja puuttuu vielä ${missing.length}.`) + symHint(p);
 }
 function giveHint(){
   if(answered) return;
-  const p = task(); hintStep++;
-  clearTimeout(hintTimer);
-  let msg = hintStep === 1 ? methodHint(p) : stateHint(p);
-  if(hintStep === 3 && ["h","v","hh","vv","tan","tanray","axes"].includes(p.guide.t)){
-    drawGuide(p); msg += " Apuviiva on nyt piirretty ympyrään.";
-  }
-  const el = $("hint"); el.innerHTML = msg; el.classList.remove("warn"); el.classList.add("tip");
+  const p = task(), steps = hintSteps(p);
+  hintsUsed++;
+  // progress first: with part of the answer found, skip ahead to the placed points
+  if(onTrack(p)) hintStep = Math.max(hintStep, steps.indexOf("state"));
+  const step = steps[Math.min(hintStep, steps.length - 1)];
+  hintStep++;
+  let msg;
+  if(step === "tri") msg = triHint(p);
+  else if(step === "method") msg = methodHint(p);
+  else msg = stateHint(p);
+  if(step === "guide"){ drawGuide(p); msg += " Apuviiva on nyt piirretty ympyrään."; }
+  if(hintStep >= steps.length){ $("giveup").hidden = false; $("actions").hidden = false; }
+  tipHint(msg);
 }
 
 /* ── memory triangles ── */
@@ -608,46 +771,76 @@ function toggle(d){
   d = norm(Math.round(d*2)/2);
   const i = placed.findIndex(q => angDist(q,d) < TOGGLE);
   if(i >= 0) placed.splice(i,1); else placed.push(d);
+  clicks++; updateHud();
   drawPoints();
+  checkPoints();
 }
 
-function check(mode){
+/* the task is solved the moment every solution is marked and nothing is wrong */
+function checkPoints(){
+  clearTimeout(almostTimer);
+  const p = task();
+  if(p.all || !p.sols.length) return;
+  const bad = badPoints(p), missed = missingSols(p);
+  if(!bad.length && !missed.length){ win(); return; }
+  // all solutions are there, but so is something extra: say so after a moment
+  if(!missed.length) almostTimer = setTimeout(() => {
+    if(answered) return;
+    tipHint(bad.length === 1 ? "Kaikki ratkaisut ovat mukana, mutta yksi piste on ylimääräinen."
+                             : `Kaikki ratkaisut ovat mukana, mutta ${bad.length} pistettä on ylimääräisiä.`);
+  }, 1000);
+}
+
+/* "Ei ratkaisuja" / "Jokainen piste": right wins, wrong costs a life */
+function answer(mode){
   if(answered) return;
   const p = task();
-  if(mode === "points" && placed.length === 0){
-    flashHint(specialOn() ? "Merkitse ensin pisteet ympyrälle, tai valitse Ei ratkaisuja tai Jokainen piste." : "Merkitse ensin pisteet ympyrälle.");
-    return;
-  }
-  answered = true;
-  if(mode !== "points") placed = [];
-  const sols = p.all ? [] : p.sols;
-  const bad = placed.filter(d => !sols.some(s => angDist(s,d) <= TOL));
-  const missed = sols.filter(s => !placed.some(d => angDist(s,d) <= TOL));
-  let ok;
-  if(p.all) ok = mode === "all";
-  else if(mode === "all") ok = false;
-  else if(mode === "none") ok = sols.length === 0;
-  else ok = bad.length === 0 && missed.length === 0;
-  if(ok) score++;
-
-  drawAim(); drawGuide(p); drawPoints({bad, missed});
-  updateHud();
-  showFeedback(p, ok, mode, bad, missed);
+  clicks++;
+  const ok = mode === "all" ? p.all : (!p.all && p.sols.length === 0);
+  if(ok){ placed = []; win(); return; }
+  lives--; lastPenalty = Math.min(score, MISTAKE_PENALTY*mult());
+  score -= lastPenalty; levelScore -= lastPenalty;
+  updateHud(true);
+  const b = $(mode); b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
+  if(lives <= 0){ gameOver = true; reveal(p, "Game Over"); return; }
+  flashHint((mode === "all" ? "Ei pidä paikkaansa: yhtälö ei ole totta jokaisella kulmalla." : "Ei pidä paikkaansa: ratkaisuja on.")
+    + ` Menetit elämän ja ${fmt(lastPenalty)} pistettä.`);
 }
 
-function showFeedback(p, ok, mode, bad, missed){
+function win(){
+  answered = true; clearTimeout(almostTimer);
+  const p = task();
+  const par = p.all || !p.sols.length ? 1 : p.sols.length;   // fewest possible clicks
+  const c = Math.max(1, clicks), t = Math.max(0.5, (performance.now() - taskStart)/1000);
+  const ref = TIME_BASE + TIME_PER_CLICK*c;
+  const pc = Math.round(PTS_CLICKS*par/c), pt = Math.round(PTS_TIME*ref/t);   // time points have no cap
+  const ph = HINT_COST*hintsUsed;
+  const total = Math.max(0, PTS_SOLVE + pc + pt - ph) * mult();
+  lastWin = {par, clicks:c, t, pc, pt, ph, total};
+  score += total; levelScore += total;
+  aim = null; drawAim(); drawGuide(p); drawPoints({bad:[], missed:[]});
+  updateHud();
+  showFeedback(p, "win");
+}
+
+/* "Näytä ratkaisu" (or the last life lost): show the answer, no points */
+function giveUp(){
+  if(answered) return;
+  lives--; updateHud(true);
+  if(lives <= 0) gameOver = true;
+  reveal(task(), gameOver ? "Game Over" : "Ratkaisu");
+}
+function reveal(p, head){
+  answered = true; clearTimeout(almostTimer);
+  const bad = p.all ? [] : badPoints(p), missed = p.all ? [] : missingSols(p);
+  aim = null; drawAim(); drawGuide(p); drawPoints({bad, missed});
+  showFeedback(p, "reveal", head);
+}
+
+function showFeedback(p, kind, head){
   const title = $("fbTitle");
-  let head;
-  if(ok) head = "Oikein!";
-  else if(p.all) head = "Yhtälö on totta joka kulmalla";
-  else if(mode === "all") head = "Ei aivan jokainen piste";
-  else if(p.sols.length === 0) head = "Tällä yhtälöllä ei ole ratkaisuja";
-  else if(mode === "none") head = "Ratkaisuja on";
-  else if(bad.length && missed.length) head = "Osa pisteistä väärin, osa puuttuu";
-  else if(bad.length) head = bad.length === 1 ? "Mukana on yksi väärä piste" : `Mukana on ${bad.length} väärää pistettä`;
-  else head = missed.length === 1 ? "Yksi ratkaisu puuttuu" : `${missed.length} ratkaisua puuttuu`;
-  title.textContent = head;
-  title.className = ok ? "ok" : "bad";
+  title.textContent = kind === "win" ? "Oikein! 🎉" : head;
+  title.className = kind === "win" ? "ok" : "bad";
 
   let text = "";
   const g = p.guide;
@@ -662,38 +855,115 @@ function showFeedback(p, ok, mode, bad, missed){
     text += `<p class="sols">${list.length === 1 ? "Ratkaisu" : "Ratkaisut"}: ${list.join(", ")}</p>`;
   }
   $("fbText").innerHTML = text;
-  $("next").textContent = idx === TASKS-1 ? "Katso tulos" : "Seuraava";
+
+  const row = (label, val, cls="") => `<span class="${cls}">${label}</span><span class="v ${cls}">${val}</span>`;
+  const sec = t => t.toFixed(1).replace(".", ",") + " s";
+  if(kind === "win"){
+    const w = lastWin;
+    $("fbScore").innerHTML =
+      row("Ratkaisu", "+" + PTS_SOLVE) +
+      row(w.clicks <= w.par ? `Klikkaukset ${w.clicks} (paras mahdollinen!)` : `Klikkaukset ${w.clicks} (minimi: ${w.par})`, "+" + w.pc) +
+      row(`Aika ${sec(w.t)}`, "+" + w.pt) +
+      (w.ph ? row(`Vihjeet ${hintsUsed} × ${HINT_COST}`, "−" + w.ph) : "") +
+      (mult() > 1 ? row(`Taso ${level}`, "×" + mult()) : "") +
+      row("Yhteensä", "+" + fmt(w.total), "tot");
+  } else {
+    $("fbScore").innerHTML = row("Tästä tehtävästä", "0 pistettä") + row("Elämiä jäljellä", `${lives}/${LIVES}`, "tot");
+  }
+
+  $("next").textContent = gameOver || idx === TASKS-1 ? "Katso tulos" : "Seuraava";
   $("fb").hidden = false;
   $("actions").hidden = true; $("subctrl").hidden = true;
   $("hint").hidden = true; $("hintBtn").hidden = true;
+  $("tri30").hidden = $("tri45").hidden = true;
   $("next").focus({preventScroll:true});
   $("fb").scrollIntoView({block:"nearest", behavior:"smooth"});
 }
 
 function next(){
   if(!answered) return;
+  if(gameOver){ showOverlay("gameover"); return; }
   if(idx < TASKS-1){ idx++; showTask(); return; }
-  showOverlay();
+  showOverlay(level < MAX_LEVEL ? "level" : "complete");
 }
 
-function showOverlay(){
+function showOverlay(kind){
   const btns = $("ovBtns"); btns.innerHTML = "";
   const btn = (label, fn, primary) => { const b = document.createElement("button");
     b.className = "btn" + (primary ? " primary" : ""); b.textContent = label; b.addEventListener("click", fn); btns.appendChild(b); return b; };
-  $("ovResult").textContent = `${score} / ${TASKS}`;
+  const row = (label, val, cls="") => `<span class="${cls}">${label}</span><span class="v ${cls}">${val}</span>`;
+  $("ovScore").innerHTML = "";
   let first;
-  if(score >= PASS){
-    $("ovTitle").textContent = score === TASKS ? "Täydellinen taso! 🎉" : "Taso läpäisty! 🎉";
-    $("ovMsg").textContent = level < 6 ? "Seuraavalla tasolla on uudenlaisia yhtälöitä." : "Seuraavalla tasolla on sekoitus kaikista tasoista.";
+  if(kind === "level"){
+    $("ovTitle").textContent = `Taso ${level} läpäisty! 🎉`;
+    $("ovResult").innerHTML = `<div class="bigscore">+${fmt(levelScore)}</div>`;
+    $("ovMsg").textContent = level < 6 ? "Seuraavalla tasolla on uudenlaisia yhtälöitä."
+                           : "Seuraavalla tasolla on sekoitus kaikista tasoista.";
+    $("ovScore").innerHTML = row("Pisteet tältä tasolta", fmt(levelScore)) +
+      row("Elämiä jäljellä", `${lives}/${LIVES}`) + row("Pisteet yhteensä", fmt(score), "tot");
     first = btn("Seuraava taso", () => { level++; startLevel(); }, true);
-    btn("Pelaa taso uudestaan", startLevel);
+    if(motion) celebrate();
+  } else if(kind === "complete"){
+    const fromLevels = score, lifeBonus = BONUS_LIFE*lives;
+    score += BONUS_FINISH + lifeBonus; updateHud();
+    $("ovTitle").textContent = "Peli läpäisty! 🏆";
+    $("ovResult").innerHTML = `<div class="bigscore">${fmt(score)} pistettä</div>`;
+    $("ovMsg").textContent = `Olet päässyt kaikki tasot läpi, 0–${MAX_LEVEL}.`;
+    $("ovScore").innerHTML = row("Pisteet tasoista", fmt(fromLevels)) +
+      row("Läpäisybonus", "+" + fmt(BONUS_FINISH)) +
+      row(`Elämät ${lives} × ${BONUS_LIFE}`, "+" + fmt(lifeBonus)) +
+      row("Yhteensä", fmt(score), "tot");
+    first = btn("Aloita alusta", newRun, true);
+    if(motion) celebrate();
   } else {
-    $("ovTitle").textContent = score >= 3 ? "Melkein!" : "Harjoitellaan vielä";
-    $("ovMsg").textContent = `Seuraavalle tasolle pääset, kun vähintään ${PASS} tehtävää kuudesta menee oikein.`;
-    first = btn("Yritä tasoa uudestaan", startLevel, true);
+    $("ovTitle").textContent = "Game Over";
+    $("ovResult").innerHTML = `<div class="bigscore">${fmt(score)} pistettä</div>`;
+    $("ovMsg").textContent = `Kolmas elämä meni. Pääsit tasolle ${level}/${MAX_LEVEL}.`;
+    first = btn("Aloita alusta", newRun, true);
   }
   const a = document.createElement("a"); a.href = COURSE_URL; a.className = "btn"; a.textContent = "Palaa kurssiin"; btns.appendChild(a);
   $("overlay").classList.add("show"); first.focus();
+}
+
+/* ── celebration: confetti bursting from the circle (as in Yhtälövaaka) ──
+   Drawn on a temporary full-screen canvas just below the dialog; it lets
+   clicks through and removes itself. Colours come from the shared theme. */
+const motion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const PARTY_COLORS = (getComputedStyle(document.documentElement).getPropertyValue("--party-colors") || "")
+  .split(",").map(c => c.trim()).filter(Boolean);
+if(!PARTY_COLORS.length) PARTY_COLORS.push("#00e5ff","#ff3df2","#ffe14d","#39ff9e","#a78bff","#ffffff");
+function celebrate(){
+  const cv = document.createElement("canvas");
+  cv.style.cssText = "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9";
+  document.body.appendChild(cv);
+  const dpr = Math.min(2, window.devicePixelRatio || 1), W = innerWidth, H = innerHeight;
+  cv.width = W*dpr; cv.height = H*dpr;
+  const ctx = cv.getContext("2d"); ctx.scale(dpr, dpr);
+  const rnd = (a,b) => a + Math.random()*(b-a), col = () => PARTY_COLORS[Math.floor(Math.random()*PARTY_COLORS.length)];
+  const box = stage.getBoundingClientRect(), cx = box.left + box.width/2, cy = box.top + box.height/2;
+  const power = Math.max(W, H), pieces = [];
+  for(let i=0; i<90; i++){
+    const a = rnd(0, Math.PI*2), v = rnd(0.2, 0.75)*power;
+    pieces.push({x:cx, y:cy, vx:Math.cos(a)*v, vy:Math.sin(a)*v*0.7 - 0.2*power,
+      color:col(), size:rnd(6,11), rot:rnd(0,6.3), vr:rnd(-12,12), flip:rnd(0,6.3), delay:rnd(0,0.1)});
+  }
+  const T = 3.2, g = power*0.9;                         // lifetime (s), gravity (px/s²)
+  const t0 = performance.now(); let last = t0;
+  (function step(now){
+    const t = (now - t0)/1000, dt = Math.min(0.033, (now - last)/1000); last = now;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalAlpha = Math.min(1, Math.max(0, (T - t)/0.8));
+    for(const p of pieces){
+      if(t < p.delay) continue;
+      const drag = p.vy < 0 ? 1.6 : 3.6, h = p.vy < 0 ? dt*2 : dt;   // flutters on the way down
+      p.vx -= p.vx*drag*h; p.vy += g*h; p.vy -= p.vy*drag*h;
+      p.x += p.vx*h; p.y += p.vy*h; p.rot += p.vr*dt; p.flip += dt*9;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.scale(1, Math.cos(p.flip));
+      ctx.fillStyle = p.color; ctx.fillRect(-p.size/2, -p.size*0.3, p.size, p.size*0.6);
+      ctx.restore();
+    }
+    if(t < T) requestAnimationFrame(step); else cv.remove();
+  })(t0);
 }
 
 /* ── input ──────────────────────────────────────────────────────────── */
@@ -746,24 +1016,28 @@ document.addEventListener("keydown", e => {
   } else if(k === " " && document.activeElement === stage){
     if(aim === null) aim = 0;
     toggle(aim); drawAim(); e.preventDefault();
-  } else if(k === "Enter" && (document.activeElement === stage || document.activeElement === document.body)){
-    e.preventDefault(); check("points");
   } else if(k.toLowerCase() === "r" && !e.ctrlKey && !e.metaKey){
-    placed = []; drawPoints();
+    clearPoints();
   }
 });
-$("check").addEventListener("click", () => check("points"));
-$("none").addEventListener("click", () => check("none"));
-$("all").addEventListener("click", () => check("all"));
+function clearPoints(){ if(!answered){ placed = []; drawPoints(); checkPoints(); } }
+$("none").addEventListener("click", () => answer("none"));
+$("all").addEventListener("click", () => answer("all"));
+$("giveup").addEventListener("click", giveUp);
 $("next").addEventListener("click", next);
 $("hintBtn").addEventListener("click", giveHint);
 $("tri30").addEventListener("click", () => showTriangle(30));
 $("tri45").addEventListener("click", () => showTriangle(45));
 $("shClose").addEventListener("click", closeSheet);
 $("sheet").addEventListener("click", e => { if(e.target === $("sheet")) closeSheet(); });
-$("clear").addEventListener("click", () => { if(!answered){ placed = []; drawPoints(); } });
+$("clear").addEventListener("click", clearPoints);
+// the memory-triangle name in a hint is a link that opens the card
+$("hint").addEventListener("click", e => {
+  const a = e.target.closest(".trilink"); if(!a) return;
+  e.preventDefault(); showTriangle(+a.dataset.tri);
+});
 
-startLevel();
+newRun();
 </script>
 </body>
 </html>

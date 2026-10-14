@@ -90,6 +90,26 @@ games/<category>/<course>/<game>/index.html
   wasted round trip stays visible. The newest rows stay visible and older ones
   fade. If the scale turns around, the last row shows `x = n`.
 
+## Yksikköympyrä (unit circle) — design decisions
+
+- No "Tarkista" button: a task is solved the moment every solution is marked
+  (within 5°) and no wrong point is left. If all solutions are marked but
+  there is an extra point, the hint line says so after about 1 s.
+- Levels 0–7, 6 tasks each. Level 0 shows the angle (arc + degrees) while
+  aiming and next to placed points; level 7 mixes levels 3–6 and is the last.
+- Scoring like Yhtälövaaka, 3 lives. Task score =
+  `(50 + 100·solutions/clicks + 50·(5 s + 2 s·clicks)/time − 30·hints) × level`
+  (level 0 counts as ×1, time points have no cap, a task never goes below 0).
+  A wrong "Ei ratkaisuja"/"Jokainen piste" costs a life and `100 × level`
+  points; "Näytä ratkaisu" (appears after the last hint step) costs a life
+  and gives 0 points. Third lost life = Game Over. Finishing level 7: +1000,
+  +500 per life left.
+- Vihje, one step per press: memory triangle (only where the solutions are
+  special angles the triangle shows), method hint (levels 0–2 split hard
+  angles into easy parts, radians stay in radians), hint about the placed
+  points, then the helper line. With part of the answer found and nothing
+  wrong, the hint jumps straight to the placed points (mirror-image hint).
+
 ## Site-wide plans
 
 - **Math typesetting with MathJax (eventually):** games will typeset maths
