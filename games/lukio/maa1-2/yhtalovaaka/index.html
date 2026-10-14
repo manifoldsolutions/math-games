@@ -19,94 +19,130 @@
      Grab an item and move it a little to take it out: it drops to the floor.
      Drop it into the other cup to move it there. Drag from the shelf to add.
      A plain click does nothing.
+     Scoring: 9 levels, 3 lives. Each solved level gives
+       (50 + 100·ideal/moves + 50·(3 s + 1 s·moves)/time) × level.
+     A broken cup costs a life and 100 × level points; the third one is
+     Game Over. Finishing gives 1000 + 500 per life left.
      Keys: A / S / D = left box / diamond / balloon,
            K / L / J = right box / diamond / balloon
-           (Shift adds instead of removing),  r = restart,  n = new puzzle
+           (Shift adds instead of removing),  r = restart (time and moves keep running)
      Puzzles are generated backwards from x = n by adding the same thing
      to both sides, so every state stays non-negative and solvable.
      ════════════════════════════════════════════════════════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap" rel="stylesheet">
 
 <style>
+  /* ── TECHNO theme: near-black, neon outlines, a faint grid ─────────────
+     Glow is kept to the scale, the cups and the shelf (one filter per cup,
+     not per item) so it stays easy on the eyes and on older phones. */
   :root{
-    --bg:#eceef3; --surface:#fff; --ink:#14162b; --muted:#5b6079; --line:#d6d9e4;
-    --accent:#4a3ecf; --accent-ink:#3a30a8;
-    --green:#1f9e57; --green-ink:#137a41; --green-wash:#e6f5ec;
-    --brown:#b07d16; --brown-ink:#8a610d; --brown-wash:#f6efdd;
-    --gold:#f2c14e;
-    --red:#c8372d;
-    --radius:14px;
-    --ui:"Space Grotesk", system-ui, sans-serif;
-    --math:"Fredoka", system-ui, sans-serif;
+    --bg:#08070f; --surface:#120f24; --surface-2:#1a1636; --ink:#e8f7ff; --muted:#8a93c6; --line:#2a2552;
+    --accent:#00e5ff; --accent-ink:#5ef1ff;          /* cyan: interface */
+    --magenta:#ff3df2; --magenta-ink:#ff7cf7;         /* magenta: balloons, highlights */
+    --green:#39ff9e; --green-ink:#7dffbf; --green-wash:#06291a;   /* x */
+    --brown:#ffe14d; --brown-ink:#ffe86e; --brown-wash:#2a2408;   /* constants */
+    --gold:#ffe14d;
+    --red:#ff3d6e;
+    --glow-cyan:drop-shadow(0 0 5px rgba(0,229,255,.65));
+    --glow-magenta:drop-shadow(0 0 5px rgba(255,61,242,.7));
+    --radius:4px;
+    --ui:"Chakra Petch", system-ui, sans-serif;
+    --math:"Chakra Petch", system-ui, sans-serif;
+    --display:"Orbitron", "Chakra Petch", system-ui, sans-serif;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; height:100%; }
   body{
-    background:var(--bg); color:var(--ink); font-family:var(--ui);
+    color:var(--ink); font-family:var(--ui);
     min-height:100dvh; display:flex; flex-direction:column;
     -webkit-font-smoothing:antialiased;
+    background:
+      linear-gradient(rgba(255,61,242,.06) 1px, transparent 1px) 0 0/28px 28px,
+      linear-gradient(90deg, rgba(255,61,242,.06) 1px, transparent 1px) 0 0/28px 28px,
+      radial-gradient(90% 60% at 50% 30%, #1a1240 0%, var(--bg) 70%) fixed,
+      var(--bg);
   }
 
   header{
     display:flex; align-items:center; justify-content:space-between; gap:16px;
     padding:14px clamp(16px,4vw,28px); border-bottom:1px solid var(--line);
-    background:var(--surface);
+    background:rgba(8,7,15,.9);
   }
   .back{ font-family:var(--ui); font-weight:500; font-size:14px; color:var(--muted); text-decoration:none; }
   .back:hover{ color:var(--accent-ink); }
-  .title{ font-family:var(--math); font-weight:600; font-size:18px; }
+  .title{
+    font-family:var(--display); font-weight:800; font-size:17px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent-ink); text-shadow:0 0 10px rgba(0,229,255,.55);
+  }
   .hud{ display:flex; gap:18px; font-family:var(--ui); font-size:14px; color:var(--muted); }
-  .hud b{ color:var(--ink); font-weight:600; }
+  .hud b{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
 
   main{ flex:1; display:flex; flex-direction:column; align-items:center; }
+
+  /* lives (small cups) and the move counter, above the scale */
+  .statusrow{
+    width:min(820px,100%); display:flex; justify-content:space-between; align-items:center;
+    padding:10px clamp(16px,4vw,28px) 0; font-family:var(--ui); font-size:14px; color:var(--muted);
+  }
+  .statusrow b{ color:var(--ink); font-weight:600; font-variant-numeric:tabular-nums; }
+  .lives{ display:flex; gap:6px; align-items:center; }
+  .lives svg{ width:34px; height:19px; overflow:visible; }
+  .life-cup{ fill:none; stroke:var(--accent); stroke-width:1.8; stroke-linejoin:round; }
+  .life-rim{ stroke:var(--accent); stroke-width:2.4; stroke-linecap:round; }
+  .lives svg:not(.lost){ filter:var(--glow-cyan); }
+  .lives .lost .life-cup{ stroke:var(--red); fill:none; }
+  .lives .lost{ opacity:.45; }
+  .lives .just-lost{ animation:lose .6s ease; }
+  @keyframes lose{ 0%,100%{ transform:none } 20%{ transform:translateX(-4px) } 40%{ transform:translateX(4px) } 60%{ transform:translateX(-3px) } 80%{ transform:translateX(2px) } }
 
   /* ── stage ── */
   .stage-wrap{ width:min(820px,100%); padding:8px 8px 0; }
   #stage{
     display:block; width:100%; height:auto;
-    max-height:calc(100dvh - 250px); min-height:260px;
+    max-height:calc(100dvh - 280px); min-height:260px;
     user-select:none; -webkit-user-select:none; touch-action:none; cursor:default;
   }
-  .floor{ stroke:var(--line); stroke-width:3; }
-  .stand{ fill:#c9cddb; }
-  .pivot{ fill:var(--ink); }
-  .beam{ fill:var(--muted); }
-  .hook{ fill:var(--ink); }
-  .string{ stroke:#9ba0b5; stroke-width:1.6; }
-  .bowl{ fill:var(--surface); stroke:var(--muted); stroke-width:2.5; stroke-linejoin:round; }
-  .bowl-rim{ stroke:var(--muted); stroke-width:5; stroke-linecap:round; }
-  .target .bowl{ stroke:var(--accent); fill:#efedff; }
-  .target .bowl-rim{ stroke:var(--accent); }
-  .shelf{ stroke:#c9cddb; stroke-width:6; stroke-linecap:round; }
+  .floor{ stroke:var(--magenta); stroke-width:3; filter:var(--glow-magenta); }
+  .stand{ fill:#15122e; stroke:var(--accent); stroke-width:2; }
+  .pivot, .hook{ fill:var(--magenta); filter:var(--glow-magenta); }
+  .beam{ fill:#0b0a18; stroke:var(--accent); stroke-width:3; }   /* stroke and glow are set from the tilt */
+  .string{ stroke:var(--accent); stroke-width:1.4; opacity:.75; }
+  .bowl{ fill:rgba(0,229,255,.06); stroke:var(--accent); stroke-width:2.5; stroke-linejoin:round; }
+  .bowl-rim{ stroke:var(--accent); stroke-width:5; stroke-linecap:round; }
+  #panL > .cup-scale, #panR > .cup-scale{ filter:var(--glow-cyan); }     /* one glow per cup */
+  .target .bowl{ stroke:var(--magenta); fill:rgba(255,61,242,.12); }
+  .target .bowl-rim{ stroke:var(--magenta); }
+  .target > .cup-scale{ filter:var(--glow-magenta) !important; }
+  .shelf{ stroke:var(--magenta); stroke-width:6; stroke-linecap:round; filter:var(--glow-magenta); }
   [hidden]{ display:none !important; }
   .shelf-label{ font-family:var(--ui); font-size:26px; fill:var(--muted); text-anchor:middle; }
   .supply{ cursor:grab; }
   .dragging{ cursor:grabbing; }
-  .return-ring{ fill:none; stroke:var(--accent); stroke-width:2.5; stroke-dasharray:7 6; opacity:.55; pointer-events:none; }
-  .return-ring.on{ opacity:1; stroke-width:4; fill:rgba(74,62,207,.10); }
-  .held{ filter:drop-shadow(0 8px 10px rgba(20,22,43,.28)); pointer-events:none; }
+  .return-ring{ fill:none; stroke:var(--magenta); stroke-width:2.5; stroke-dasharray:7 6; opacity:.6; pointer-events:none; }
+  .return-ring.on{ opacity:1; stroke-width:4; fill:rgba(255,61,242,.12); }
+  .held{ filter:drop-shadow(0 0 10px rgba(0,229,255,.8)); pointer-events:none; }
 
   .item{ cursor:grab; }
   .box-body{ fill:var(--green-wash); stroke:var(--green); stroke-width:3.5; }
   .box-lid{ stroke:var(--green); stroke-width:3; opacity:.6; }
-  .box-label{ font-family:var(--math); font-weight:600; font-size:60px; fill:var(--green-ink); text-anchor:middle; }
-  .gem-body{ fill:var(--gold); stroke:var(--brown-ink); stroke-width:1.6; stroke-linejoin:round; }
-  .balloon-body{ fill:#9d93f5; stroke:var(--accent-ink); stroke-width:1.6; }
-  .balloon-knot{ fill:var(--accent-ink); }
-  .balloon-shine{ fill:#fff; opacity:.55; }
-  .bstring{ fill:none; stroke:#7b7fa0; stroke-width:1.3; }
-  .pterm{ color:var(--accent-ink); }
-  .gem-facet{ fill:none; stroke:var(--brown-ink); stroke-width:1; opacity:.55; }
-  .item:hover .box-body{ fill:#d3eedd; }
-  .item:hover .gem-body{ fill:#f7cf6c; }
+  .box-label{ font-family:var(--display); font-weight:700; font-size:54px; fill:var(--green-ink); text-anchor:middle; }
+  .gem-body{ fill:var(--gold); stroke:#fff3a8; stroke-width:1.6; stroke-linejoin:round; }
+  .gem-facet{ fill:none; stroke:#7a6510; stroke-width:1; opacity:.55; }
+  .balloon-body{ fill:var(--magenta); stroke:#ffb8fb; stroke-width:1.6; }
+  .balloon-knot{ fill:#ffb8fb; }
+  .balloon-shine{ fill:#fff; opacity:.5; }
+  .bstring{ fill:none; stroke:#ffb8fb; stroke-width:1.3; opacity:.7; }
+  .pterm{ color:var(--magenta-ink); }
+  .item:hover .box-body{ fill:#0b3d26; }
+  .item:hover .gem-body{ fill:#fff07a; }
   .open-lid{ fill:var(--green-wash); stroke:var(--green); stroke-width:3.5; }
 
   /* ── equation readout ── */
   .readout{
-    font-family:var(--math); font-weight:500; font-size:clamp(24px,6vw,38px);
+    font-family:var(--math); font-weight:600; font-size:clamp(26px,6.5vw,40px);
     display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline;
     width:min(560px,96vw); white-space:nowrap; margin-top:2px;
   }
@@ -116,7 +152,7 @@
   .cterm{ color:var(--brown-ink); }
   .op{ color:var(--muted); margin:0 .14em; }
   .eq{ color:var(--ink); margin:0 .3em; }
-  .eq.off{ color:var(--red); }
+  .eq.off{ color:var(--red); text-shadow:0 0 10px rgba(255,61,110,.6); }
 
   .legend{
     display:flex; gap:22px; justify-content:center; align-items:center;
@@ -126,7 +162,7 @@
   .legend svg{ width:20px; height:20px; overflow:visible; }
 
   .hint{ text-align:center; color:var(--muted); font-size:13px; padding:4px 16px 8px; min-height:2.6em; max-width:520px; }
-  .hint.warn{ color:var(--red); font-weight:500; }
+  .hint.warn{ color:var(--red); font-weight:600; }
 
   .subctrl{
     display:flex; gap:18px; justify-content:center; padding:6px 0 22px;
@@ -134,7 +170,7 @@
   }
   .subctrl button{
     background:none; border:none; color:var(--muted); cursor:pointer; font:inherit;
-    padding:4px 6px; border-radius:6px;
+    padding:4px 6px; border-radius:var(--radius); letter-spacing:.04em;
   }
   .subctrl button:hover{ color:var(--accent-ink); }
   .subctrl button:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
@@ -142,26 +178,45 @@
   /* ── overlay ── */
   .overlay{
     position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-    background:rgba(20,22,43,.42); padding:20px; z-index:10;
+    background:rgba(4,3,10,.62); padding:20px; z-index:10;
   }
   .overlay.show{ display:flex; }
   .win{
-    background:var(--surface); border-radius:18px; padding:30px 30px 24px; width:min(420px,92vw);
-    text-align:center; box-shadow:0 30px 70px -30px rgba(20,22,43,.6);
+    background:var(--surface); border:1px solid var(--accent); border-radius:var(--radius);
+    padding:30px 30px 24px; width:min(420px,92vw); text-align:center;
+    box-shadow:0 0 36px rgba(0,229,255,.22);
   }
-  .win h2{ font-family:var(--math); font-weight:600; font-size:28px; margin:0 0 6px; }
-  .win .result{ font-family:var(--math); font-size:30px; margin:10px 0 4px; }
+  .win h2{
+    font-family:var(--display); font-weight:800; font-size:24px; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--accent-ink); text-shadow:0 0 12px rgba(0,229,255,.5); margin:0 0 6px;
+  }
+  .win .result{ font-family:var(--math); font-weight:600; font-size:30px; margin:10px 0 4px; }
   .win .gems{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin:8px auto 0; max-width:260px; }
   .win .gems svg{ width:22px; height:24px; overflow:visible; }
   .win p{ color:var(--muted); margin:10px 0 20px; }
+  .win .score{
+    display:grid; grid-template-columns:1fr auto; gap:5px 18px; text-align:left;
+    max-width:300px; margin:-6px auto 20px; font-family:var(--ui); font-size:14px; color:var(--muted);
+  }
+  .win .score:empty{ display:none; }
+  .win .score .v{ text-align:right; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .win .score .tot{ border-top:1px solid var(--line); padding-top:6px; color:var(--ink); font-weight:600; }
+  .win .bigscore{
+    font-family:var(--display); font-weight:700; font-size:30px; color:var(--brown-ink);
+    text-shadow:0 0 12px rgba(255,225,77,.45); margin:8px 0 0;
+  }
   .win .btns{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
   .win .btns a, .win .btns button{
-    font-family:var(--ui); font-weight:500; font-size:15px; cursor:pointer;
-    padding:11px 18px; border-radius:11px; border:1px solid var(--line);
-    text-decoration:none; color:var(--ink); background:var(--surface);
+    font-family:var(--ui); font-weight:600; font-size:14px; cursor:pointer; letter-spacing:.08em; text-transform:uppercase;
+    padding:11px 18px; border-radius:var(--radius); border:1px solid var(--line);
+    text-decoration:none; color:var(--ink); background:transparent;
   }
-  .win .btns .primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
-  .win .btns :focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .win .btns a:hover, .win .btns button:hover{ border-color:var(--accent); }
+  .win .btns .primary{
+    background:var(--accent); border-color:var(--accent); color:#08070f; font-weight:700;
+    box-shadow:0 0 14px rgba(0,229,255,.5);
+  }
+  .win .btns :focus-visible{ outline:2px solid var(--magenta); outline-offset:3px; }
 </style>
 </head>
 <body>
@@ -169,10 +224,14 @@
   <header>
     <a class="back" href="../../../../#/lukio/maa1-2">← Takaisin</a>
     <span class="title">Yhtälövaaka</span>
-    <span class="hud"><span>Taso: <b id="level">1</b></span><span>Ratkaistu: <b id="solved">0</b></span></span>
+    <span class="hud"><span>Taso: <b id="level">1/9</b></span><span>Pisteet: <b id="score">0</b></span></span>
   </header>
 
   <main>
+    <div class="statusrow">
+      <span class="lives" id="lives" aria-label="Elämät"></span>
+      <span>Siirrot: <b id="moves">0</b></span>
+    </div>
     <div class="stage-wrap">
       <svg id="stage" viewBox="0 -145 1100 1215" aria-label="Vaaka, jossa on kaksi kuppia">
         <line class="floor" x1="20" y1="1051" x2="1080" y2="1051"/>
@@ -221,7 +280,6 @@
 
     <div class="subctrl">
       <button id="restart">↺ Alusta</button>
-      <button id="new">✦ Uusi tehtävä</button>
     </div>
   </main>
 
@@ -231,6 +289,7 @@
       <div class="result" id="ovResult"></div>
       <div class="gems" id="ovGems"></div>
       <p id="ovMsg"></p>
+      <div class="score" id="ovScore"></div>
       <div class="btns" id="ovBtns"></div>
     </div>
   </div>
@@ -260,6 +319,7 @@ const MAX_TILT = Math.asin((FLOOR - BOWL_DEPTH - HANG - PIV.y) / ARM);  // lower
 const CAP = {b:6, d:24, p:8};    // (24 diamonds: they are big now and stack up)
 document.querySelectorAll(".cup-scale").forEach(g=>g.setAttribute("transform",`scale(${S})`));    // what fits in one cup
 let SUPPLY = {};                 // shelf pick areas, set by renderShelf()
+const MAX_LEVEL = 9;              // difficulty stops growing here, so the game ends after level 9
 const BALLOON_LEVEL = 3;
 const balloonsOn = () => level >= BALLOON_LEVEL;
 
@@ -415,7 +475,9 @@ function genPuzzle(level){
   }
   // a side's constant c is shown as c diamonds, or |c| balloons when c < 0
   const side = (b,c) => ({b, d:Math.max(0,c), p:Math.max(0,-c)});
-  const p = { x, L:side(1+kb, k), R:side(kb, x+k) };
+  // ideal number of moves: undo the kb boxes and the constant k on both sides.
+  // (Checked for every possible puzzle: no solution is shorter.)
+  const p = { x, L:side(1+kb, k), R:side(kb, x+k), par: 2*kb + 2*Math.abs(k) };
   if(Math.random()<.5) [p.L, p.R] = [p.R, p.L];               // box may end up on either side
   return p;
 }
@@ -423,15 +485,26 @@ const fallTimeFor = level => Math.max(2.4, 6 - 0.45*(level-1));   // seconds to 
 
 /* ── state ──────────────────────────────────────────────────────────── */
 let celebrated=false;           // fireworks already started for this win?
-let level=1, solvedCount=0, puzzle, cur, tilt, tiltV=0, needFlip=false, flipT=0, status, settle, particles=[], drag=null, flash=null;
+/* scoring: one run = levels 1…MAX_LEVEL with 3 lives */
+const LIVES = 3;
+const PTS_SOLVE = 50, PTS_MOVES = 100, PTS_TIME = 50;
+const TIME_BASE = 3, TIME_PER_MOVE = 1;          // reference time = 3 s + 1 s per move made
+const CRASH_PENALTY = 100;                       // × level
+const BONUS_FINISH = 1000, BONUS_LIFE = 500;
+let score=0, lives=LIVES, moves=0, elapsed=0, lastWin=null, lastPenalty=0;
+const fmt = n => Math.round(n).toLocaleString("fi-FI");
+let level=1, puzzle, cur, tilt, tiltV=0, needFlip=false, flipT=0, status, settle, particles=[], drag=null, flash=null;
 // status: play | winning | identity | won | crash | over
 
 const svg=$("stage");
 const panEl={L:$("panL"), R:$("panR")};
 const stringsEl=$("strings"), fxEl=$("fx"), dragLayer=$("dragLayer"), beamEl=$("beam"), beamBar=$("beamBar");
 
-function startPuzzle(p){
+/* keepClock: the "Alusta" restart and retrying after a vanished x keep the
+   time and moves running; a new level and a retry after a broken cup start fresh */
+function startPuzzle(p, keepClock){
   puzzle=p;
+  if(!keepClock){ moves=0; elapsed=0; }
   cur={L:{p:0,...p.L}, R:{p:0,...p.R}};
   tilt=0; tiltV=0; needFlip=false; flipT=0; status="play"; settle=0; flash=null; celebrated=false;
   $("rig").removeAttribute("transform");
@@ -439,13 +512,31 @@ function startPuzzle(p){
   particles.forEach(q=>q.g.remove()); particles=[];
   ["L","R"].forEach(s=>{ panEl[s].style.display=""; renderPan(s); });
   $("overlay").classList.remove("show");
-  setText("level",level); setText("solved",solvedCount);
+  updateHud();
   renderShelf();
   $("legendBalloon").hidden = !balloonsOn();
   updateUI();
 }
 const newPuzzle = ()=> startPuzzle(genPuzzle(level));
-const restart   = ()=> startPuzzle(puzzle);
+const restart   = ()=> { if(status==="play") startPuzzle(puzzle, true); };   // ↺ Alusta
+const retryKeep = ()=> startPuzzle(puzzle, true);
+const retryFresh= ()=> startPuzzle(puzzle);
+function newRun(){ level=1; score=0; lives=LIVES; newPuzzle(); }
+
+/* life icons: a small cup, and the same cup broken in two */
+const CUP_ICON = `<path class="life-cup" d="M2,5 L38,5 Q36,17 27,18 L13,18 Q4,17 2,5 Z"/><line class="life-rim" x1="1" y1="5" x2="39" y2="5"/>`;
+const CUP_BROKEN = `<g transform="rotate(-12 10 12)"><path class="life-cup" d="M2,5 L18,5 L15,10 L19,14 L16,18 L13,18 Q4,17 2,5 Z"/></g>`+
+                   `<g transform="translate(4,2) rotate(10 30 12)"><path class="life-cup" d="M21,5 L38,5 Q36,17 27,18 L18,18 L21,14 L17,10 Z"/></g>`;
+function updateHud(justLost){
+  setText("level",`${level}/${MAX_LEVEL}`); setText("score",fmt(score)); setText("moves",moves);
+  $("lives").innerHTML = Array.from({length:LIVES},(_,i)=>{
+    const alive = i < lives;
+    return `<svg viewBox="0 0 40 22" class="${alive?"":"lost"}${justLost && i===lives?" just-lost":""}">${alive?CUP_ICON:CUP_BROKEN}</svg>`;
+  }).join("");
+  $("lives").setAttribute("aria-label", `Elämät: ${lives}/${LIVES}`);
+}
+const stateKey = ()=> JSON.stringify(cur);
+function countMove(){ moves++; setText("moves",moves); }
 
 function renderPan(side, revealX, dim){
   const g=panEl[side].querySelector(".items");
@@ -618,10 +709,11 @@ svg.addEventListener("pointercancel",e=>{
 });
 
 function beginDrag(hit, p, id, touch, g){
+  const snap=stateKey();                                // to tell later whether anything changed
   if(hit.from!=="S"){ cur[hit.from][hit.t]--; renderPan(hit.from); }   // now its weight comes off
   if(!g) g=makeHeld(hit.t);
   const o=heldOffset(hit.t, touch) || {grow:1, ox:hit.x-p.x, oy:hit.y-p.y};
-  drag={t:hit.t, from:hit.from, g, id, ox:o.ox, oy:o.oy, grow:o.grow, x:p.x+o.ox, y:p.y+o.oy,
+  drag={snap, t:hit.t, from:hit.from, g, id, ox:o.ox, oy:o.oy, grow:o.grow, x:p.x+o.ox, y:p.y+o.oy,
         vx:0, vy:0, lt:performance.now()};
   if(hit.from!=="S"){
     // mark where it came from: bringing it back onto this ring puts it back
@@ -675,7 +767,7 @@ function updateReturnRing(){
 }
 
 function endDrag(p){
-  const {t, from, x, y, vx, vy}=drag;
+  const {t, from, x, y, vx, vy, snap}=drag;
   const home=atHome();
   $("returnRing").style.display="none";
   const target = p && !home ? cupAt({x, y}) : null;
@@ -690,6 +782,7 @@ function endDrag(p){
   } else {
     dropToFloor(t, x, y, vx, vy);            // out of the scale: falls to the floor
   }
+  if(stateKey()!==snap) countMove();         // put back / dropped from the shelf = no move
   updateUI(); checkEnd();
 }
 function cancelDrag(){
@@ -706,7 +799,7 @@ function nudge(side, t, add){
   if(status!=="play" || drag) return;
   if(add){ if(cur[side][t]>=CAP[t]) return flashHint("Kuppi on täynnä."); cur[side][t]++; }
   else { if(!cur[side][t]) return; cur[side][t]--; }
-  renderPan(side); updateUI(); checkEnd();
+  countMove(); renderPan(side); updateUI(); checkEnd();
 }
 
 /* ── particles (items dropped to the floor, crash debris) ────────────────────── */
@@ -757,12 +850,18 @@ function crash(side){
   spawn(`<path class="bowl" d="${SHARD_L}"/>`, c.x-85*S, c.y+18*S, {vx:-170*k, vy:-180*k, vr:-120*k, r:18*S, scale:S});
   spawn(`<path class="bowl" d="${SHARD_R}"/>`, c.x+80*S, c.y+18*S, {vx: 180*k, vy:-200*k, vr: 130*k, r:18*S, scale:S});
   panEl[side].style.display="none";
-  updateUI();
-  setTimeout(()=>showOverlay("crash"), motion?1100:300);
+  lives--; lastPenalty=Math.min(score, CRASH_PENALTY*level); score-=lastPenalty;
+  updateHud(true); updateUI();
+  setTimeout(()=>showOverlay(lives>0 ? "crash" : "gameover"), motion?1100:300);
 }
 
 function reveal(){
-  status="won"; solvedCount++; setText("solved",solvedCount);
+  status="won";
+  const par = puzzle.par ?? moves, m = Math.max(1, moves), t = Math.max(0.5, elapsed);
+  const ref = TIME_BASE + TIME_PER_MOVE*m;
+  const pm = Math.round(PTS_MOVES*par/m), pt = Math.round(PTS_TIME*ref/t);   // time points have no cap
+  lastWin = {par, moves:m, t, ref, pm, pt, total:(PTS_SOLVE+pm+pt)*level};
+  score += lastWin.total; updateHud();
   renderPan("L", true); updateUI();
   setTimeout(()=>showOverlay("win"), motion ? 1950 : 200);
 }
@@ -774,7 +873,7 @@ function startFireworks(){ if(celebrated || !motion) return; celebrated=true; ce
    Drawn on a temporary full-screen canvas just below the win card (it lets
    clicks through); it keeps falling behind the card for a moment and then
    removes itself. */
-const PARTY_COLORS=["#1f9e57","#f2c14e","#9d93f5","#4a3ecf","#c8372d","#5ec2e8","#f28cb1"];
+const PARTY_COLORS=["#00e5ff","#ff3df2","#ffe14d","#39ff9e","#a78bff","#ffffff","#ff7cf7"];
 function celebrate(){
   const cv=document.createElement("canvas");
   cv.style.cssText="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:9";
@@ -840,7 +939,9 @@ function showOverlay(kind){
     b.textContent=label; if(primary) b.className="primary"; b.addEventListener("click",fn); btns.appendChild(b); return b; };
   const link=()=>{ const a=document.createElement("a"); a.href="../../../../#/lukio/maa1-2";
     a.textContent="Palaa kurssiin"; btns.appendChild(a); };
-  $("ovGems").innerHTML="";
+  $("ovGems").innerHTML=""; $("ovScore").innerHTML="";
+  const row=(label,val,cls="")=>`<span class="${cls}">${label}</span><span class="v ${cls}">${val}</span>`;
+  const sec = t => t.toFixed(1).replace(".",",")+" s";
   let first;
 
   if(kind==="win"){
@@ -852,32 +953,70 @@ function showOverlay(kind){
       ? `<svg viewBox="-15 -18 30 40">${balloonShape(0,20,1)}</svg>`
       : `<svg viewBox="-11 -11 22 22">${gemShape(GEM_SCALE_SMALL)}</svg>`).join("");
     $("ovMsg").textContent = neg ? `Laatikossa on ${n} ilmapalloa.` : `Laatikossa on ${n} timanttia.`;
-    first=btn("Seuraava taso",()=>{ level++; newPuzzle(); },true);
-    btn("Uusi tehtävä samalla tasolla",newPuzzle);
+    const w=lastWin;
+    $("ovScore").innerHTML =
+      row("Ratkaisu", "+"+PTS_SOLVE) +
+      row(w.moves<=w.par ? `Siirrot ${w.moves} (paras mahdollinen!)` : `Siirrot ${w.moves} (minimi: ${w.par})`, "+"+w.pm) +
+      row(`Aika ${sec(w.t)}`, "+"+w.pt) +
+      row(`Taso ${level}`, "×"+level) +
+      row("Yhteensä", "+"+fmt(w.total), "tot");
+    if(level<MAX_LEVEL) first=btn("Seuraava taso",()=>{ level++; newPuzzle(); },true);
+    else first=btn("Jatka",()=>showOverlay("complete"),true);         // the last level: on to the finish
+  } else if(kind==="complete"){
+    const fromLevels=score, lifeBonus=BONUS_LIFE*lives;
+    score += BONUS_FINISH + lifeBonus; updateHud();
+    $("ovTitle").textContent="Peli läpäisty! 🏆";
+    $("ovResult").innerHTML=`<div class="bigscore">${fmt(score)} pistettä</div>`;
+    $("ovMsg").textContent=`Olet päässyt pelin kaikki ${MAX_LEVEL} tasoa läpi.`;
+    $("ovScore").innerHTML =
+      row("Pisteet tasoista", fmt(fromLevels)) +
+      row("Läpäisybonus", "+"+fmt(BONUS_FINISH)) +
+      row(`Elämät ${lives} × ${BONUS_LIFE}`, "+"+fmt(lifeBonus)) +
+      row("Yhteensä", fmt(score), "tot");
+    first=btn("Aloita alusta",newRun,true);
+    if(motion) celebrate();
   } else if(kind==="identity"){
-    $("ovTitle").textContent="x katosi yhtälöstä";
+    // balanced with equal box counts: either no boxes are left at all (x is gone),
+    // or both cups still have boxes (a tautology such as 2x + 5 = 2x + 5)
+    const empty = c => !c.b && !c.d && !c.p;
     $("ovResult").innerHTML=eqHTML();
-    $("ovMsg").textContent = (cur.L.b===0 && cur.L.d===0)
-      ? "Molemmat kupit ovat tyhjiä. 0 = 0 on totta aina, joten siitä ei voi päätellä, montako timanttia laatikossa oli."
-      : "Kummassakin kupissa on nyt täsmälleen samat esineet. Yhtälö on totta millä tahansa x:n arvolla, joten laatikon sisältöä ei voi enää päätellä.";
-    first=btn("Yritä samaa uudestaan",restart,true);
-    btn("Uusi tehtävä",newPuzzle);
+    if(cur.L.b===0 && cur.R.b===0){
+      $("ovTitle").textContent="x katosi yhtälöstä";
+      $("ovMsg").textContent = (empty(cur.L) && empty(cur.R))
+        ? "Molemmat kupit ovat tyhjiä. 0 = 0 on totta aina, joten siitä ei voi päätellä, mitä laatikossa oli."
+        : "Laatikot ovat poissa molemmista kupeista. Jäljelle jäänyt yhtälö on totta, mutta siinä ei ole enää x:ää, joten siitä ei voi päätellä, mitä laatikossa oli.";
+    } else {
+      $("ovTitle").textContent="Tautologia!";
+      $("ovMsg").textContent="Kummassakin kupissa on nyt täsmälleen samat esineet. Yhtälö on totta millä tahansa x:n arvolla, joten laatikon sisältöä ei voi enää päätellä.";
+    }
+    $("ovMsg").textContent += " Tehtävä alkaa alusta, mutta aika ja siirrot jatkavat kulumistaan.";
+    first=btn("Yritä uudestaan",retryKeep,true);
+  } else if(kind==="gameover"){
+    $("ovTitle").textContent="Game Over";
+    $("ovResult").innerHTML=`<div class="bigscore">${fmt(score)} pistettä</div>`;
+    $("ovMsg").textContent=`Kolmas kuppi hajosi. Pääsit tasolle ${level}/${MAX_LEVEL}.`;
+    first=btn("Aloita alusta",newRun,true);
   } else {
     $("ovTitle").textContent="Kuppi hajosi!";
     $("ovResult").innerHTML="";
     $("ovMsg").textContent="Vaaka kallistui liikaa. Kun muutat yhtä kuppia, tee heti sama muutos myös toiseen.";
-    first=btn("Yritä samaa uudestaan",restart,true);
-    btn("Uusi tehtävä",newPuzzle);
+    $("ovScore").innerHTML =
+      row("Menetit pisteitä", "−"+fmt(lastPenalty)) +
+      row("Elämiä jäljellä", `${lives}/${LIVES}`, "tot");
+    first=btn("Jatka",retryFresh,true);
   }
   link(); $("overlay").classList.add("show"); first.focus();
 }
 
 /* ── main loop: the scale tips while unbalanced, levels out when balanced ─ */
 const SWING_W=6.5, SWING_Z=0.3;     // swing frequency (rad/s) and damping ratio: ≈2 s to settle
-const BEAM_CALM=[91,96,121], BEAM_DANGER=[200,55,45];
+const BEAM_CALM=[0,229,255], BEAM_DANGER=[255,61,110];   // cyan → red as it tips
 let last=performance.now();
 function frame(now){
-  const dt=Math.min(.05,(now-last)/1000); last=now;
+  const realDt=(now-last)/1000;
+  const dt=Math.min(.05,realDt); last=now;
+  if(status==="play" && $("overlay").classList.contains("show")===false)
+    elapsed += Math.min(0.25, realDt);          // (ignores a pause if the tab was in the background)
 
   if(status==="play" || status==="winning" || status==="identity"){
     const s=tiltSign();
@@ -920,7 +1059,9 @@ function frame(now){
 
   beamEl.setAttribute("transform",`rotate(${(tilt*180/Math.PI).toFixed(2)} ${PIV.x} ${PIV.y})`);
   const k=Math.min(1,Math.abs(tilt)/MAX_TILT);
-  beamBar.style.fill=`rgb(${BEAM_CALM.map((c,i)=>Math.round(c+(BEAM_DANGER[i]-c)*k)).join(",")})`;
+  const beamCol=`rgb(${BEAM_CALM.map((c,i)=>Math.round(c+(BEAM_DANGER[i]-c)*k)).join(",")})`;
+  beamBar.style.stroke=beamCol;
+  beamBar.style.filter=`drop-shadow(0 0 ${(5+7*k).toFixed(1)}px ${beamCol})`;
   let strings="";
   ["L","R"].forEach(side=>{
     if(panEl[side].style.display==="none") return;
@@ -943,12 +1084,10 @@ document.addEventListener("keydown",e=>{
   const map={a:["L","b"], s:["L","d"], d:["L","p"], k:["R","b"], l:["R","d"], j:["R","p"]};
   if(map[k] && (map[k][1]!=="p" || balloonsOn())) nudge(...map[k], e.shiftKey);
   else if(k==="r") restart();
-  else if(k==="n") newPuzzle();
 });
 $("restart").addEventListener("click",restart);
-$("new").addEventListener("click",newPuzzle);
 
-newPuzzle();
+newRun();
 requestAnimationFrame(frame);
 </script>
 </body>
