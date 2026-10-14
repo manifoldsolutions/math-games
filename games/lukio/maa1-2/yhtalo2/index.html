@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,37 +14,11 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap" rel="stylesheet">
+<!-- shared site look: colours, fonts, header, buttons, dialogs -->
+<link rel="stylesheet" href="../../../../assets/theme.css">
 
 <style>
-  :root{
-    --bg:#eceef3; --surface:#fff; --ink:#14162b; --muted:#5b6079; --line:#d6d9e4;
-    --accent:#4a3ecf; --accent-ink:#3a30a8;
-    --green:#1f9e57; --green-ink:#137a41; --green-wash:#e6f5ec;
-    --brown:#b07d16; --brown-ink:#8a610d; --brown-wash:#f6efdd;
-    --radius:14px;
-    --ui:"Space Grotesk", system-ui, sans-serif;
-    --math:"Fredoka", system-ui, sans-serif;
-  }
-  *{ box-sizing:border-box; }
-  html,body{ margin:0; height:100%; }
-  body{
-    background:var(--bg); color:var(--ink); font-family:var(--ui);
-    min-height:100dvh; display:flex; flex-direction:column;
-    -webkit-font-smoothing:antialiased;
-  }
-
-  header{
-    display:flex; align-items:center; justify-content:space-between; gap:16px;
-    padding:14px clamp(16px,4vw,28px); border-bottom:1px solid var(--line);
-    background:var(--surface);
-  }
-  .back{ font-family:var(--ui); font-weight:500; font-size:14px; color:var(--muted); text-decoration:none; }
-  .back:hover{ color:var(--accent-ink); }
-  .title{ font-family:var(--math); font-weight:600; font-size:18px; }
-  .hud{ display:flex; gap:18px; font-family:var(--ui); font-size:14px; color:var(--muted); }
-  .hud b{ color:var(--ink); font-weight:600; }
-
+  /* Only what is specific to this game. Everything else comes from assets/theme.css. */
   main{ flex:1; display:flex; flex-direction:column; }
 
   /* the equation stack sits in the vertical middle */
@@ -75,12 +49,8 @@
     font-family:var(--math); font-weight:500; font-size:clamp(15px,3.6vw,21px);
     color:var(--muted); white-space:nowrap;
   }
-  .ann .bar{ color:var(--line); margin-right:.35em; }
+  .ann .bar{ color:var(--muted); opacity:.5; margin-right:.35em; }
 
-  .xterm{ color:var(--green-ink); }
-  .cterm{ color:var(--brown-ink); }
-  .op{ color:var(--muted); margin:0 .14em; }
-  .eq{ color:var(--ink); margin:0 .26em; }
   .fraction{ display:inline-flex; align-items:center; gap:.12em; white-space:nowrap; vertical-align:.04em; }
   .fraction .whole{ position:relative; top:.08em; }
   .fraction-part{ display:inline-flex; flex-direction:column; align-items:center; line-height:.8; font-size:.62em; position:relative; top:0; }
@@ -89,36 +59,14 @@
   .fraction-part span:first-child{ border-bottom:1px solid currentColor; padding:0 .12em .08em; }
   .fraction-part span:last-child{ padding:.08em .12em 0; }
 
-  /* controls */
+  /* controls: 4 per row, the last one (swap) centred on its own row */
   .ops{
     display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px;
     width:min(440px,calc(100% - 24px)); margin-inline:auto;
     padding:16px clamp(12px,4vw,24px) 8px;
   }
-  .op-btn{
-    font-family:var(--math); font-weight:600; font-size:clamp(17px,4.4vw,21px);
-    min-width:0; padding:12px 10px; border-radius:12px; cursor:pointer;
-    background:var(--surface); border:1px solid var(--line); color:var(--ink);
-    transition:transform .1s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
-  }
-  .op-btn:hover{ transform:translateY(-1px); box-shadow:0 6px 16px -10px rgba(20,22,43,.5); }
-  .op-btn:active{ transform:translateY(0); }
-  .op-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
-  .op-btn.x{ color:var(--green-ink); border-color:#bfe3cd; background:var(--green-wash); }
-  .op-btn.c{ color:var(--brown-ink); border-color:#e8d9ac; background:var(--brown-wash); }
-  .op-btn.n{ color:var(--accent-ink); }
+  .op-btn{ min-width:0; padding:12px 10px; }
   .op-btn:last-child{ grid-column:1 / -1; justify-self:center; }
-  .op-btn[disabled]{ opacity:.4; cursor:default; transform:none; box-shadow:none; }
-
-  .subctrl{
-    display:flex; gap:18px; justify-content:center; padding:4px 0 22px;
-    font-family:var(--ui); font-size:13px;
-  }
-  .subctrl button{
-    background:none; border:none; color:var(--muted); cursor:pointer; font:inherit;
-    padding:4px 6px; border-radius:6px;
-  }
-  .subctrl button:hover{ color:var(--accent-ink); }
 
   .counter{
     text-align:center; font-family:var(--math); font-weight:500;
@@ -126,34 +74,14 @@
   }
   .counter b{
     font-weight:700; color:var(--accent-ink); font-size:1.35em; margin:0 .18em 0 .25em;
+    text-shadow:var(--glow-text);
   }
   .counter .par-note{ font-size:.7em; color:var(--muted); margin-left:.5em; }
 
-  .hint{ text-align:center; color:var(--muted); font-size:13px; padding:0 16px 8px; min-height:1.2em; }
-
-  /* win overlay */
-  .overlay{
-    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
-    background:rgba(20,22,43,.42); padding:20px; z-index:10;
-  }
-  .overlay.show{ display:flex; }
-  .win{
-    background:var(--surface); border-radius:18px; padding:30px 30px 24px; width:min(400px,92vw);
-    text-align:center; box-shadow:0 30px 70px -30px rgba(20,22,43,.6);
-  }
-  .win h2{ font-family:var(--math); font-weight:600; font-size:28px; margin:0 0 6px; }
-  .win .result{ font-family:var(--math); font-size:30px; margin:10px 0 4px; }
-  .win p{ color:var(--muted); margin:6px 0 20px; }
-  .win .btns{ display:flex; gap:10px; justify-content:center; }
-  .win .btns a, .win .btns button{
-    font-family:var(--ui); font-weight:500; font-size:15px; cursor:pointer;
-    padding:11px 18px; border-radius:11px; border:1px solid var(--line);
-    text-decoration:none; color:var(--ink); background:var(--surface);
-  }
-  .win .btns .primary{ background:var(--accent); border-color:var(--accent); color:#fff; }
+  .hint{ margin-inline:auto; padding-top:0; }
 </style>
 </head>
-<body>
+<body class="game">
 
   <header>
     <a class="back" href="../../../../#/lukio/maa1-2">← Takaisin</a>
