@@ -311,8 +311,14 @@ Tarkennuksia:
   keltainen, tan cyan, korostukset magenta. Samat värit kuin cos α- ja
   sin α-janat, joten kuva ja selite sopivat yhteen.
 - **Akselin nimi ja merkitty arvo** ovat akselin eri puolilla ("sin α"
-  y-akselin oikealla, arvo vasemmalla; "cos α" x-akselin yläpuolella, arvo
-  alapuolella), joten ne eivät mene päällekkäin.
+  y-akselin oikealla, arvo vasemmalla; "tan α" suoran x = 1 oikealla, arvo
+  vasemmalla; "cos α" x-akselin yläpuolella, arvo alapuolella), joten ne eivät
+  mene päällekkäin. Pystysuoralla viivalla luku on aina viivan vasemmalla
+  puolella: pieni vaakaviiva ja sen oikealla puolella "1" näyttäisi luvulta −1.
+- **Tangentti säteen liikkuessa** (tangenttitasoilla, ei vihje): säteen jatke
+  piirretään suoralle x = 1 asti ja sille cyan jana korkeuteen tan α, jonka
+  päässä lukee "tan α". Kun leikkauspiste on kuvan ulkopuolella, viivat
+  jatkuvat kuvan reunan yli ja "tan α" jää reunaan.
 - **Arvon merkintä** vain, kun arvo näkyy kuvassa (|c| ≤ 1; tan: |c| ≤ 1,36) eikä
   ole 0.
 - **Neljännekset ja kahdeksasosat** jätetään pois, jos tehtävän kulma on
