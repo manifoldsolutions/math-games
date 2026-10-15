@@ -111,18 +111,13 @@ games/<category>/<course>/<game>/index.html
   yhdeksi vihjeeksi."; "Näytä ratkaisu" (appears after the last hint step) costs a life
   and gives 0 points. Third lost life = Game Over. Finishing level 7: +1000,
   +500 per life left.
-- First Vihje press, when the task has several solutions and at least one
-  placed point is right: "Yksi merkitsemistäsi pisteistä on oikein." (one right,
-  some wrong) / "Osa merkitsemistäsi pisteistä on oikein, mutta osa on väärin." /
-  "Merkitsemäsi pisteet ovat oikein, mutta ratkaisuja on vielä lisää." (none
-  wrong). It costs a hint but does not use up a step of the sequence below.
-- Vihje, one step per press: memory triangle (only where the solutions are
-  special angles the triangle shows), method hint (levels 0–2 split hard
-  angles into easy parts, radians stay in radians; degree splits use only
-  what beginners know, 45°, 90°, 180°, 360°: 315° = 3 · 90° + 45°, never
-  270° + 45°), hint about the placed
-  points, then the helper line. With part of the answer found and nothing
-  wrong, the hint jumps straight to the placed points (mirror-image hint).
+- Hints: the full plan, with every text, is in
+  `games/lukio/maa5/yksikkoympyra/VIHJEET.md` and is implemented. Press 1/2/3
+  gives a random hint of hint level 1/2/3 (game levels 0–2: two presses);
+  A hints comment on the placed points, B hints are about the task, some are
+  pictures. Levels 1–2 never pin the answer down. After the last press the
+  Vihje button goes and "Näytä ratkaisu" appears. Update VIHJEET.md together
+  with the code.
 
 ## Site-wide plans
 
