@@ -24,8 +24,9 @@
      Scoring (like Yhtälövaaka), 3 lives. Each solved task gives
        (50 + 100·solutions/clicks + 50·(5 s + 2 s·clicks)/time − 30·hints) × level
      (level 0 counts as ×1; time points have no cap). A wrong "Ei ratkaisuja"
-     / "Jokainen piste" costs a life and 100 × level points; "Näytä ratkaisu"
-     costs a life and gives no points. The third lost life is Game Over.
+     / "Jokainen piste" counts as one hint (cost and hint step) and the task
+     goes on; "Näytä ratkaisu" costs a life and gives no points. The third
+     lost life is Game Over.
      Finishing level 7 gives 1000 + 500 per life left.
      Keys: ← / → turn the ray 15° (Shift: 1°), Space = place/remove,
            Enter = next, r = clear points
@@ -272,7 +273,6 @@ const D2R = Math.PI/180;
 const LIVES = 3;
 const PTS_SOLVE = 50, PTS_CLICKS = 100, PTS_TIME = 50, HINT_COST = 30;
 const TIME_BASE = 5, TIME_PER_CLICK = 2;         // reference time = 5 s + 2 s per click made
-const MISTAKE_PENALTY = 100;                     // × level, for a wrong "Ei ratkaisuja" / "Jokainen piste"
 const BONUS_FINISH = 1000, BONUS_LIFE = 500;
 const mult = () => Math.max(1, level);           // level 0 scores like level 1
 const fmt = n => Math.round(n).toLocaleString("fi-FI");
@@ -441,7 +441,7 @@ function angleText(d, unit){
 let level = 0, tasks = [], idx = 0, placed = [], aim = null, answered = false;
 let score = 0, levelScore = 0, lives = LIVES;
 let levelDone = false;          // last task solved: the level dialog is on its way
-let clicks = 0, hintsUsed = 0, taskStart = 0, lastWin = null, lastPenalty = 0, gameOver = false;
+let clicks = 0, hintsUsed = 0, taskStart = 0, lastWin = null, gameOver = false;
 const task = () => tasks[idx];
 const showAngle = () => level === 0;
 const tanOn = () => level >= 4;
@@ -618,7 +618,8 @@ function triKind(p){
 function hintSteps(p){
   const steps = [];
   if(triKind(p)) steps.push("tri");
-  steps.push("method", "state");
+  if(methodHint(p)) steps.push("method");
+  steps.push("state");
   if(["h","v","hh","vv","tan","tanray","axes"].includes(p.guide.t)) steps.push("guide");
   return steps;
 }
@@ -644,7 +645,7 @@ function methodHint(p){
       : `Säde nousee ${g.vh} yksikköä, kun x kasvaa yhdellä. Käytä ruudukkoa tai muistikolmiota.`);
   }
   if(g.t === "rays"){
-    if(level === 0) return "Liikuta sädettä ja seuraa kulman lukemaa. Kulma kasvaa vastapäivään, ja neljännes kierrosta on 90°.";
+    if(level === 0) return "";        // the level intro already says how to read the angle
     if(p.unit === "rad") return `π on puoli kierrosta ja 2π täysi kierros. Esimerkiksi ${pi("",2)} on neljännes kierrosta ja ${pi("",6)} kolmasosa siitä.` + pm;
     return "Aloita positiiviselta x-akselilta. Positiivinen kulma kierretään vastapäivään, negatiivinen myötäpäivään. Neljännes kierrosta on 90°." + pm;
   }
@@ -812,20 +813,19 @@ function checkPoints(){
   }, 1000);
 }
 
-/* "Ei ratkaisuja" / "Jokainen piste": right wins, wrong costs a life */
+/* "Ei ratkaisuja" / "Jokainen piste": right wins; wrong counts as one hint
+   (costs a hint and uses up one hint step), the task goes on */
 function answer(mode){
   if(answered) return;
   const p = task();
-  clicks++;
   const ok = mode === "all" ? p.all : (!p.all && p.sols.length === 0);
-  if(ok){ placed = []; win(); return; }
-  lives--; lastPenalty = Math.min(score, MISTAKE_PENALTY*mult());
-  score -= lastPenalty; levelScore -= lastPenalty;
-  updateHud(true);
+  if(ok){ clicks++; placed = []; win(); return; }
+  hintsUsed++; hintStep++;                        // only the hint counts, not the click
+  if(hintStep >= hintSteps(p).length){ $("giveup").hidden = false; $("actions").hidden = false; }
   const b = $(mode); b.classList.remove("shake"); void b.offsetWidth; b.classList.add("shake");
-  if(lives <= 0){ gameOver = true; reveal(p, "Game Over"); return; }
-  flashHint((mode === "all" ? "Ei pidä paikkaansa: yhtälö ei ole totta jokaisella kulmalla." : "Ei pidä paikkaansa: ratkaisuja on.")
-    + ` Menetit elämän ja ${fmt(lastPenalty)} pistettä.`);
+  clearTimeout(hintTimer);
+  setHint((mode === "all" ? "Yhtälö ei ole totta jokaisella kulmalla." : "Ratkaisuja on olemassa.")
+    + " Tämä lasketaan yhdeksi vihjeeksi.", true);
 }
 
 function win(){

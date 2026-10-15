@@ -106,8 +106,9 @@ games/<category>/<course>/<game>/index.html
 - Scoring like Yhtälövaaka, 3 lives. Task score =
   `(50 + 100·solutions/clicks + 50·(5 s + 2 s·clicks)/time − 30·hints) × level`
   (level 0 counts as ×1, time points have no cap, a task never goes below 0).
-  A wrong "Ei ratkaisuja"/"Jokainen piste" costs a life and `100 × level`
-  points; "Näytä ratkaisu" (appears after the last hint step) costs a life
+  A wrong "Ei ratkaisuja"/"Jokainen piste" counts as one hint (−30, uses up
+  a hint step) with the red text "Ratkaisuja on olemassa. Tämä lasketaan
+  yhdeksi vihjeeksi."; "Näytä ratkaisu" (appears after the last hint step) costs a life
   and gives 0 points. Third lost life = Game Over. Finishing level 7: +1000,
   +500 per life left.
 - First Vihje press, when the task has several solutions and at least one
