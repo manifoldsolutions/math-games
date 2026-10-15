@@ -290,6 +290,7 @@ vihjetasollaan ja jää näkyviin tehtävän loppuun.
 |---|---|---|---|
 | 1 | sin α = c (myös sin α = 2) | y-akselin viereen pystysuoraan "sin α", x-akselin yläpuolelle "cos α" | Pisteen y-koordinaatti on sin α. |
 | 1 | cos α = c | samat nimet | Pisteen x-koordinaatti on cos α. |
+| 2 | sin α · cos α = 0 | samat nimet | Pisteen x-koordinaatti on cos α ja y-koordinaatti sin α. |
 | 1 | tan α = c | suoran x = 1 viereen "tan α" | tan α näkyy korkeutena suoralla x = 1. |
 | 1 | kulmatehtävät | neljännesten rajat: 90°, 180°, 270°, 360° (pelitaso 2: π/2, π, 3π/2, 2π) | Neljännesten rajat on merkitty ympyrään. |
 | 2 | kulmatehtävät | kahdeksasosakulmat: lisäksi 45°, 135°, 225°, 315° (pelitaso 2: π/4, 3π/4, 5π/4, 7π/4) | Kahdeksasosakulmat on merkitty ympyrään. |
@@ -300,7 +301,7 @@ vihjetasollaan ja jää näkyviin tehtävän loppuun.
 | 2 | cos⁻¹ | päähaaran kaari 0° … 180° (yläpuoli) korostetaan | Ratkaisu on korostetulla kaarella. |
 | 2 | sin α = 2, cos α = −3/2 | akselille korostetaan väli −1 … 1, ja arvo c merkitään sen ulkopuolelle (kuvan reunaan, jos se ei mahdu) | sin α on aina korostetulla välillä. / cos α on aina korostetulla välillä. |
 | 2 | cos²α = −1 | x-akselille korostetaan väli −1 … 1 | cos α on aina korostetulla välillä, joten cos²α on aina vähintään 0. |
-| 2 (pelitasot 5–7: 1 tai 2) | kaikki tehtävät pelitasoilta 1–7, joilla on ratkaisuja | kulma näytetään tehtävän loppuun asti kuten pelitasolla 0: kaari ja lukema säteen vieressä, merkittyjen pisteiden kulmat | Kulma on nyt merkitty tehtävän loppuun saakka. |
+| 2 (pelitasot 5–7: 1 tai 2) | tehtävät, joiden ratkaisut ovat suoraan kulmia (pelitasot 1–2 ja moninkertaiset kulmat pelitasolla 6, myös sekoituksessa); ei arvo-, tangentti- eikä muita tehtäviä, joissa suora tai arvo johtaa pisteisiin | kulma näytetään tehtävän loppuun asti kuten pelitasolla 0: kaari ja lukema säteen vieressä, merkittyjen pisteiden kulmat | Kulma on nyt merkitty tehtävän loppuun saakka. |
 | 3 | sin α = c, cos α = c, tan α = c, käänteisfunktiot, sin α · cos α = 0 | apuviiva (kun se näkyy kuvassa) | Apuviiva on nyt piirretty ympyrään. / Apuviivat … |
 | 3 | sin²α + cos²α = 1 | kun sädettä liikutetaan, piirretään kolmio: kateetit cos α ja sin α, hypotenuusa 1 | Kolmion sivut ovat cos α, sin α ja 1. |
 

@@ -822,10 +822,15 @@ function bHints(p, tier){
     return `Aivan oikein, ${text[0].toLowerCase()}${text.slice(1, -1)}, mutta ei merkitsemässäsi ${placed.length === 1 ? "kohdassa" : "kohdissa"}.`;
   };
   const rad = p.unit === "rad", half = rad ? "π" : "180°";
-  // the angle shown while aiming: level 2 hint, from game level 5 also level 1
+  // the angle shown while aiming: level 2 hint, from game level 5 also level 1.
+  // Only for tasks whose answers are angles to find (α = π ± π/2, sin 2α = 1 …);
+  // where a line or a value leads to the points the readout adds nothing.
   const angleTier = level >= 5 ? [1,2] : [2];
-  if(level >= 1 && n && angleTier.includes(tier))
+  if(level >= 1 && n && g.t === "rays" && angleTier.includes(tier))
     add("vis-angle", "Kulma on nyt merkitty tehtävän loppuun saakka.", () => { hintFx.angle = true; });
+  // sin α · cos α = 0 has no angle readout any more: name both axes at level 2
+  if(tier === 2 && g.t === "axes")
+    add("vis-labels", `Pisteen x-koordinaatti on ${COS}${A} ja y-koordinaatti ${SIN}${A}.`, () => { hintFx.labels = "sincos"; });
 
   // α = 135° written as such: a marked 135° would simply show the answer
   const direct = isAngleTask(p) && n === 1 && !/[±−]/.test(p.html) && !p.turn;
