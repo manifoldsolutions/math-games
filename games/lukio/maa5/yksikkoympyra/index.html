@@ -198,6 +198,9 @@
   .fb .score .tot.v{ color:var(--brown-ink); }
 
   .statusrow{ width:min(560px,100%); }
+  /* giving up costs a life: red, so it stands apart from "Ei ratkaisuja" / "Jokainen piste" */
+  #giveup{ border-color:var(--red); color:var(--red); }
+  #giveup:hover{ border-color:var(--red); box-shadow:0 0 12px rgba(255,61,110,.45); }
   .btn.shake{ animation:mp-shake .5s ease; border-color:var(--red); }
   @media (prefers-reduced-motion: reduce){ .btn.shake{ animation:none; } }
 
@@ -625,6 +628,7 @@ function showTask(){
   $("fb").hidden = true;
   $("actions").hidden = !specialOn(); $("subctrl").hidden = false; $("hint").hidden = false;
   $("none").hidden = $("all").hidden = !specialOn();
+  $("none").classList.remove("shake"); $("all").classList.remove("shake");   // the red border of a wrong guess is for that task only
   $("giveup").hidden = true;
   $("tri30").hidden = $("tri45").hidden = !specialOn();
   $("tri30").classList.remove("pulse"); $("tri45").classList.remove("pulse");
@@ -713,10 +717,12 @@ function side(d, axis){
   const v = axis === "x" ? Math.sin(d*D2R) : Math.cos(d*D2R);
   return Math.abs(v) < 1e-9 ? 0 : Math.sign(v);
 }
-/* a value as plain text for pictures and short hints: ½, −√3/2 … */
-function valText(v){
+/* a value in one line for pictures and short hints: ½, −√3/2 … The radicand
+   gets its roof from .rad in HTML, or from roofs() in SVG (svg = true). */
+function valText(v, svg = false){
   const a = Math.abs(v), sgn = v < 0 ? "−" : "";
-  for(const [x, t] of [[.5,"½"], [Math.sqrt(3)/2,"√3/2"], [Math.SQRT1_2,"√2/2"], [1/Math.sqrt(3),"√3/3"], [Math.sqrt(3),"√3"], [1.5,"3/2"]])
+  const r = n => svg ? `√<tspan class="rt">${n}</tspan>` : sq(n);
+  for(const [x, t] of [[.5,"½"], [Math.sqrt(3)/2,r(3)+"/2"], [Math.SQRT1_2,r(2)+"/2"], [1/Math.sqrt(3),r(3)+"/3"], [Math.sqrt(3),r(3)], [1.5,"3/2"]])
     if(Math.abs(a - x) < 1e-9) return sgn + t;
   return sgn + String(a).replace(".", ",");
 }
@@ -772,7 +778,7 @@ function aHints(p, tier){
                         : "Merkitsemäsi pisteet ovat oikein, mutta ratkaisuja on vielä lisää.");
     if(!good.length && solDist(p, closest) < NEAR)
       add("a-near", one ? "Merkitsemäsi piste on lähellä oikeaa ratkaisua."
-                        : `Merkitsemäsi pisteet ovat väärin, mutta sykkivä piste on lähellä ${sol}.`,
+                        : `Merkitsemäsi pisteet ovat väärin, mutta sykkivä piste on niistä lähimpänä ${sol}.`,
           one ? null : () => hintPulse.add(closest));
     // (one point, one solution: that it is wrong is obvious, the task would be solved)
     if(!good.length && solDist(p, closest) >= NEAR && !(one && n === 1))
@@ -996,11 +1002,11 @@ function drawHintLayer(){
     const vals = ["hh","vv"].includes(g.t) ? [g.v, -g.v] : [g.v];
     for(const v of vals){
       if(sinType(p)){ const y = -R*v;
-        h += `<line class="hmark sin" x1="-12" y1="${f1(y)}" x2="12" y2="${f1(y)}"/>` + text("sin", -20, y, valText(v), "end"); }
+        h += `<line class="hmark sin" x1="-12" y1="${f1(y)}" x2="12" y2="${f1(y)}"/>` + text("sin", -20, y, valText(v, true), "end"); }
       else if(cosType(p)){ const x = R*v;
-        h += `<line class="hmark cos" x1="${f1(x)}" y1="-12" x2="${f1(x)}" y2="12"/>` + text("cos", x, 34, valText(v)); }
+        h += `<line class="hmark cos" x1="${f1(x)}" y1="-12" x2="${f1(x)}" y2="12"/>` + text("cos", x, 34, valText(v, true)); }
       else { const y = -R*v;
-        h += `<line class="hmark tan" x1="${R-12}" y1="${f1(y)}" x2="${R+12}" y2="${f1(y)}"/>` + text("tan", R + 20, y, valText(v), "start"); }
+        h += `<line class="hmark tan" x1="${R-12}" y1="${f1(y)}" x2="${R+12}" y2="${f1(y)}"/>` + text("tan", R + 20, y, valText(v, true), "start"); }
     }
   }
   if(fx.quarters){
@@ -1025,13 +1031,28 @@ function drawHintLayer(){
     const c = b.v === undefined ? null : Math.max(-400, Math.min(400, R*b.v));   // off the picture: at its edge
     if(b.axis === "y"){
       h += `<line class="hband" x1="0" y1="${-R}" x2="0" y2="${R}"/>`;
-      if(c !== null) h += `<line class="hmark ${cls}" x1="-12" y1="${f1(-c)}" x2="12" y2="${f1(-c)}"/>` + text(cls, -20, -c, valText(b.v), "end");
+      if(c !== null) h += `<line class="hmark ${cls}" x1="-12" y1="${f1(-c)}" x2="12" y2="${f1(-c)}"/>` + text(cls, -20, -c, valText(b.v, true), "end");
     } else {
       h += `<line class="hband" x1="${-R}" y1="0" x2="${R}" y2="0"/>`;
-      if(c !== null) h += `<line class="hmark ${cls}" x1="${f1(c)}" y1="-12" x2="${f1(c)}" y2="12"/>` + text(cls, c, 34, valText(b.v));
+      if(c !== null) h += `<line class="hmark ${cls}" x1="${f1(c)}" y1="-12" x2="${f1(c)}" y2="12"/>` + text(cls, c, 34, valText(b.v, true));
     }
   }
   $("hintLayer").innerHTML = h;
+  roofs($("hintLayer"));
+}
+
+/* SVG text has no overline that meets the √ sign, so draw the roof over each
+   <tspan class="rt"> as a line after its <text> (with the same transform). */
+function roofs(root){
+  for(const t of root.querySelectorAll(".rt")){
+    const txt = t.closest("text"), b = t.getBBox(), cs = getComputedStyle(txt);
+    const fs = parseFloat(cs.fontSize), y = f1(b.y + fs*0.13), w = fs*0.07;
+    const line = (stroke, sw) => `<line x1="${f1(b.x - fs*0.03)}" y1="${y}" x2="${f1(b.x + b.width + fs*0.02)}" y2="${y}"
+      stroke="${stroke}" stroke-width="${f1(sw)}" stroke-linecap="butt"${txt.hasAttribute("transform") ? ` transform="${txt.getAttribute("transform")}"` : ""}/>`;
+    const halo = txt.classList.contains("hlabel") ? line(cs.stroke, w + 2*parseFloat(cs.strokeWidth)) : "";
+    txt.insertAdjacentHTML("beforebegin", halo);       // the halo goes under the text, the roof over it
+    txt.insertAdjacentHTML("afterend", line(cs.fill, w));
+  }
 }
 
 /* ── memory triangles ── */
@@ -1049,7 +1070,7 @@ function showTriangle(kind){
       <text class="tl" x="198" y="115">2</text>
       <text class="tl" x="75" y="240" text-anchor="middle">1</text>
       <text class="tl" x="185" y="240" text-anchor="middle">1</text>
-      <text class="tl" x="122" y="140" text-anchor="end">√3</text>
+      <text class="tl" x="122" y="140" text-anchor="end">√<tspan class="rt">3</tspan></text>
       <text class="ta" x="206" y="206" text-anchor="end">60°</text>
       <text class="ta" x="136" y="80">30°</text>
     </svg>`;
@@ -1065,7 +1086,7 @@ function showTriangle(kind){
       <path class="ra" d="M40,186 L54,186 L54,200"/>
       <text class="tl" x="125" y="228" text-anchor="middle">1</text>
       <text class="tl" x="24" y="122" text-anchor="end">1</text>
-      <text class="tl" x="136" y="106">√2</text>
+      <text class="tl" x="136" y="106">√<tspan class="rt">2</tspan></text>
       <text class="ta" x="172" y="192" text-anchor="end">45°</text>
       <text class="ta" x="48" y="82">45°</text>
     </svg>`;
@@ -1075,6 +1096,7 @@ function showTriangle(kind){
   }
   $("shBody").innerHTML = svg + `<p class="lead">${lead}</p><table class="vt">${table}</table>`;
   $("sheet").classList.add("show"); $("shClose").focus();
+  roofs($("shBody"));
 }
 function closeSheet(){ $("sheet").classList.remove("show"); }
 

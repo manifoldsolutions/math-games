@@ -105,7 +105,7 @@ alle 5° päässä ratkaisusta.
 | jokin merkitty oikein + vääriä (ratkaisuja 1 tai enemmän) | Yksi / Kaksi / Kolme … merkitsemistäsi pisteistä on oikein, mutta muut ovat väärin. |
 | ratkaisuja ≥ 2, merkityt kaikki oikein, ratkaisuja puuttuu | Merkitsemäsi pisteet ovat oikein, mutta ratkaisuja on vielä lisää. (yksi piste: Merkitsemäsi piste on oikein, …) |
 | kaikki väärin, yksi piste merkitty, se on lähellä | Merkitsemäsi piste on lähellä oikeaa ratkaisua. |
-| kaikki väärin, useita merkitty, lähin on lähellä | lähin piste sykkii magentana: Merkitsemäsi pisteet ovat väärin, mutta sykkivä piste on lähellä oikeaa ratkaisua. (useita ratkaisuja: … lähellä yhtä oikeista ratkaisuista.) |
+| kaikki väärin, useita merkitty, lähin on lähellä | lähin piste sykkii magentana: Merkitsemäsi pisteet ovat väärin, mutta sykkivä piste on niistä lähimpänä oikeaa ratkaisua. (useita ratkaisuja: … lähimpänä yhtä oikeista ratkaisuista.) |
 | kaikki väärin, mikään ei lähellä — ei kun ratkaisuja on 1 ja pisteitä 1 (silloin se on selvää: tehtävä olisi muuten ratkennut) | Yksikään merkitsemäsi piste ei ole ratkaisu. / Merkitsemäsi piste ei ole ratkaisu. |
 | kaikki kaukana (myös vihjetasolla 2) | Merkitsemäsi piste on kaukana oikeasta ratkaisusta. / Kaikki merkitsemäsi pisteet ovat kaukana oikeista ratkaisuista. |
 
