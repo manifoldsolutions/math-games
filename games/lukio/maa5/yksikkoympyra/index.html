@@ -714,10 +714,23 @@ function stateHint(p){
   }
   return (missing.length === 1 ? "Hyvä alku! Yksi ratkaisu puuttuu vielä." : `Hyvä alku! Ratkaisuja puuttuu vielä ${missing.length}.`) + symHint(p);
 }
+/* the very first hint, when there are several solutions and at least one
+   placed point is right: say what is right before anything else */
+function progressHint(p){
+  if(p.all || p.sols.length < 2) return "";
+  const good = placed.filter(d => isOk(p, d)).length, bad = placed.length - good;
+  if(!good) return "";
+  if(!bad) return "Merkitsemäsi pisteet ovat oikein, mutta ratkaisuja on vielä lisää.";
+  return good === 1 ? "Yksi merkitsemistäsi pisteistä on oikein."
+                    : "Osa merkitsemistäsi pisteistä on oikein, mutta osa on väärin.";
+}
 function giveHint(){
   if(answered) return;
   const p = task(), steps = hintSteps(p);
+  // this one does not use up a step: the next press continues as usual
+  const first = hintsUsed === 0 ? progressHint(p) : "";
   hintsUsed++;
+  if(first){ tipHint(first); return; }
   // progress first: with part of the answer found, skip ahead to the placed points
   if(onTrack(p)) hintStep = Math.max(hintStep, steps.indexOf("state"));
   const step = steps[Math.min(hintStep, steps.length - 1)];

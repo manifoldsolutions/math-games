@@ -110,6 +110,11 @@ games/<category>/<course>/<game>/index.html
   points; "Näytä ratkaisu" (appears after the last hint step) costs a life
   and gives 0 points. Third lost life = Game Over. Finishing level 7: +1000,
   +500 per life left.
+- First Vihje press, when the task has several solutions and at least one
+  placed point is right: "Yksi merkitsemistäsi pisteistä on oikein." (one right,
+  some wrong) / "Osa merkitsemistäsi pisteistä on oikein, mutta osa on väärin." /
+  "Merkitsemäsi pisteet ovat oikein, mutta ratkaisuja on vielä lisää." (none
+  wrong). It costs a hint but does not use up a step of the sequence below.
 - Vihje, one step per press: memory triangle (only where the solutions are
   special angles the triangle shows), method hint (levels 0–2 split hard
   angles into easy parts, radians stay in radians; degree splits use only
