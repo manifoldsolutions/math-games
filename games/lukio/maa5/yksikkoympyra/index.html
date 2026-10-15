@@ -807,6 +807,12 @@ function aHints(p, tier){
 function bHints(p, tier){
   const out = [], add = (id, text, fx) => out.push({id, text, fx});
   const g = p.guide, n = hasSols(p) ? p.sols.length : 0, S = n ? p.sols.map(norm) : [];
+  // a location hint that the marked (all wrong) points already satisfy:
+  // "Aivan oikein, ratkaisu on …, mutta ei merkitsemässäsi kohdassa."
+  const where = (text, test) => {
+    if(!placed.length || placed.some(d => isOk(p, d)) || !placed.every(test)) return text;
+    return `Aivan oikein, ${text[0].toLowerCase()}${text.slice(1, -1)}, mutta ei merkitsemässäsi ${placed.length === 1 ? "kohdassa" : "kohdissa"}.`;
+  };
   const rad = p.unit === "rad", half = rad ? "π" : "180°";
   // the angle shown while aiming: level 2 hint, from game level 5 also level 1
   const angleTier = level >= 5 ? [1,2] : [2];
@@ -888,15 +894,15 @@ function bHints(p, tier){
       const inQ = S.filter(d => quadrant(d) !== null);
       if(inQ.length){
         const s = inQ[Math.floor(Math.random() * inQ.length)];
-        add("quad", `${n === 1 ? "Ratkaisu" : "Yksi ratkaisuista"} on ${QUAD[quadrant(s)]}.`);
+        add("quad", where(`${n === 1 ? "Ratkaisu" : "Yksi ratkaisuista"} on ${QUAD[quadrant(s)]}.`, d => quadrant(d) === quadrant(s)));
       }
       for(const [ax, plus, minus] of [["x","x-akselin yläpuolella","x-akselin alapuolella"], ["y","y-akselin oikealla puolella","y-akselin vasemmalla puolella"]]){
         const sides = S.map(d => side(d, ax));
         if(sides.some(v => !v) || !sides.every(v => v === sides[0])) continue;
-        add(`half-${ax}`, `${n === 1 ? "Ratkaisu on" : "Kaikki ratkaisut ovat"} ${sides[0] > 0 ? plus : minus}.`);
+        add(`half-${ax}`, where(`${n === 1 ? "Ratkaisu on" : "Kaikki ratkaisut ovat"} ${sides[0] > 0 ? plus : minus}.`, d => side(d, ax) === sides[0]));
       }
       if(n < 4 && S.every(onAxis))
-        add("axes", n === 1 ? "Ratkaisu on koordinaattiakselilla." : "Ratkaisut ovat koordinaattiakseleilla.");
+        add("axes", where(n === 1 ? "Ratkaisu on koordinaattiakselilla." : "Ratkaisut ovat koordinaattiakseleilla.", onAxis));
     }
     // pictures: the value on its axis
     if((sinType(p) || cosType(p)) && g.v !== 0 && Math.abs(g.v) <= 1){
@@ -921,7 +927,7 @@ function bHints(p, tier){
       add("guide", two ? "Apuviivat on nyt piirretty ympyrään." : "Apuviiva on nyt piirretty ympyrään.", () => drawGuide(p));
     }
     // all four axis points: only level 3 may name them
-    if(n >= 4 && S.every(onAxis)) add("axes", "Ratkaisut ovat koordinaattiakseleilla.");
+    if(n >= 4 && S.every(onAxis)) add("axes", where("Ratkaisut ovat koordinaattiakseleilla.", onAxis));
     if(p.all) add("vis-tri", `Kolmion sivut ovat ${COS}${A}, ${SIN}${A} ja 1.`, () => { hintFx.tri = true; });
   }
   return out;

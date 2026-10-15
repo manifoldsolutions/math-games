@@ -168,6 +168,14 @@ on π, astetehtävissä asteet.
 | 2 | kaikki ratkaisut akseleilla, alle 4 ratkaisua | Ratkaisu on koordinaattiakselilla. / Ratkaisut ovat koordinaattiakseleilla. |
 | 3 | ratkaisut ovat kaikki neljä akselipistettä (määrää ratkaisun) | Ratkaisut ovat koordinaattiakseleilla. |
 
+**Sijaintivihje, jonka merkityt pisteet jo täyttävät:** jos kaikki merkityt
+pisteet ovat väärin ja täyttävät vihjeen ehdon (esim. merkitty piste on
+akselilla ja vihje on "Ratkaisu on koordinaattiakselilla"), vihje kuittaa sen:
+"Aivan oikein, ratkaisu on koordinaattiakselilla, mutta ei merkitsemässäsi
+kohdassa." / "Aivan oikein, ratkaisu on vasemmanpuoleisessa alaneljänneksessä,
+mutta ei merkitsemässäsi kohdassa." (useita pisteitä: … kohdissa). Koskee
+neljännes-, puolitaso- ja koordinaattiakselivihjeitä.
+
 Ratkaisupisteiden määrä on etusijavihje, kun ratkaisuja on enemmän kuin kaksi
 (kohta 3).
 
