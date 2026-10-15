@@ -99,8 +99,10 @@ games/<category>/<course>/<game>/index.html
 - No "Tarkista" button: a task is solved the moment every solution is marked
   (within 5°) and no wrong point is left. If all solutions are marked but
   there is an extra point, the hint line says so after about 1 s.
-- Levels 0–7, 6 tasks each. Level 0 shows the angle (arc + degrees) while
-  aiming and next to placed points; level 7 mixes levels 3–6 and is the last.
+- Levels 0–7, 6 tasks each. Solving the last task of a level starts the
+  fireworks, and 1.5 s later the level dialog opens by itself (no button).
+  Level 0 shows the angle (arc + degrees) while aiming and next to placed
+  points; level 7 mixes levels 3–6 and is the last.
 - Scoring like Yhtälövaaka, 3 lives. Task score =
   `(50 + 100·solutions/clicks + 50·(5 s + 2 s·clicks)/time − 30·hints) × level`
   (level 0 counts as ×1, time points have no cap, a task never goes below 0).
@@ -110,7 +112,9 @@ games/<category>/<course>/<game>/index.html
   +500 per life left.
 - Vihje, one step per press: memory triangle (only where the solutions are
   special angles the triangle shows), method hint (levels 0–2 split hard
-  angles into easy parts, radians stay in radians), hint about the placed
+  angles into easy parts, radians stay in radians; degree splits use only
+  what beginners know, 45°, 90°, 180°, 360°: 315° = 3 · 90° + 45°, never
+  270° + 45°), hint about the placed
   points, then the helper line. With part of the answer found and nothing
   wrong, the hint jumps straight to the placed points (mirror-image hint).
 

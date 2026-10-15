@@ -297,11 +297,15 @@ const NONE = [];
 /* levels 0–2: "split" breaks a hard angle into easy parts for the first hint;
    radians are split in radians, never converted to degrees */
 const HALF = " ja π on tasan puoli kierrosta", FULL = " ja 2π on täysi kierros";
-// degrees: whole quarter turns plus 30°, 45° or 60° (150° = 90° + 60°); easy angles get none
+// degrees: built from what beginners know (45°, 90°, 180°, 360°), so three
+// quarter turns are 3 · 90°, never 270°: 150° = 90° + 60°, 315° = 3 · 90° + 45°.
+// Easy angles get no split.
 function degSplit(d){
-  const q = Math.floor(d/90)*90, r = d - q;
-  if(d === 270) return "270° = 180° + 90°";
-  return q > 0 && [30,45,60].includes(r) ? `${d}° = ${q}° + ${r}°` : "";
+  const k = Math.floor(d/90), r = d - 90*k;
+  const base = ["", "90°", "180°", "3 · 90°"][k] || "";
+  if(!base) return "";
+  if(r === 0) return k === 3 ? "270° = 3 · 90°" : "";
+  return [30,45,60].includes(r) ? `${d}° = ${base} + ${r}°` : "";
 }
 const BANK = {
 0: [ // angles in degrees, the angle is shown while aiming
@@ -309,15 +313,15 @@ const BANK = {
 ],
 1: [ // angles in degrees
   P(eq(A,"60°"), [60], {t:"rays"}, {unit:"deg"}),
-  P(eq(A,"135°"), [135], {t:"rays"}, {unit:"deg", split:"135° = 90° + 45°"}),
+  P(eq(A,"135°"), [135], {t:"rays"}, {unit:"deg", split:degSplit(135)}),
   P(eq(A,"−45°"), [315], {t:"rays"}, {unit:"deg", note:"Negatiivinen kulma kierretään myötäpäivään, joten −45° on sama piste kuin 315°."}),
   P(eq(A,"±30°"), [30,330], {t:"rays"}, {unit:"deg", note:"± tarkoittaa kahta kulmaa: 30° ja −30°. Kulma −30° on sama piste kuin 330°."}),
   P(eq(A,"90°"+PM+"45°"), [45,135], {t:"rays"}, {unit:"deg"}),
   P(eq(A,"180°"+PM+"60°"), [120,240], {t:"rays"}, {unit:"deg"}),
   P(eq(A,"390°"), [30], {t:"rays"}, {unit:"deg", split:"390° = 360° + 30°", note:"390° = 360° + 30°: täysi kierros ja vielä 30°."}),
-  P(eq(A,"−270°"), [90], {t:"rays"}, {unit:"deg", split:"270° = 180° + 90°, ja miinus tarkoittaa myötäpäivään", note:"Kolme neljännestä myötäpäivään päätyy samaan pisteeseen kuin yksi neljännes vastapäivään."}),
-  P(eq(A,"±150°"), [150,210], {t:"rays"}, {unit:"deg", split:"150° = 90° + 60°"}),
-  P(eq(A,"270°"+PM+"30°"), [240,300], {t:"rays"}, {unit:"deg", split:"270° = 180° + 90°"}),
+  P(eq(A,"−270°"), [90], {t:"rays"}, {unit:"deg", split:"270° = 3 · 90°, ja miinus tarkoittaa myötäpäivään", note:"Kolme neljännestä myötäpäivään päätyy samaan pisteeseen kuin yksi neljännes vastapäivään."}),
+  P(eq(A,"±150°"), [150,210], {t:"rays"}, {unit:"deg", split:degSplit(150)}),
+  P(eq(A,"270°"+PM+"30°"), [240,300], {t:"rays"}, {unit:"deg", split:degSplit(270)}),
 ],
 2: [ // angles in radians
   P(eq(A,pi("",3)), [60], {t:"rays"}, {unit:"rad", note:`${pi("",3)} on kuudesosa täydestä kierroksesta 2π.`}),
@@ -436,6 +440,7 @@ function angleText(d, unit){
 /* ── state ──────────────────────────────────────────────────────────── */
 let level = 0, tasks = [], idx = 0, placed = [], aim = null, answered = false;
 let score = 0, levelScore = 0, lives = LIVES;
+let levelDone = false;          // last task solved: the level dialog is on its way
 let clicks = 0, hintsUsed = 0, taskStart = 0, lastWin = null, lastPenalty = 0, gameOver = false;
 const task = () => tasks[idx];
 const showAngle = () => level === 0;
@@ -550,6 +555,7 @@ function startLevel(){
   showTask();
 }
 function showTask(){
+  levelDone = false;
   placed = []; answered = false; aim = null;
   clicks = 0; hintsUsed = 0; hintStep = 0; lastWin = null; taskStart = performance.now();
   clearTimeout(hintTimer); clearTimeout(almostTimer);
@@ -823,6 +829,12 @@ function win(){
   aim = null; drawAim(); drawGuide(p); drawPoints({bad:[], missed:[]});
   updateHud();
   showFeedback(p, "win");
+  // the last task of a level: fireworks first, then the level dialog by itself
+  if(idx === TASKS-1){
+    levelDone = true; $("next").hidden = true;
+    if(motion) burst();
+    setTimeout(() => showOverlay(level < MAX_LEVEL ? "level" : "complete"), motion ? 1500 : 300);
+  }
 }
 
 /* "Näytä ratkaisu" (or the last life lost): show the answer, no points */
@@ -874,6 +886,7 @@ function showFeedback(p, kind, head){
   }
 
   $("next").textContent = gameOver || idx === TASKS-1 ? "Katso tulos" : "Seuraava";
+  $("next").hidden = false;
   $("fb").hidden = false;
   $("actions").hidden = true; $("subctrl").hidden = true;
   $("hint").hidden = true; $("hintBtn").hidden = true;
@@ -883,7 +896,7 @@ function showFeedback(p, kind, head){
 }
 
 function next(){
-  if(!answered) return;
+  if(!answered || levelDone) return;          // a finished level opens its dialog by itself
   if(gameOver){ showOverlay("gameover"); return; }
   if(idx < TASKS-1){ idx++; showTask(); return; }
   showOverlay(level < MAX_LEVEL ? "level" : "complete");
@@ -904,7 +917,6 @@ function showOverlay(kind){
     $("ovScore").innerHTML = row("Pisteet tältä tasolta", fmt(levelScore)) +
       row("Elämiä jäljellä", `${lives}/${LIVES}`) + row("Pisteet yhteensä", fmt(score), "tot");
     first = btn("Seuraava taso", () => { level++; startLevel(); }, true);
-    if(motion) burst();
   } else if(kind === "complete"){
     const fromLevels = score, lifeBonus = BONUS_LIFE*lives;
     score += BONUS_FINISH + lifeBonus; updateHud();
@@ -916,7 +928,6 @@ function showOverlay(kind){
       row(`Elämät ${lives} × ${BONUS_LIFE}`, "+" + fmt(lifeBonus)) +
       row("Yhteensä", fmt(score), "tot");
     first = btn("Aloita alusta", newRun, true);
-    if(motion) burst();
   } else {
     $("ovTitle").textContent = "Game Over";
     $("ovResult").innerHTML = `<div class="bigscore">${fmt(score)} pistettä</div>`;
