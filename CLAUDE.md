@@ -164,10 +164,10 @@ games/<category>/<course>/<game>/index.html
   A new row lifts the whole chain by one row.
 - When the scale turns around (box on the right), the last row turns too:
   `2 = x` → `x = 2`.
-- The win dialog has a closed "Näytä ratkaisu" section at the bottom: the
-  player's chain beside a model chain with the step counts. The model comes
-  from how the puzzle was built (take off the constant k, then the kb extra
-  boxes), never from a search.
+- The win dialog has a "Näytä ratkaisu" section at the bottom, open by
+  default (it can be folded away): the player's chain beside a model chain
+  with the step counts. The model comes from how the puzzle was built (take
+  off the constant k, then the kb extra boxes), never from a search.
 
 ## Open questions (ask Vadim before deciding)
 

@@ -1053,13 +1053,13 @@ function showOverlay(kind){
       row(`Aika ${sec(w.t)}`, "+"+w.pt) +
       row(`Taso ${level}`, "×"+level) +
       row("Yhteensä", "+"+fmt(w.total), "tot");
-    // "Näytä ratkaisu": the player's chain beside the model one (closed by default)
+    // "Näytä ratkaisu": the player's chain beside the model one (open by default)
     const mine = chain.map(r => ({...r})), model = modelChain(puzzle);
     const steps = (rows, extra = "") => { const n = stepCount(rows); return `<div class="steps">${n} ${n === 1 ? "vaihe" : "vaihetta"}${extra}</div>`; };
     $("ovCmp").innerHTML =
       `<div><h3>Sinun ratkaisusi</h3>${miniChain(mine)}${steps(mine)}</div>` +
       `<div><h3>Mallivastaus</h3>${miniChain(model)}${steps(model)}</div>`;
-    $("ovSolution").open = false; $("ovSolution").hidden = false;
+    $("ovSolution").open = true; $("ovSolution").hidden = false;
     if(level<MAX_LEVEL) first=btn("Seuraava taso",()=>{
       level++;
       // balloons come in: their short intro first, the first time on this device
