@@ -43,7 +43,7 @@
   .stage-wrap{ width:min(820px,100%); padding:8px 8px 0; }
   #stage{
     display:block; width:100%; height:auto;
-    max-height:calc(100dvh - 280px); min-height:260px;
+    max-height:calc(100dvh - 370px); min-height:260px;
     user-select:none; -webkit-user-select:none; touch-action:none; cursor:default;
   }
   .floor{ stroke:var(--magenta); stroke-width:3; filter:var(--glow-magenta); }
@@ -80,14 +80,43 @@
   .item:hover .gem-body{ fill:#fff07a; }
   .open-lid{ fill:var(--green-wash); stroke:var(--green); stroke-width:3.5; }
 
-  /* ── equation under the scale ── */
-  .readout{
-    font-family:var(--math); font-weight:600; font-size:clamp(26px,6.5vw,40px);
-    display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline;
-    width:min(560px,96vw); white-space:nowrap; margin-top:2px;
+  /* ── equation chain under the scale ──
+     One row per balanced state, aligned at "=", with "| −1" on the right of
+     the row it was done to. The newest three rows sit under the scale; older
+     ones rise behind the (transparent) scale picture, faded. */
+  .stage-wrap{ position:relative; z-index:1; }
+  .eqzone{ position:relative; width:100%; height:calc(3 * var(--row)); --row:clamp(32px,7.4vw,46px); margin-top:2px; }
+  .chain{
+    position:absolute; left:0; right:0; bottom:0; z-index:0; pointer-events:none;
+    /* [pad][left side][=][right side][| −1]: the two sides are made equally wide
+       (each cell also holds an invisible copy of the other side) and the pad
+       and the step column share the rest equally, so "=" stays in the exact
+       middle, under the scale's post, whatever the row says */
+    display:grid; grid-template-columns:minmax(0,1fr) max-content auto max-content minmax(0,1fr);
+    grid-auto-rows:var(--row); align-items:center;
+    font-family:var(--math); font-weight:600; font-size:clamp(22px,5.4vw,34px); white-space:nowrap;
   }
-  .readout .lhs{ text-align:right; }
-  .readout .rhs{ text-align:left; }
+  .chain.rise{ transition:transform .35s ease; }
+  .chain > span{ transition:opacity .35s ease; }
+  .chain .lhs{ grid-column:2; }
+  .chain .rel{ grid-column:3; text-align:center; }
+  .chain .rhs{ grid-column:4; }
+  .chain .lhs, .chain .rhs{ display:grid; }
+  .chain .lhs > *, .chain .rhs > *{ grid-area:1/1; }
+  .chain .lhs > :last-child{ justify-self:end; }
+  .chain .rhs > :last-child{ justify-self:start; }
+  .chain .ghost{ visibility:hidden; }
+  /* ≠ drawn as the font's own "=" with a slash (Chakra Petch has no ≠ glyph) */
+  .eq.ne{ position:relative; display:inline-block; }
+  .eq.ne::after{
+    content:""; position:absolute; left:50%; top:52%; width:.085em; height:.62em; border-radius:.04em;
+    background:currentColor; transform:translate(-50%,-50%) rotate(32deg);
+  }
+  .chain .ann{ grid-column:5; padding-left:.7em; color:var(--muted); font-weight:500; }
+  .chain .ann .bar{ color:var(--accent); opacity:.7; margin-right:.25em; }
+  .chain .old{ opacity:.28; }
+  .chain .gone{ opacity:0; }
+  @media (prefers-reduced-motion: reduce){ .chain.rise, .chain > span{ transition:none; } }
 
   .legend{
     display:flex; gap:22px; justify-content:center; align-items:center;
@@ -95,6 +124,34 @@
   }
   .legend span{ display:inline-flex; align-items:center; gap:6px; }
   .legend svg{ width:20px; height:20px; overflow:visible; }
+
+  /* ── "Näytä ratkaisu" in the win dialog: the player's chain beside a model one ── */
+  .win{ max-height:calc(100dvh - 40px); overflow-y:auto; }
+  .win:has(.solution[open]){ width:min(600px,96vw); }
+  .solution{ margin-top:16px; border-top:1px solid var(--line); padding-top:10px; }
+  .solution summary{
+    list-style:none; cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+    font-family:var(--ui); font-size:13px; letter-spacing:.04em; color:var(--muted);
+    padding:4px 6px; border-radius:var(--radius);
+  }
+  .solution summary::-webkit-details-marker{ display:none; }
+  .solution summary::before{ content:"▸"; color:var(--accent); transition:transform .15s ease; }
+  .solution[open] summary::before{ transform:rotate(90deg); }
+  .solution summary:hover{ color:var(--accent-ink); }
+  .solution summary:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  /* two equal halves, each chain centred in its half: the pair sits symmetrically around the middle */
+  .cmp{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; text-align:center; }
+  .cmp > div{ min-width:0; }
+  .cmp h3{ font-family:var(--ui); font-size:12px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin:0 0 6px; }
+  .cmp .steps{ font-family:var(--ui); font-size:12px; color:var(--muted); margin-top:6px; }
+  .mini{
+    display:inline-grid; grid-template-columns:auto auto auto auto; align-items:baseline; max-width:100%; text-align:left;
+    gap:4px 0; font-family:var(--math); font-weight:600; font-size:clamp(13px,3.6vw,17px); white-space:nowrap; overflow-x:auto;
+  }
+  .mini .lhs{ text-align:right; } .mini .rhs{ text-align:left; }
+  .mini .ann{ padding-left:.6em; color:var(--muted); font-weight:500; }
+  .mini .ann .bar{ color:var(--accent); opacity:.7; margin-right:.2em; }
+  @media (max-width:380px){ .cmp{ grid-template-columns:1fr; } }
 
   /* ── what the box held, in the win dialog ── */
   .win .gems{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin:8px auto 0; max-width:260px; }
@@ -152,7 +209,7 @@
       </svg>
     </div>
 
-    <div class="readout" id="readout" aria-live="polite"></div>
+    <div class="eqzone"><div class="chain" id="chain" aria-live="polite"></div></div>
     <div class="legend">
       <span><svg viewBox="-17 -17 34 34"><rect x="-15" y="-15" width="30" height="30" rx="6" class="box-body" style="stroke-width:2.2"/></svg>= x</span>
       <span><svg viewBox="-11 -11 22 22"><polygon points="-6,-10 6,-10 10,-4 0,11 -10,-4" class="gem-body"/></svg>= 1</span>
@@ -173,6 +230,10 @@
       <p id="ovMsg"></p>
       <div class="score" id="ovScore"></div>
       <div class="btns" id="ovBtns"></div>
+      <details class="solution" id="ovSolution" hidden>
+        <summary>Näytä ratkaisu</summary>
+        <div class="cmp" id="ovCmp"></div>
+      </details>
     </div>
   </div>
 
@@ -389,6 +450,7 @@ function startPuzzle(p, keepClock){
   puzzle=p;
   if(!keepClock){ moves=0; elapsed=0; }
   cur={L:{p:0,...p.L}, R:{p:0,...p.R}};
+  resetChain();
   tilt=0; tiltV=0; needFlip=false; flipT=0; status="play"; settle=0; flash=null; celebrated=false;
   $("rig").removeAttribute("transform");
   cancelDrag();
@@ -450,13 +512,107 @@ function sideHTML(c){
   return h || `<span class="cterm">0</span>`;
 }
 function eqHTML(){
-  const s=tiltSign();
-  const rel = s===0 ? `<span class="eq">=</span>` : `<span class="eq off">${s>0?"&lt;":"&gt;"}</span>`;
-  return `<span class="lhs">${sideHTML(cur.L)}</span>${rel}<span class="rhs">${sideHTML(cur.R)}</span>`;
+  return `<span class="lhs">${sideHTML(cur.L)}</span>${relHTML()}<span class="rhs">${sideHTML(cur.R)}</span>`;
+}
+
+/* ── equation chain ─────────────────────────────────────────────────────
+   chain = the balanced states so far, oldest first: {L, R, a}. `a` is what
+   was done to both sides to get to the next row ({b: x's, c: constant}),
+   null when the two sides changed differently ("weighing" — still an open
+   question in CLAUDE.md, so for now such a row just has no annotation),
+   undefined on the newest row. While a step is unfinished (the scale is
+   tipped, or an item is in the hand) the newest row shows what has been done
+   so far after each side, e.g. x + 2 ≠ 4 − 1, until the scale balances. */
+let chain = [], shownRows = 0;
+const copyState = () => ({L:{...cur.L}, R:{...cur.R}});
+const sameSide = (a, b) => a.b===b.b && a.d===b.d && a.p===b.p;
+const sameState = (a, b) => sameSide(a.L, b.L) && sameSide(a.R, b.R);
+const val = c => ({b:c.b, c:c.d - c.p});
+const kindOf = a => a && (a.b && !a.c ? "x" + Math.sign(a.b) : !a.b && a.c ? "c" + Math.sign(a.c) : "");
+function resetChain(){ chain = [{...copyState(), a:undefined}]; shownRows = 0; }
+
+// a balanced state that differs from the newest row becomes a new row
+function commitChain(){
+  const last = chain[chain.length - 1], vL0 = val(last.L), vR0 = val(last.R), vL = val(cur.L), vR = val(cur.R);
+  const dL = {b:vL.b - vL0.b, c:vL.c - vL0.c}, dR = {b:vR.b - vR0.b, c:vR.c - vR0.c};
+  let a = dL.b===dR.b && dL.c===dR.c ? dL : null;
+  // −1, −1, −1 → | −3: a step of the same kind and sign as the one before it merges into it
+  const prev = chain.length >= 2 ? chain[chain.length - 2] : null;
+  if(a && prev && kindOf(prev.a) && kindOf(prev.a) === kindOf(a)){
+    chain.pop(); a = {b:prev.a.b + a.b, c:prev.a.c + a.c}; chain[chain.length - 1].a = a;
+  } else last.a = a;
+  chain.push({...copyState(), a:undefined});
+}
+/* the model solution, from how the puzzle was built (see genPuzzle): take the
+   constant k off both sides, then the kb extra boxes; the last row is x = n
+   even when the box started on the right (the scale turns around) */
+function modelChain(p){
+  const side = (b, c) => ({b, d:Math.max(0, c), p:Math.max(0, -c)});
+  const boxLeft = p.L.b > p.R.b, X = boxLeft ? p.L : p.R, O = boxLeft ? p.R : p.L;
+  const kb = O.b, k = X.d - (X.p || 0), rest = O.d - (O.p || 0);   // rest = x + k
+  const row = (bx, cx, bo, co, a) => boxLeft ? {L:side(bx, cx), R:side(bo, co), a} : {L:side(bo, co), R:side(bx, cx), a};
+  const rows = [row(1 + kb, k, kb, rest, k ? {b:0, c:-k} : kb ? {b:-kb, c:0} : undefined)];
+  if(k) rows.push(row(1 + kb, 0, kb, rest - k, kb ? {b:-kb, c:0} : undefined));
+  if(kb) rows.push(row(1, 0, 0, rest - k));
+  const last = rows[rows.length - 1];
+  if(!boxLeft) [last.L, last.R] = [last.R, last.L];        // 2 = x is written x = 2, as in the player's chain
+  return rows;
+}
+function miniChain(rows){
+  return `<div class="mini">` + rows.map(r => `<span class="lhs">${sideHTML(r.L)}</span><span class="eq">=</span>` +
+    `<span class="rhs">${sideHTML(r.R)}</span><span class="ann">${annHTML(r.a)}</span>`).join("") + `</div>`;
+}
+const stepCount = rows => rows.filter(r => r.a && (r.a.b || r.a.c)).length;
+
+// the scale was turned around: the newest row is written the other way round too
+function flipChain(){ const r = chain[chain.length - 1]; [r.L, r.R] = [r.R, r.L]; }
+
+function annHTML(a){
+  if(!a || (!a.b && !a.c)) return "";
+  const t = [];
+  if(a.b) t.push(`${a.b < 0 ? "−" : "+"}${Math.abs(a.b) === 1 ? "" : Math.abs(a.b)}x`);
+  if(a.c) t.push(`${a.c < 0 ? "−" : "+"}${Math.abs(a.c)}`);
+  return `<span class="bar">|</span>` + t.map((x, i) => i ? x.replace(/^([−+])/, " $1 ") : x).join("");
+}
+// what has been put into or taken out of a cup since the newest row, written
+// after that side: a diamond −1/+1, a balloon +1/−1 (taking a balloon out
+// makes the cup heavier), a box −x/+x
+function pendingHTML(was, now){
+  const op = neg => `<span class="op">${neg ? "−" : "+"}</span>`, t = [];
+  const db = now.b - was.b, dd = now.d - was.d, dp = now.p - was.p;
+  if(db) t.push(op(db < 0) + `<span class="xterm">${Math.abs(db) === 1 ? "" : Math.abs(db)}x</span>`);
+  if(dd) t.push(op(dd < 0) + `<span class="cterm">${Math.abs(dd)}</span>`);
+  if(dp) t.push(op(dp > 0) + `<span class="pterm">${Math.abs(dp)}</span>`);
+  return t.join("");
+}
+// "=" when the scale is level, otherwise a red "≠": with x unknown we can't say
+// which side is bigger, even though the scale shows it
+const relHTML = () => tiltSign() === 0 ? `<span class="eq">=</span>` : `<span class="eq off ne" role="img" aria-label="≠">=</span>`;
+
+function renderChain(){
+  const last = chain[chain.length - 1];
+  if(status==="play" && !drag && tiltSign()===0 && !sameState(cur, last)) commitChain();
+  const rows = chain.map(r => ({lhs:sideHTML(r.L), rel:`<span class="eq">=</span>`, rhs:sideHTML(r.R), ann:annHTML(r.a)}));
+  const top = chain[chain.length - 1], open = rows[rows.length - 1];
+  if(!sameState(cur, top)){                                     // an unfinished step
+    open.lhs += pendingHTML(top.L, cur.L); open.rhs += pendingHTML(top.R, cur.R); open.rel = relHTML();
+  }
+  const el = $("chain"), n = rows.length;
+  el.innerHTML = rows.map((r, i) => { const o = i < n - 11 ? ' gone' : i < n - 3 ? ' old' : '';   // at most 8 faded rows above the newest three
+    const g = h => `<span class="ghost" aria-hidden="true">${h}</span>`;
+    return `<span class="lhs${o}">${g(r.rhs)}<span>${r.lhs}</span></span><span class="rel${o}">${r.rel}</span>` +
+           `<span class="rhs${o}">${g(r.lhs)}<span>${r.rhs}</span></span><span class="ann${o}">${r.ann}</span>`; }).join("");
+  // a new row lifts the whole chain up by one row (a merge drops it by one)
+  if(shownRows && n !== shownRows && motion){
+    const h = el.firstElementChild ? el.firstElementChild.getBoundingClientRect().height : 0;
+    el.classList.remove("rise"); el.style.transform = `translateY(${(n - shownRows) * h}px)`;
+    void el.offsetWidth; el.classList.add("rise"); el.style.transform = "";
+  }
+  shownRows = n;
 }
 
 function updateUI(){
-  $("readout").innerHTML = eqHTML();
+  renderChain();
   const hint=$("hint");
   let msg="Vedä esine pois kupista (se putoaa lattialle) tai lisää hyllyltä — ja tee sama toiselle kupille. Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa.", warn=false;
   if(balloonsOn()) msg="Ilmapallo keventää kuppia yhden timantin verran. Irti vedetty pallo lentää pois. Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa.";
@@ -765,7 +921,7 @@ function showOverlay(kind){
     b.textContent=label; if(primary) b.className="primary"; b.addEventListener("click",fn); btns.appendChild(b); return b; };
   const link=()=>{ const a=document.createElement("a"); a.href="../../../../#/lukio/maa1-2";
     a.textContent="Palaa kurssiin"; btns.appendChild(a); };
-  $("ovGems").innerHTML=""; $("ovScore").innerHTML="";
+  $("ovGems").innerHTML=""; $("ovScore").innerHTML=""; $("ovSolution").hidden=true;
   const row=(label,val,cls="")=>`<span class="${cls}">${label}</span><span class="v ${cls}">${val}</span>`;
   const sec = t => t.toFixed(1).replace(".",",")+" s";
   let first;
@@ -786,6 +942,13 @@ function showOverlay(kind){
       row(`Aika ${sec(w.t)}`, "+"+w.pt) +
       row(`Taso ${level}`, "×"+level) +
       row("Yhteensä", "+"+fmt(w.total), "tot");
+    // "Näytä ratkaisu": the player's chain beside the model one (closed by default)
+    const mine = chain.map(r => ({...r})), model = modelChain(puzzle);
+    const steps = (rows, extra = "") => { const n = stepCount(rows); return `<div class="steps">${n} ${n === 1 ? "vaihe" : "vaihetta"}${extra}</div>`; };
+    $("ovCmp").innerHTML =
+      `<div><h3>Sinun ratkaisusi</h3>${miniChain(mine)}${steps(mine)}</div>` +
+      `<div><h3>Mallivastaus</h3>${miniChain(model)}${steps(model)}</div>`;
+    $("ovSolution").open = false; $("ovSolution").hidden = false;
     if(level<MAX_LEVEL) first=btn("Seuraava taso",()=>{ level++; newPuzzle(); },true);
     else first=btn("Jatka",()=>showOverlay("complete"),true);         // the last level: on to the finish
   } else if(kind==="complete"){
@@ -874,11 +1037,11 @@ function frame(now){
   if(status==="flipping"){
     const before=flipT;
     flipT=Math.min(1, flipT+dt/0.9);
-    if(before<0.5 && flipT>=0.5){ [cur.L, cur.R]=[cur.R, cur.L]; renderPan("L"); renderPan("R"); updateUI(); }
+    if(before<0.5 && flipT>=0.5){ [cur.L, cur.R]=[cur.R, cur.L]; flipChain(); renderPan("L"); renderPan("R"); updateUI(); }
     const sx=Math.max(0.001, Math.abs(Math.cos(Math.PI*flipT)));
     $("rig").setAttribute("transform",`translate(${PIV.x} 0) scale(${sx.toFixed(3)} 1) translate(${-PIV.x} 0)`);
     if(flipT>=1){
-      if(cur.R.b){ [cur.L, cur.R]=[cur.R, cur.L]; renderPan("L"); renderPan("R"); }   // (no-motion path)
+      if(cur.R.b){ [cur.L, cur.R]=[cur.R, cur.L]; flipChain(); renderPan("L"); renderPan("R"); updateUI(); }   // (no-motion path)
       $("rig").removeAttribute("transform"); needFlip=false; reveal();
     }
   }

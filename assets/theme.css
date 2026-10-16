@@ -125,7 +125,7 @@ body.game{ min-height:100dvh; display:flex; flex-direction:column; }
 .pterm{ color:var(--magenta-ink); }               /* negative constants (balloons) */
 .op{ color:var(--muted); margin:0 .14em; }
 .eq{ color:var(--ink); margin:0 .3em; }
-.eq.off{ color:var(--red); text-shadow:0 0 10px rgba(255,61,110,.6); }   /* < or > when unbalanced */
+.eq.off{ color:var(--red); text-shadow:0 0 10px rgba(255,61,110,.6); }   /* ≠ (or < >) when unbalanced */
 
 /* ── text under the board ─────────────────────────────────────────────── */
 .hint{ text-align:center; color:var(--muted); font-size:13px; padding:4px 16px 8px; min-height:2.6em; max-width:520px; }

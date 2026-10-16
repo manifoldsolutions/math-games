@@ -21,6 +21,8 @@
           with the game's own index.html inside it.
        2. Add a game entry in the right course whose `game` is that path.
      Set `game: null` to show a game as "Coming soon" (not clickable).
+     Titles and blurbs can be given in both languages: { fi: "…", en: "…" }
+     (see the comment above CATALOG for the language switch).
 
      IDs (the `id:` fields) become part of the URL, so keep them short and
      url-safe: lowercase letters, numbers and hyphens, no spaces.
@@ -73,6 +75,20 @@
     gap:9px;
   }
   .mark svg{ display:block; filter:var(--glow-cyan); }
+
+  /* FI | EN switch, top right of the hero */
+  .langsw{
+    position:absolute; top:clamp(28px, 6vw, 60px); right:clamp(20px, 5vw, 44px);
+    display:inline-flex; border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+    background:rgba(8,7,15,.7);
+  }
+  .langsw button{
+    font:600 13px var(--ui); letter-spacing:.08em; color:var(--muted); background:transparent;
+    border:0; padding:6px 12px; cursor:pointer;
+  }
+  .langsw button:hover{ color:var(--accent-ink); }
+  .langsw button[aria-pressed="true"]{ background:rgba(0,229,255,.16); color:var(--accent-ink); }
+  .langsw button:focus-visible{ outline:2px solid var(--magenta); outline-offset:-2px; }
   .hero h1{
     font-family:var(--display);
     font-weight:800;
@@ -170,6 +186,12 @@
   .card::before{ top:-1px; left:-1px; border-width:2px 0 0 2px; }
   .card::after{ bottom:-1px; right:-1px; border-width:0 2px 2px 0; border-color:var(--magenta); }
   .card .glyph{ color:var(--accent); filter:var(--glow-cyan); align-self:flex-start; }
+  /* "In Finnish" / "In English" on a category in one language only */
+  .card .tag{
+    position:absolute; top:20px; right:20px;
+    font-family:var(--ui); font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--magenta-ink); border:1px solid rgba(255,61,242,.55); border-radius:var(--radius); padding:2px 7px;
+  }
   .card .glyph.txt{ font-family:var(--ui); font-weight:700; font-size:19px; line-height:26px; height:26px; letter-spacing:.02em; white-space:nowrap; }
   .card .title{
     font-family:var(--ui);
@@ -270,7 +292,10 @@
         </svg>
         manifoldsolutions.fi
       </span>
-      <h1>Math games by<br>Vadim Weinstein.</h1>
+      <div class="langsw" id="langsw" role="group" aria-label="Kieli / Language">
+        <button type="button" data-lang="fi">FI</button><button type="button" data-lang="en">EN</button>
+      </div>
+      <h1 id="heroTitle">Math games by<br>Vadim Weinstein.</h1>
       <p></p>
     </div>
   </header>
@@ -281,7 +306,7 @@
     <div id="app"></div>
   </main>
 
-  <footer><div class="wrap">Built and hosted on GitHub Pages.</div></footer>
+  <footer><div class="wrap" id="footText">Built and hosted on GitHub Pages.</div></footer>
 
 <script>
 /* ══════════════════════════════════════════════════════════════════════
@@ -293,72 +318,108 @@
    `icon` (optional, on any level) picks the card's glyph: a name from
    GLYPHS below (e.g. "scale") or a short text such as "f(x)". A course
    without one shows its category's glyph, a game its course's.
+   Languages: the page has a FI/EN switch. A `title` or `blurb` is either
+   one string (same in both) or { fi: "…", en: "…" }. A category whose
+   content is in one language only gets `lang: "fi"` or `lang: "en"`; its
+   card then carries a small "In Finnish" / "In English" tag in the other
+   language. `kind: "tool"` marks something that isn't a game (the card
+   says "Avaa / Explore" instead of "Pelaa / Play"). A category whose
+   sections aren't school courses gets `sub: "topics"` ("1 aihe / 1 topic"
+   instead of "1 kurssi / 1 course").
    ══════════════════════════════════════════════════════════════════════ */
 const CATALOG = [
   {
     id: "lukio",
     title: "Lukiomatikkaa",
+    blurb: { fi: "Lukion matematiikka.", en: "Finnish upper-secondary maths." },
+    lang: "fi",
     icon: "lyre",
-    blurb: "Finnish upper-secondary curriculum, in Finnish.",
     courses: [
       {
-          id: "maa1-2",
-          title: "MAA 1–2",
-          blurb: "Funktiot ja yhtälöt",
-          icon: "f(x)",
-          games: [
-          { id: "game0", title: "Yhtälövaaka", blurb: "", icon: "scale", game: "games/lukio/maa1-2/yhtalovaaka/" },
-          { id: "game1", title: "Yhtälön ratkaisu 1", blurb: "", icon: "boxedx", game: "games/lukio/maa1-2/yhtalo1/" },
-          { id: "game2", title: "Yhtälön ratkaisu 2", blurb: "", icon: "boxedx", game: "games/lukio/maa1-2/yhtalo2/" },
+        id: "maa1-2",
+        title: "MAA 1–2",
+        blurb: "Funktiot ja yhtälöt",
+        icon: "f(x)",
+        games: [
+          { id: "game0", title: "Yhtälövaaka", icon: "scale", game: "games/lukio/maa1-2/yhtalovaaka/" },
+          { id: "game1", title: "Yhtälön ratkaisu 1", icon: "boxedx", game: "games/lukio/maa1-2/yhtalo1/" },
+          { id: "game2", title: "Yhtälön ratkaisu 2", icon: "boxedx", game: "games/lukio/maa1-2/yhtalo2/" },
         ],
       },
       {
-          id: "maa3",
-          title: "MAA 3",
-          blurb: "Geometria",
-          icon: "geometry",
-          games: [
-          ],
+        id: "maa3",
+        title: "MAA 3",
+        blurb: "Geometria",
+        icon: "geometry",
+        games: [],
       },
       {
-          id: "maa5",
-          title: "MAA 5",
-          blurb: "Trigonometria",
-          icon: "sin x",
-          games: [
-	      { id: "1-ympyra1", title: "Yksikköympyrä", blurb: "", icon: "unitcircle", game: "games/lukio/maa5/yksikkoympyra/" },
-          ],
+        id: "maa5",
+        title: "MAA 5",
+        blurb: "Trigonometria",
+        icon: "sin x",
+        games: [
+          { id: "1-ympyra1", title: "Yksikköympyrä", icon: "unitcircle", game: "games/lukio/maa5/yksikkoympyra/" },
+        ],
       },
-	
     ],
   },
-    {
-	id: "ib",
-	title: "IB math",
-	icon: "globe",
-	blurb: "International Baccalaureate, in English.",
-	courses: [
-	],
-    },
-    {
-	id: "artsy",
-	title: "Matikkataiteilua\nArtsy Math",
-	icon: "spiral",
-	blurb: "Visualisointeja\nVisualizations",
-	courses: [
-	    {
-		id: "fractals",
-		title: "Fraktaaleja\nFractals",
-		blurb: "Attraktoreita ja fraktaaleja\nAttractors and fractals",
-		icon: "sierpinski",
-		games: [
-		    {id: "ifs_explorer", title: "IFS explorer", blurb: "Iterated Function Systems and the Flame Algorithm", icon: "sierpinski", game: "games/artsy_math/fractals/ifs_explorer/"},
-		],
-	    },
-	],
-    },
+  {
+    id: "ib",
+    title: "IB math",
+    blurb: { fi: "International Baccalaureate -matematiikka.", en: "International Baccalaureate." },
+    lang: "en",
+    icon: "globe",
+    courses: [],
+  },
+  {
+    id: "artsy",
+    sub: "topics",
+    title: { fi: "Matikkataiteilua", en: "Artsy Math" },
+    blurb: { fi: "Visualisointeja", en: "Visualizations" },
+    icon: "spiral",
+    courses: [
+      {
+        id: "fractals",
+        title: { fi: "Fraktaaleja", en: "Fractals" },
+        blurb: { fi: "Attraktoreita ja fraktaaleja", en: "Attractors and fractals" },
+        icon: "sierpinski",
+        games: [
+          { id: "ifs_explorer", title: "IFS explorer", kind: "tool", icon: "sierpinski",
+            blurb: { fi: "Iteroidut funktiosysteemit ja flame-algoritmi", en: "Iterated Function Systems and the Flame Algorithm" },
+            game: "games/artsy_math/fractals/ifs_explorer/" },
+        ],
+      },
+    ],
+  },
 ];
 /* ════════════════════ end of the part you edit ════════════════════════ */
+
+/* ── language ───────────────────────────────────────────────────────────
+   One site-wide choice in localStorage "lang" (the IFS explorer reads the
+   same key). Default: Finnish for a Finnish browser, English otherwise. */
+const UI = {
+  fi: {
+    home: 'Kategoriat', pick: 'Valitse kategoria', courses: n => n === 1 ? '1 kurssi' : `${n} kurssia`,
+    topics: n => n === 1 ? '1 aihe' : `${n} aihetta`, noTopics: 'Täällä ei ole vielä aiheita.',
+    games: n => n === 1 ? '1 peli' : `${n} peliä`, tools: n => n === 1 ? '1 työkalu' : `${n} työkalua`,
+    play: 'Pelaa', open: 'Avaa', soon: 'Tulossa', noCourses: 'Täällä ei ole vielä kursseja.', noGames: 'Täällä ei ole vielä pelejä.',
+    hero: 'Tervetuloa pelaamaan Vadimin matikkapelejä', footer: 'Tehty ja julkaistu GitHub Pagesissa.',
+    onlyIn: { en: 'In English' }, title: 'Vadimin matikkapelit', crumb: 'Sijainti',
+  },
+  en: {
+    home: 'Categories', pick: 'Select category', courses: n => n === 1 ? '1 course' : `${n} courses`,
+    topics: n => n === 1 ? '1 topic' : `${n} topics`, noTopics: 'No topics here yet.',
+    games: n => n === 1 ? '1 game' : `${n} games`, tools: n => n === 1 ? '1 tool' : `${n} tools`,
+    play: 'Play', open: 'Explore', soon: 'Coming soon', noCourses: 'No courses here yet.', noGames: 'No games here yet.',
+    hero: 'Math games by<br>Vadim Weinstein.', footer: 'Built and hosted on GitHub Pages.',
+    onlyIn: { fi: 'In Finnish' }, title: 'Manifold Solutions — learning games', crumb: 'Breadcrumb',
+  },
+};
+let LANG = (navigator.language || '').toLowerCase().startsWith('fi') ? 'fi' : 'en';
+try { const l = localStorage.getItem('lang'); if (UI[l]) LANG = l; } catch (e) {}
+const L = () => UI[LANG];
+const tr = v => (v && typeof v === 'object') ? (v[LANG] ?? v.en ?? v.fi) : (v || '');   // a catalog text in the current language
 
 const app   = document.getElementById('app');
 const crumb = document.getElementById('crumb');
@@ -406,8 +467,8 @@ function setCrumb(parts){
 }
 
 // one reusable card builder. `soon:true` → renders a disabled "coming soon" card.
-function card({ href, title, blurb, meta, soon, icon }){
-  const inner = `${icon}
+function card({ href, title, blurb, meta, soon, icon, tag }){
+  const inner = `${icon}${tag ? `<span class="tag">${esc(tag)}</span>` : ''}
     <span class="title">${esc(title)}</span>
     ${blurb ? `<span class="blurb">${esc(blurb)}</span>` : ''}
     <span class="meta">${meta}</span>`;
@@ -420,62 +481,65 @@ function card({ href, title, blurb, meta, soon, icon }){
 function emptyState(msg){ return `<div class="empty">${esc(msg)}</div>`; }
 
 function renderCategories(){
-  setCrumb([{ label: 'Categories' }]);
-  const cards = CATALOG.map(c => {
-    const n = c.courses.length;
-    return card({
-      href: `#/${enc(c.id)}`,
-      icon: glyph(c.icon),
-      title: c.title,
-      blurb: c.blurb,
-      meta: `${n} ${n === 1 ? 'course' : 'courses'} ${arrow}`,
-    });
-  }).join('');
+  setCrumb([{ label: L().home }]);
+  const cards = CATALOG.map(c => card({
+    href: `#/${enc(c.id)}`,
+    icon: glyph(c.icon),
+    title: tr(c.title),
+    blurb: tr(c.blurb),
+    tag: c.lang && c.lang !== LANG ? L().onlyIn[c.lang] : '',
+    meta: `${L()[c.sub === 'topics' ? 'topics' : 'courses'](c.courses.length)} ${arrow}`,
+  })).join('');
   app.innerHTML = `<section class="view">
-    <div class="lead"><h2>Select category</h2></div>
+    <div class="lead"><h2>${esc(L().pick)}</h2></div>
     <div class="grid">${cards}</div>
   </section>`;
 }
 
+// "2 games", "1 tool", "2 games, 1 tool"
+function countItems(games){
+  const tools = games.filter(g => g.kind === 'tool').length, n = games.length - tools;
+  return [n || !tools ? L().games(n) : '', tools ? L().tools(tools) : ''].filter(Boolean).join(', ');
+}
+
 function renderCourses(cat){
-  setCrumb([{ label: 'Categories', href: '#/' }, { label: cat.title }]);
-  const cards = cat.courses.map(co => {
-    const n = co.games.length;
-    return card({
-      href: `#/${enc(cat.id)}/${enc(co.id)}`,
-      icon: glyph(co.icon, cat.icon),
-      title: co.title,
-      blurb: co.blurb,
-      meta: `${n} ${n === 1 ? 'game' : 'games'} ${arrow}`,
-    });
-  }).join('');
+  setCrumb([{ label: L().home, href: '#/' }, { label: tr(cat.title) }]);
+  const cards = cat.courses.map(co => card({
+    href: `#/${enc(cat.id)}/${enc(co.id)}`,
+    icon: glyph(co.icon, cat.icon),
+    title: tr(co.title),
+    blurb: tr(co.blurb),
+    meta: `${countItems(co.games)} ${arrow}`,
+  })).join('');
+  const blurb = tr(cat.blurb);
   app.innerHTML = `<section class="view">
-    <div class="lead"><h2>${esc(cat.title)}</h2>${cat.blurb ? `<p>${esc(cat.blurb)}</p>` : ''}</div>
-    ${cat.courses.length ? `<div class="grid">${cards}</div>` : emptyState('No courses here yet.')}
+    <div class="lead"><h2>${esc(tr(cat.title))}</h2>${blurb ? `<p>${esc(blurb)}</p>` : ''}</div>
+    ${cat.courses.length ? `<div class="grid">${cards}</div>` : emptyState(cat.sub === 'topics' ? L().noTopics : L().noCourses)}
   </section>`;
 }
 
 function renderGames(cat, course){
   setCrumb([
-    { label: 'Categories', href: '#/' },
-    { label: cat.title, href: `#/${enc(cat.id)}` },
-    { label: course.title },
+    { label: L().home, href: '#/' },
+    { label: tr(cat.title), href: `#/${enc(cat.id)}` },
+    { label: tr(course.title) },
   ]);
   const cards = course.games.map(g => card({
     href: g.game ? esc(g.game) : null,
     soon: !g.game,
     icon: glyph(g.icon, course.icon, cat.icon),
-    title: g.title,
-    blurb: g.blurb,
-    meta: g.game ? `Play ${arrow}` : 'Coming soon',
+    title: tr(g.title),
+    blurb: tr(g.blurb),
+    meta: g.game ? `${g.kind === 'tool' ? L().open : L().play} ${arrow}` : L().soon,
   })).join('');
+  const blurb = tr(course.blurb);
   app.innerHTML = `<section class="view">
-    <div class="lead"><h2>${esc(course.title)}</h2>${course.blurb ? `<p>${esc(course.blurb)}</p>` : ''}</div>
-    ${course.games.length ? `<div class="grid">${cards}</div>` : emptyState('No games here yet.')}
+    <div class="lead"><h2>${esc(tr(course.title))}</h2>${blurb ? `<p>${esc(blurb)}</p>` : ''}</div>
+    ${course.games.length ? `<div class="grid">${cards}</div>` : emptyState(L().noGames)}
   </section>`;
 }
 
-function route(){
+function route(keepScroll = false){
   const segs = location.hash.replace(/^#\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   const [catId, courseId] = segs;
 
@@ -485,14 +549,29 @@ function route(){
   const course = (cat && courseId) ? courseById(cat, courseId) : null;
   if (courseId && !course){ location.replace(`#/${enc(cat.id)}`); return; }  // unknown course → category
 
-  if (course){ document.title = `${course.title} — ${cat.title}`; renderGames(cat, course); }
-  else if (cat){ document.title = `${cat.title} — Manifold Solutions`; renderCourses(cat); }
-  else { document.title = 'Manifold Solutions — learning games'; renderCategories(); }
+  if (course){ document.title = `${tr(course.title)} — ${tr(cat.title)}`; renderGames(cat, course); }
+  else if (cat){ document.title = `${tr(cat.title)} — ${L().title}`; renderCourses(cat); }
+  else { document.title = L().title; renderCategories(); }
 
-  window.scrollTo({ top: 0 });
+  if (!keepScroll) window.scrollTo({ top: 0 });
 }
 
-window.addEventListener('hashchange', route);
+// the fixed texts of the page, and the FI/EN switch
+function applyLang(){
+  document.documentElement.lang = LANG;
+  document.getElementById('heroTitle').innerHTML = L().hero;
+  document.getElementById('footText').textContent = L().footer;
+  crumb.setAttribute('aria-label', L().crumb);
+  document.querySelectorAll('#langsw button').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang === LANG));
+}
+document.querySelectorAll('#langsw button').forEach(b => b.addEventListener('click', () => {
+  LANG = b.dataset.lang;
+  try { localStorage.setItem('lang', LANG); } catch (e) {}
+  applyLang(); route(true);
+}));
+
+window.addEventListener('hashchange', () => route());
+applyLang();
 route();
 </script>
 </body>

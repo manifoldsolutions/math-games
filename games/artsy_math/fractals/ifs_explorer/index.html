@@ -6,44 +6,22 @@
 <title>Epälineaarinen IFS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../../assets/theme.css">
 <style>
 :root {
-  --paper: #eceef1;
-  --panel: #f6f7f9;
-  --ink: #18202b;
-  --muted: #5a6472;
-  --rule: #d2d7de;
-  --well: #dfe3e8;
-  --accent: #9e1b2c;
-  --accent-ink: #ffffff;
-  --steel: #2d5a78;
-  --focus: #d9822b;
-  --track: #c5ccd5;
+  /* this page's own names, mapped onto the shared theme tokens (assets/theme.css) */
+  --paper: var(--bg); --panel: var(--surface); --rule: var(--line); --well: var(--surface-2);
+  --steel: var(--magenta); --focus: var(--magenta); --track: var(--line);
   --barh: 42px;
-  --sans: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
-  color-scheme: light dark;
+  --sans: var(--ui); --serif: var(--ui);
   box-sizing: border-box;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #15191f; --panel: #1c2129; --ink: #e6e9ee; --muted: #9aa3b0;
-    --rule: #2f3743; --well: #252b35; --accent: #c9394b; --steel: #6f9fc2;
-    --track: #3a4350;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #15191f; --panel: #1c2129; --ink: #e6e9ee; --muted: #9aa3b0;
-  --rule: #2f3743; --well: #252b35; --accent: #c9394b; --steel: #6f9fc2;
-  --track: #3a4350;
-}
 *, *::before, *::after { box-sizing: inherit; }
 html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
 body {
-  height: 100%; margin: 0; background: var(--paper); color: var(--ink);
+  height: 100%; margin: 0; color: var(--ink);
   font: 14px/1.4 var(--sans); font-variant-numeric: tabular-nums;
 }
 body { display: flex; flex-direction: column; }
@@ -72,15 +50,16 @@ body { display: flex; flex-direction: column; }
 /* ---------- panel ---------- */
 .panel { background: var(--panel); border-left: 1px solid var(--rule); overflow-y: auto; min-height: 0; }
 .head { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: 16px 20px 12px; border-bottom: 1px solid var(--rule); }
-h1 { margin: 0 0 10px; font: 600 24px/1.1 var(--serif); letter-spacing: -.01em; }
-h1 small { font: italic 400 15px var(--serif); color: var(--muted); margin-left: 6px; }
+h1 { margin: 0 0 10px; font: 700 19px/1.2 var(--display); letter-spacing: .05em; text-transform: uppercase;
+     color: var(--accent-ink); text-shadow: var(--glow-text); }
+h1 small { font: 500 14px var(--ui); letter-spacing: 0; text-transform: none; color: var(--muted); text-shadow: none; margin-left: 6px; white-space: nowrap; display: inline-block; }
 .actions { display: flex; flex-wrap: wrap; gap: 6px; }
 button, .filebtn {
   font: 500 13px var(--sans); color: var(--ink); background: var(--well);
   border: 1px solid var(--rule); border-radius: 5px; padding: 6px 10px; cursor: pointer;
 }
-button:hover, .filebtn:hover { border-color: var(--muted); }
-button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button:hover, .filebtn:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; box-shadow: 0 0 12px rgba(0,229,255,.45); }
 button.on { box-shadow: inset 0 0 0 2px var(--focus); }
 button:disabled { opacity: .45; cursor: default; }
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -113,12 +92,15 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height:
 .view input[type=range] { accent-color: var(--steel); }
 .seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 5px; overflow: hidden; }
 .seg button { border: 0; border-radius: 0; background: transparent; padding: 5px 10px; }
-.seg button.on { background: var(--ink); color: var(--panel); box-shadow: none; }
+.seg button.on { background: rgba(0,229,255,.16); color: var(--accent-ink); box-shadow: none; }
 .line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
 .line > span { font-size: 12px; color: var(--muted); }
 
 .presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .presets button { padding: 8px 6px; }
+.check { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.check:hover { color: var(--ink); }
 .pals { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 6px; margin-top: 10px; }
 .pals button { text-align: left; padding: 6px 8px 8px; }
 .pals button i { display: block; height: 8px; border-radius: 2px; margin-top: 5px; }
@@ -127,7 +109,7 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height:
 .stops { font-size: 12px; color: var(--muted); margin: 6px 0 0; padding: 0; list-style: none; }
 .stops li { display: flex; align-items: center; gap: 8px; }
 .stops i { width: 12px; height: 10px; display: inline-block; border: 1px solid var(--rule); }
-.hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; }
+.hint { font-size: 12px; color: var(--muted); margin: 8px 0 0; text-align: left; padding: 0; min-height: 0; max-width: none; }   /* not the theme's centred game hint */
 .formula { font: italic 400 14px var(--serif); color: var(--muted); margin: 0 0 6px; }
 
 @media (max-width: 900px) {
@@ -147,34 +129,34 @@ input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height:
 @media (prefers-reduced-motion: reduce) { .busy, .frame { transition: none; } }
 .sitenav {
   flex: none; height: var(--barh); display: flex; align-items: center; justify-content: space-between; gap: 12px;
-  padding: 0 20px; background: var(--panel); border-bottom: 1px solid var(--rule); font: 500 14px var(--sans);
+  padding: 0 20px; background: rgba(8,7,15,.9); border-bottom: 1px solid var(--rule); font: 500 14px var(--sans);
 }
 .sitenav a { color: var(--muted); text-decoration: none; border-radius: 4px; }
-.sitenav a:hover { color: var(--ink); text-decoration: underline; }
+.sitenav a:hover { color: var(--accent-ink); }
 .langseg { margin: -2px 0 10px; }
 .langseg button { padding: 3px 10px; font-size: 12px; }
 #btnInfo {
-  background: var(--steel); color: #fff; border-color: var(--steel);
+  background: transparent; color: var(--magenta-ink); border-color: var(--magenta);
   font: 600 14px var(--sans); padding: 6px 12px 6px 7px;
   display: inline-flex; align-items: center; gap: 7px;
 }
-#btnInfo:hover { filter: brightness(1.12); border-color: var(--steel); }
+#btnInfo:hover { border-color: var(--magenta); box-shadow: 0 0 12px rgba(255,61,242,.4); }
 #btnInfo .i {
-  width: 18px; height: 18px; border-radius: 50%; background: #fff; color: var(--steel);
+  width: 18px; height: 18px; border-radius: 50%; background: var(--magenta); color: var(--bg);
   display: inline-grid; place-items: center; font: italic 600 13px/1 var(--serif);
 }
 #info {
   max-width: min(640px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto;
   padding: 22px 26px 18px; border: 1px solid var(--rule); border-radius: 8px;
-  background: var(--panel); color: var(--ink); box-shadow: 0 18px 50px rgba(0,0,0,.25);
+  background: var(--panel); color: var(--ink); box-shadow: 0 0 30px rgba(0,229,255,.18);
   font: 16px/1.55 var(--serif);
 }
 #info::backdrop { background: rgba(10, 14, 20, .45); }
-#info h2 { margin: 0 0 10px; font: 600 22px/1.2 var(--serif); }
+#info h2 { margin: 0 0 10px; font: 700 19px/1.2 var(--display); letter-spacing: .04em; color: var(--accent-ink); }
 #info p { margin: 0 0 12px; }
 #info .refs { font-size: 14px; color: var(--muted); border-top: 1px solid var(--rule); padding-top: 10px; }
 #info .refs p { margin: 0 0 6px; padding-left: 2em; text-indent: -2em; }
-#info a { color: var(--steel); }
+#info a { color: var(--accent-ink); }
 #info .close { float: right; margin: -4px -8px 0 12px; font: 500 13px var(--sans); }
 #info mjx-container[display="true"] { overflow-x: auto; overflow-y: hidden; }
 </style>
@@ -184,7 +166,7 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
 </script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg.js"></script>
 </head>
-<body>
+<body class="game">
 <!-- site navigation: this page lives at games/artsy_math/fractals/ifs_explorer/index.html -->
 <nav class="sitenav" aria-label="Site" data-i18n-aria="site">
   <a href="../../../../#/artsy/fractals" data-i18n="back">← Back to Fractals</a>
@@ -219,7 +201,8 @@ window.MathJax = { tex: { inlineMath: [["$", "$"]], displayMath: [["$$", "$$"]] 
 
     <details open>
       <summary><span data-i18n="classics">Sample fractals</span><span class="sub" data-i18n="classicsSub"></span></summary>
-      <div class="body"><div class="presets" id="presets"></div></div>
+      <div class="body"><div class="presets" id="presets"></div>
+        <label class="check"><input type="checkbox" id="chkIter" checked><span data-i18n="showIter">Show iteration</span></label></div>
     </details>
 
     <details open>
@@ -356,7 +339,7 @@ const I18N = {
     docTitle: "Nonlinear IFS explorer", title: "Nonlinear IFS", site: "Site", back: "← Back to Fractals", home: "Home",
     fractalImage: "Fractal image", rendering: "Rendering…", showIter: "Show iteration", undo: "Undo", redo: "Redo",
     saveSettings: "Save settings", loadSettings: "Load settings", savePng: "Save PNG", whatIs: "What is this?", close: "Close",
-    classics: "Classic fractals", classicsSub: "each one starts with the iteration", affine: "Affine maps",
+    classics: "Preset settings", classicsSub: "", affine: "Affine maps",
     nonlin: "Nonlinearity h", form: "Form", crossed: "crossed", renderView: "Rendering & view", background: "Background",
     white: "White", black: "Black", style: "Style", flame: "Flame", dots: "Dots", smoothing: "Smoothing",
     newSeeds: "New seed points", fit: "Fit to picture", pngSize: "PNG size",
@@ -380,7 +363,7 @@ const I18N = {
     docTitle: "Epälineaarinen IFS", title: "Epälineaarinen IFS", site: "Sivusto", back: "← Takaisin fraktaaleihin", home: "Etusivu",
     fractalImage: "Fraktaalikuva", rendering: "Piirretään…", showIter: "Näytä iterointi", undo: "Kumoa", redo: "Tee uudelleen",
     saveSettings: "Tallenna asetukset", loadSettings: "Lataa asetukset", savePng: "Tallenna PNG", whatIs: "Mikä tämä on?", close: "Sulje",
-    classics: "Valmiita esimerkkifraktaaleja", classicsSub: "", affine: "Affiinit kuvaukset",
+    classics: "Valmiit asetukset", classicsSub: "", affine: "Affiinit kuvaukset",
     nonlin: "Epälineaarisuus h", form: "Muoto", crossed: "ristikkäinen", renderView: "Piirto ja näkymä", background: "Tausta",
     white: "Valkoinen", black: "Musta", style: "Tyyli", flame: "Liekki", dots: "Pisteet", smoothing: "Pehmennys",
     newSeeds: "Uudet alkupisteet", fit: "Sovita kuvaan", pngSize: "PNG-koko",
@@ -405,8 +388,10 @@ const I18N = {
             "blue flame": "sininen liekki", "fern green": "saniaisenvihreä" },
   },
 };
-let LANG = "fi";
-try { const l = localStorage.getItem("ifsLang"); if (l && I18N[l]) LANG = l; } catch (e) {}
+// the site-wide language (localStorage "lang", shared with the main page); the
+// old "ifsLang" key still counts. Default: Finnish for a Finnish browser.
+let LANG = (navigator.language || "").toLowerCase().startsWith("fi") ? "fi" : "en";
+try { const l = localStorage.getItem("lang") || localStorage.getItem("ifsLang"); if (l && I18N[l]) LANG = l; } catch (e) {}
 function t(key, ...args) {
   const v = key in I18N[LANG] ? I18N[LANG][key] : I18N.en[key];
   return typeof v === "function" ? v(...args) : (v === undefined ? key : v);
@@ -464,7 +449,8 @@ const PRESETS = [
   ["Phoenix", PHOENIX.hmode, () => PHOENIX.params.slice(), PHOENIX],
   ["Art blob", ART.hmode, () => ART.params.slice(), ART],
 ];
-const MAPCOL = ["#d9822b", "#3f86b8", "#4f9a55", "#c2557d"];
+// map swatches: the first four party colours of the theme (cyan, magenta, yellow, green)
+const MAPCOL = getComputedStyle(document.documentElement).getPropertyValue("--party-colors").split(",").map(c => c.trim()).filter(Boolean).slice(0, 4);
 
 /* ============================ State ============================ */
 const S = {
@@ -840,13 +826,24 @@ $("btnSeeds").onclick = () => { seeds = randomSeeds(100); requestRender("full");
 $("btnFit").onclick = () => { S.zoom = S.offx = S.offy = 0; syncViewSliders(); requestRender("full"); };
 $("btnColours").onclick = () => { S.mc = [0,1,2,3].map(() => Math.random()); requestRender("full"); };
 $("btnIter").onclick = () => startIteration();
+// a sample fractal is shown with the iteration animation, or straight away
+// when "Show iteration" under the samples is unticked (remembered per browser)
+try { $("chkIter").checked = localStorage.getItem("ifsIter") !== "0"; } catch (e) {}
+$("chkIter").onchange = () => { try { localStorage.setItem("ifsIter", $("chkIter").checked ? "1" : "0"); } catch (e) {} };
+function showPreset(finalView) {
+  if ($("chkIter").checked) { startIteration(finalView); return; }
+  stopAnim(); pending = null;
+  S.frame = fitFrame(); S.zoom = -0.2; S.offx = 0; S.offy = 0; syncViewSliders();   // the framing the animation ends on
+  if (finalView) applyView(finalView);
+  requestRender("full");
+}
 PRESETS.forEach(([name, hm, fn, extra, look]) => {
   const b = document.createElement("button"); b.textContent = presetName(name); b.dataset.preset = name;
   b.onclick = () => {
     if (extra && typeof extra === "object") {     // full saved settings (background kept)
       applySettings(extra, false, true);
       S.pal = S.palettes.findIndex(q => q[0] === "fire");   // fire for every preset except Fern
-      syncAll(); startIteration(extra.view);
+      syncAll(); showPreset(extra.view);
     } else {
       S.p = fn(); S.hmode = hm;
       // the preset's own palette (Fern), otherwise fire
@@ -856,7 +853,7 @@ PRESETS.forEach(([name, hm, fn, extra, look]) => {
       S.gamma = look && look.gamma !== undefined ? look.gamma : 2.2;
       S.bright = look && look.bright !== undefined ? look.bright : 1.0;
       S.ss = look && look.ss !== undefined ? look.ss : 2;
-      syncAll(); startIteration();
+      syncAll(); showPreset();
     }
   };
   $("presets").append(b);
@@ -969,7 +966,7 @@ function drawPaletteEditor() {
     const d = [b[0]-a[0], b[1]-a[1], b[2]-a[2]];
     if (d[0] + d[1] + d[2] === 1 && Math.abs(d[0]) + Math.abs(d[1]) + Math.abs(d[2]) === 1) gradLine(cctx, a, b, R, 3, 16, "rgba(120,125,140,.45)");
   }
-  cctx.font = "500 22px Public Sans, sans-serif"; cctx.fillStyle = "rgba(120,125,140,.95)";
+  cctx.font = "500 22px 'Chakra Petch', sans-serif"; cctx.fillStyle = "rgba(120,125,140,.95)";
   const lab = { "0,0,0": "black", "1,0,0": "R", "0,1,0": "G", "0,0,1": "B", "1,1,0": "Y", "1,0,1": "M", "0,1,1": "C", "1,1,1": "white" };
   for (const c of corners) { const q = proj(c, R); cctx.fillText(lab[c.join(",")], q[0] + 10, q[1] - 8); }
   const order = st.map((_, i) => i).sort((i, j) => st[i][0] - st[j][0]);
@@ -1226,7 +1223,7 @@ function applyLang() {
 }
 document.querySelectorAll("#langseg button").forEach(b => b.onclick = () => {
   LANG = b.dataset.lang;
-  try { localStorage.setItem("ifsLang", LANG); } catch (e) {}
+  try { localStorage.setItem("lang", LANG); } catch (e) {}
   applyLang();
 });
 applyLang();

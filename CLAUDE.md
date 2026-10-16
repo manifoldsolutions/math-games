@@ -23,6 +23,13 @@ games/<category>/<course>/<game>/index.html
   card shows its parent's glyph. New drawings follow the same family: 26×26
   grid, thin cyan lines (stroke 1.6, helper lines 1.2 and dimmer), no fills.
 - Catalog ids become URL parts: short, lowercase, digits and hyphens only.
+- Languages: the main page has a FI/EN switch, stored site-wide in
+  localStorage `lang` (the IFS explorer uses the same key). Catalog texts are
+  a string or `{fi, en}`; a one-language category has `lang: "fi"`/`"en"` and
+  gets an "In Finnish"/"In English" tag in the other language. Games keep
+  their own language. `kind: "tool"` (IFS explorer) says "Avaa/Explore", not
+  "Pelaa/Play". A category whose sections aren't courses has `sub: "topics"`
+  (Artsy Math: "1 aihe / 1 topic").
 - Shared JS goes in `assets/` too, loaded with a plain `<script src>` before the
   game's own script (no modules). Yhtälövaaka and Yksikköympyrä use
   `assets/celebrate.js`; a game must not define its own `celebrate` function.
@@ -51,18 +58,18 @@ games/<category>/<course>/<game>/index.html
 ## Language
 
 - Lukio games: interface entirely in Finnish.
-- IB games: English. Main page interface: English.
+- IB games: English. Main page interface: Finnish and English (the switch).
 - Code comments: English.
 
 ## Status of the games
 
-- `yhtalovaaka`, `yhtalo1`, `yhtalo2` and `games/lukio/maa5/yksikkoympyra`
-  use `assets/theme.css`. Yksikköympyrä adds IBM Plex Sans as a fallback in
-  `--math`, because Chakra Petch has no Greek (α, π).
-- `games/artsy_math/fractals/ifs_explorer` still carries its own old light
-  styles. To convert one: link the theme, add `class="game"` to `<body>`,
-  delete its own `:root{…}` block and the rules the theme already provides
-  (steps are in the comment at the top of `assets/theme.css`).
+- Every page uses `assets/theme.css`. Yksikköympyrä adds IBM Plex Sans as a
+  fallback in `--math`, because Chakra Petch has no Greek (α, π).
+- `games/artsy_math/fractals/ifs_explorer` is a tool with a side panel, not a
+  game: it keeps its own layout and nav bar, and its old colour names
+  (`--paper`, `--panel`, `--rule`, `--well`, `--steel` …) are aliases of the
+  theme tokens at the top of its `<style>`. Its maths in the info dialog is
+  typeset with MathJax 3.
 
 ## Yhtälövaaka (balance-scale equations) — design decisions
 
@@ -90,53 +97,37 @@ games/<category>/<course>/<game>/index.html
   levels), with the text "Ota sama esine kummastakin kupista". About 5 s, a tap
   skips it, and its time doesn't count. Possibly a similar short demo when
   balloons first appear at level 3.
-- **Equation chain:** the legend (box = x, diamond = 1, balloon = −1) sits
-  directly under the scale, and under it a growing chain of equations, one row
-  each time the scale comes back to balance, annotated with what was done to
-  both sides, e.g. `2x + 3 = x + 7  | −x`. Consecutive steps of the same kind
-  and sign merge (−1, −1, −1 → `| −3`); opposite steps are not merged, so a
-  wasted round trip stays visible. The newest rows stay visible and older ones
-  fade. If the scale turns around, the last row shows `x = n`.
+## Equation chain (built)
 
-## Yksikköympyrä (unit circle) — design decisions
-
-- No "Tarkista" button: a task is solved the moment every solution is marked
-  (within 5°) and no wrong point is left. If all solutions are marked but
-  there is an extra point, the hint line says so after about 3 s.
-- Levels 0–7, 6 tasks each. Solving the last task of a level starts the
-  fireworks, and 1.5 s later the level dialog opens by itself (no button).
-  Level 0 shows the angle (arc + degrees) while aiming and next to placed
-  points; level 7 mixes levels 3–6 and is the last.
-- Scoring like Yhtälövaaka, 3 lives. Task score =
-  `(50 + 100·solutions/clicks + 50·(5 s + 2 s·clicks)/time − 30·hints) × level`
-  (level 0 counts as ×1, time points have no cap, a task never goes below 0).
-  A wrong "Ei ratkaisuja"/"Jokainen piste" counts as one hint (−30, uses up
-  a hint step) with the red text "Ratkaisuja on olemassa. Tämä lasketaan
-  yhdeksi vihjeeksi."; "Näytä ratkaisu" (appears after the last hint step) costs a life
-  and gives 0 points. Third lost life = Game Over. Finishing level 7: +1000,
-  +500 per life left.
-- Hints: the full plan, with every text, is in
-  `games/lukio/maa5/yksikkoympyra/VIHJEET.md` and is implemented. Press 1/2/3
-  gives a random hint of hint level 1/2/3 (game levels 0–2: two presses);
-  A hints comment on the placed points, B hints are about the task, some are
-  pictures. Levels 1–2 never pin the answer down. After the last press the
-  Vihje button goes and "Näytä ratkaisu" appears. Update VIHJEET.md together
-  with the code.
-
-## Site-wide plans
-
-- **Math typesetting with MathJax (eventually):** games will typeset maths
-  (Greek letters, fractions, roots) with MathJax instead of hand-built HTML
-  such as `.frac`/`.rad` in Yksikköympyrä. The theme colours must survive
-  (`\class{xterm}{…}` etc.). Until then Yksikköympyrä uses IBM Plex Sans as
-  the Greek fallback. Not decided: which version and font, and whether a game
-  that re-renders on every click (yhtalo1/2) uses it too.
+- Under the scale, where the single equation used to be. A row is written
+  only when the scale is balanced again. While a step is unfinished (tipped,
+  or an item in the hand) the newest row shows the change so far after each
+  side with a red ≠, e.g. `x + 2 ≠ 4 − 1` (never < or >: with x unknown we
+  can't say which side is bigger, e.g. after `| −x`).
+- The "=" column stays in the exact middle, under the scale's post.
+- The annotation (`| −1`, `| −x`, `| −x − 1`) is computed from the difference
+  between two balanced states, so the order of the clicks doesn't matter.
+  It goes on the right of the row it was done to.
+- Consecutive steps of the same kind and sign merge (−1, −1, −1 → `| −3`);
+  opposite or mixed steps are not merged, so a wasted round trip stays visible.
+- A diamond and a balloon added to the same cup is a row without annotation
+  (`x + 3` → `x + 4 − 1` is fine).
+- The newest three rows sit under the scale; older ones rise behind the
+  (transparent) scale picture at about 1/4 brightness, at most eight of them.
+  A new row lifts the whole chain by one row.
+- When the scale turns around (box on the right), the last row turns too:
+  `2 = x` → `x = 2`.
+- The win dialog has a closed "Näytä ratkaisu" section at the bottom: the
+  player's chain beside a model chain with the step counts. The model comes
+  from how the puzzle was built (take off the constant k, then the kb extra
+  boxes), never from a search.
 
 ## Open questions (ask Vadim before deciding)
 
 - "Weighing": the scale accepts a box removed on one side and x diamonds on the
-  other. Show such a step as a red "not an allowed transformation" row in the
-  chain, or forbid it?
+  other. Realistic for a scale, but not an allowed step in solving an equation
+  (unless the answer is already known). Postponed by Vadim. For now such a
+  row in the chain simply has no annotation.
 - Division (e.g. 3x = 12 with ÷2/÷3/÷4 tokens that split a cup into equal
   piles): as extra levels in this game, or a separate game "Yhtälövaaka 2"?
 - Intro demo: every time level 1 starts, or only the first time on a device?
