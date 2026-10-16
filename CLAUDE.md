@@ -80,10 +80,26 @@ games/<category>/<course>/<game>/index.html
 - Puzzles are generated backwards from the answer x = n by adding the same
   boxes (kb) and constant (k) to both sides, so every state is solvable and
   non-negative. x is never 0, 1 or −1.
-- The minimum number of moves is known at generation time:
-  `par = 2·kb + 2·|k|`. Never find optima by searching all move sequences —
-  derive them from how the puzzle was built.
-- 9 levels, 3 lives. Level score =
+- Level 5 (added between the old 4 and 5): as hard as level 4, but one cup
+  always starts with diamond–balloon pairs added (`3x + 2 − 1 = 2x`). Levels
+  6–10 are the old 5–9 (`difficulty(level)`), and half their puzzles have
+  such a mixed cup.
+- The minimum number of moves is known at generation time (`parOf`): every
+  item that has to leave or join a cup is a move, minus the items that can
+  be carried straight from a cup that loses them to one that gains them
+  (with a mixed cup this happens: `2x + 2 − 4 = x + 4` → move the 2 diamonds
+  across). Both end states are counted, the box kept in either cup, and
+  the cheaper wins (`2x + 2 − 6 = x − 2` is cheapest with the box ending on
+  the right). Without mixing this is `2·kb + 2·|k|`. Never find optima by
+  searching all move sequences in the game — derive them from how the
+  puzzle was built (the formula was checked offline against a full search).
+- The hint line under the scale starts with what is new on the level
+  (`INTRO`: how to drag on levels 1–2, balloons on 3, balloons in the box on
+  4; levels 5–10 have none), but only on the first two attempts at that level
+  since the page was opened. A retry after a broken cup is an attempt;
+  "Alusta" and a retry after a vanished x are not. After that only the goal
+  ("Tavoite: …").
+- 10 levels, 3 lives. Level score =
   `(50 + 100·par/moves + 50·(3 s + 1 s·moves)/time) × level`
   (time points have no cap). A broken cup costs a life and `100 × level`
   points; the third is Game Over. Finishing: +1000, +500 per life left.
@@ -94,6 +110,10 @@ games/<category>/<course>/<game>/index.html
 - Snap-back: releasing an item within its dashed ring puts it back (ring at
   0.6 of the original size). Releasing over its own cup elsewhere drops it to
   the floor (decided).
+- Touch screens: the held item stays centred on the fingertip and grows
+  (diamond 5×, box and balloon 2×; `TOUCH_GROW`) so it shows around the
+  finger. It used to rise above the finger; Vadim didn't like that. Being
+  trialled.
 - Keyboard shortcuts A/S/D/K/L/J (Shift = add) exist for automated testing;
   keep them for now even though they make play faster than dragging.
 

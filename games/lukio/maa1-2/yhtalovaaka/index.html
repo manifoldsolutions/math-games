@@ -19,7 +19,8 @@
      Grab an item and move it a little to take it out: it drops to the floor.
      Drop it into the other cup to move it there. Drag from the shelf to add.
      A plain click does nothing.
-     Scoring: 9 levels, 3 lives. Each solved level gives
+     Level 5: a cup may start with both diamonds and balloons (3x + 2 − 1 = 2x).
+     Scoring: 10 levels, 3 lives. Each solved level gives
        (50 + 100·ideal/moves + 50·(3 s + 1 s·moves)/time) × level.
      A broken cup costs a life and 100 × level points; the third one is
      Game Over. Finishing gives 1000 + 500 per life left.
@@ -162,7 +163,7 @@
   <header>
     <a class="back" href="../../../../#/lukio/maa1-2">← Takaisin</a>
     <span class="title">Yhtälövaaka</span>
-    <span class="hud"><span>Taso: <b id="level">1/9</b></span><span>Pisteet: <b id="score">0</b></span></span>
+    <span class="hud"><span>Taso: <b id="level">1/10</b></span><span>Pisteet: <b id="score">0</b></span></span>
   </header>
 
   <main>
@@ -262,7 +263,7 @@ const MAX_TILT = Math.asin((FLOOR - BOWL_DEPTH - HANG - PIV.y) / ARM);  // lower
 const CAP = {b:6, d:24, p:8};    // (24 diamonds: they are big now and stack up)
 document.querySelectorAll(".cup-scale").forEach(g=>g.setAttribute("transform",`scale(${S})`));    // what fits in one cup
 let SUPPLY = {};                 // shelf pick areas, set by renderShelf()
-const MAX_LEVEL = 9;              // difficulty stops growing here, so the game ends after level 9
+const MAX_LEVEL = 10;             // difficulty stops growing here, so the game ends after level 10
 const BALLOON_LEVEL = 3;
 const balloonsOn = () => level >= BALLOON_LEVEL;
 
@@ -404,7 +405,46 @@ function layout(c){
 
 /* ── puzzle generator: start from x = n and add the same to both sides ─ */
 const NEG_LEVEL = 4;             // from this level the answer may be negative
+const MIX_LEVEL = 5;             // from this level a cup may start with diamonds AND balloons
+// Level 5 was added between the old levels 4 and 5: it is as hard as level 4,
+// but one cup always starts mixed (3x + 2 − 1 = 2x). Levels 6–10 are the old
+// 5–9, and half of their puzzles have a mixed cup.
+const difficulty = level => level <= MIX_LEVEL ? Math.min(level, MIX_LEVEL - 1) : level - 1;
 function genPuzzle(level){
+  const mixed = level === MIX_LEVEL || (level > MIX_LEVEL && Math.random() < .5);
+  for(;;){
+    const p = genPure(difficulty(level));
+    if(mixed){
+      // add z diamond–balloon pairs to one cup (it keeps its weight)
+      const c = Math.random() < .5 ? p.L : p.R, z = rand(1, level >= 8 ? 3 : 2);
+      c.d += z; c.p += z;
+      if(c.d > CAP.d || c.p > CAP.p) continue;
+    }
+    p.par = parOf(p);
+    return p;
+  }
+}
+/* the fewest moves: every item that has to leave or join a cup is one move,
+   except that one move carries an item straight from a cup that has to lose
+   it to a cup that has to gain it. The end state is one box alone in a cup
+   and |x| diamonds (or balloons when x < 0) in the other; it can be cheaper
+   to keep the box in the cup that has fewer boxes (2x + 2 − 6 = x − 2: take
+   out both boxes on the left), so both ends are counted and the cheaper one
+   wins. (Checked offline against a full search of all move sequences.) */
+function parOf(p){
+  const pure = {b:0, d:Math.max(0, p.x), p:Math.max(0, -p.x)}, box = {b:1, d:0, p:0};
+  const cost = (tL, tR) => {
+    let n = 0;
+    for(const t of ["b","d","p"]){
+      const dL = tL[t] - (p.L[t] || 0), dR = tR[t] - (p.R[t] || 0);
+      n += Math.abs(dL) + Math.abs(dR);
+      if(dL * dR < 0) n -= Math.min(Math.abs(dL), Math.abs(dR));     // carried across
+    }
+    return n;
+  };
+  return Math.min(cost(box, pure), cost(pure, box));
+}
+function genPure(level){
   const kb = rand(level>=2 ? 1 : 0, Math.min(3, level));       // boxes added to both
   let x, k;                                                     // answer; constant added to both sides
   if(level>=NEG_LEVEL && Math.random()<0.4){
@@ -418,13 +458,11 @@ function genPuzzle(level){
   }
   // a side's constant c is shown as c diamonds, or |c| balloons when c < 0
   const side = (b,c) => ({b, d:Math.max(0,c), p:Math.max(0,-c)});
-  // ideal number of moves: undo the kb boxes and the constant k on both sides.
-  // (Checked for every possible puzzle: no solution is shorter.)
-  const p = { x, L:side(1+kb, k), R:side(kb, x+k), par: 2*kb + 2*Math.abs(k) };
+  const p = { x, L:side(1+kb, k), R:side(kb, x+k) };
   if(Math.random()<.5) [p.L, p.R] = [p.R, p.L];               // box may end up on either side
   return p;
 }
-const fallTimeFor = level => Math.max(2.4, 6 - 0.45*(level-1));   // seconds to hit the floor
+const fallTimeFor = level => Math.max(2.4, 6 - 0.45*(difficulty(level)-1));   // seconds to hit the floor
 
 /* ── state ──────────────────────────────────────────────────────────── */
 let celebrated=false;           // fireworks already started for this win?
@@ -452,9 +490,12 @@ const stringsEl=$("strings"), fxEl=$("fx"), dragLayer=$("dragLayer"), beamEl=$("
 
 /* keepClock: the "Alusta" restart and retrying after a vanished x keep the
    time and moves running; a new level and a retry after a broken cup start fresh */
+// attempts at each level since the page was opened: a new level and a retry
+// after a broken cup count, "Alusta" and a retry after a vanished x don't
+const tries = {};
 function startPuzzle(p, keepClock){
   puzzle=p;
-  if(!keepClock){ moves=0; elapsed=0; }
+  if(!keepClock){ moves=0; elapsed=0; tries[level] = (tries[level] || 0) + 1; }
   cur={L:{p:0,...p.L}, R:{p:0,...p.R}};
   resetChain();
   tilt=0; tiltV=0; needFlip=false; flipT=0; status="play"; settle=0; flash=null; celebrated=false;
@@ -549,9 +590,10 @@ function commitChain(){
   } else last.a = a;
   chain.push({...copyState(), a:undefined});
 }
-/* the model solution, from how the puzzle was built (see genPuzzle): take the
-   constant k off both sides, then the kb extra boxes; the last row is x = n
-   even when the box started on the right (the scale turns around) */
+/* the model solution, from how the puzzle was built (see genPuzzle): first
+   take the diamond–balloon pairs out of a mixed cup (a row without a step),
+   then the constant k off both sides, then the kb extra boxes; the last row
+   is x = n even when the box started on the right (the scale turns around) */
 function modelChain(p){
   const side = (b, c) => ({b, d:Math.max(0, c), p:Math.max(0, -c)});
   const boxLeft = p.L.b > p.R.b, X = boxLeft ? p.L : p.R, O = boxLeft ? p.R : p.L;
@@ -562,6 +604,8 @@ function modelChain(p){
   if(kb) rows.push(row(1, 0, 0, rest - k));
   const last = rows[rows.length - 1];
   if(!boxLeft) [last.L, last.R] = [last.R, last.L];        // 2 = x is written x = 2, as in the player's chain
+  const mix = c => c.d && c.p;
+  if(mix(p.L) || mix(p.R)) rows.unshift({L:{p:0, ...p.L}, R:{p:0, ...p.R}});
   return rows;
 }
 function miniChain(rows){
@@ -618,12 +662,18 @@ function renderChain(){
   shownRows = n;
 }
 
+// a level's first sentence in the hint, before the goal: what is new there.
+// Only on the first two attempts at that level, after that just the goal.
+const DRAG_TIP = "Vedä esine pois kupista (se putoaa lattialle) tai lisää hyllyltä — ja tee sama toiselle kupille.";
+const INTRO = {1:DRAG_TIP, 2:DRAG_TIP,
+  [BALLOON_LEVEL]:"Ilmapallo keventää kuppia yhden timantin verran. Irti vedetty pallo lentää pois.",
+  [NEG_LEVEL]:"Laatikossa voi nyt olla myös ilmapalloja."};
 function updateUI(){
   renderChain();
   const hint=$("hint");
-  let msg="Vedä esine pois kupista (se putoaa lattialle) tai lisää hyllyltä — ja tee sama toiselle kupille. Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa.", warn=false;
-  if(balloonsOn()) msg="Ilmapallo keventää kuppia yhden timantin verran. Irti vedetty pallo lentää pois. Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa.";
-  if(level>=NEG_LEVEL) msg="Laatikossa voi nyt olla myös ilmapalloja. Tavoite: yksi laatikko yksin toisessa kupissa, toisessa pelkkiä timantteja tai pelkkiä palloja.";
+  let msg = (INTRO[level] && tries[level] <= 2 ? INTRO[level] + " " : "") + (level>=NEG_LEVEL
+    ? "Tavoite: yksi laatikko yksin toisessa kupissa, toisessa pelkkiä timantteja tai pelkkiä palloja."
+    : "Tavoite: yksi laatikko yksin toisessa kupissa, pelkkiä timantteja toisessa."), warn=false;
   if(flash && performance.now()<flash.until){ msg=flash.msg; warn=true; }
   else if(status==="play" && tiltSign()!==0){ warn=true; msg = balloonsOn() ? "Vaaka kallistuu! Tasapainota se muuttamalla myös toista kuppia." : "Vaaka kallistuu! Tee sama myös toiselle kupille."; }
   else if(status==="winning") msg="Tasapainossa! Katsotaan, mitä laatikossa on…";
@@ -697,24 +747,20 @@ function pick(p){
   return best;
 }
 
-/* Touch screens: the moment a finger touches an item, a big copy of it rises
-   above the fingertip so the player sees what they are holding. The item
+/* Touch screens: the moment a finger touches an item, a big copy of it
+   appears centred on the fingertip, big enough to show around the finger, so
+   the player sees what they are holding. The item
    still weighs on the cup — releasing without moving leaves it there.
    Moving the finger a few pixels takes it out for real.
    Mouse: a plain click does nothing; moving a few pixels takes the item out.
    A taken-out item released anywhere except the OTHER cup falls / flies away. */
 const DRAG_START_PX = 6;
-const TOUCH_LIFT_PX = 70;                     // gap between fingertip and item
-const TOUCH_GROW = {b:1.25, d:1.3, p:1.1};    // how much the held item grows
+const TOUCH_GROW = {b:2, d:5, p:2};          // the held item's size on a touch screen (× its size in the cup)
 let pending=null;
 
 function heldOffset(t, touch){
   if(!touch) return null;
-  const grow=TOUCH_GROW[t];
-  const unitsPerPx=1/svg.getScreenCTM().a;
-  const half=(t==="b"?51:t==="p"?30:18)*S*1.06*grow;   // half the held item's height
-  // the lifted copy sits half as far from the original as "clear of the finger" would put it
-  return {grow, ox:0, oy:-(TOUCH_LIFT_PX*unitsPerPx + half)*0.5};
+  return {grow:TOUCH_GROW[t], ox:0, oy:0};
 }
 function makeHeld(t){
   const g=document.createElementNS(SVGNS,"g");
