@@ -87,6 +87,13 @@ games/<category>/<course>/<game>/index.html
   `(50 + 100·par/moves + 50·(3 s + 1 s·moves)/time) × level`
   (time points have no cap). A broken cup costs a life and `100 × level`
   points; the third is Game Over. Finishing: +1000, +500 per life left.
+- Dropping into a cup: from the shelf the whole space the cup hangs in counts
+  (a normal solving move); from the other cup only the bowl itself (never a
+  useful move, usually an accident when dropping something off the scale).
+  The magenta highlight follows the same areas. Being trialled.
+- Snap-back: releasing an item within its dashed ring puts it back (ring at
+  0.6 of the original size). Releasing over its own cup elsewhere drops it to
+  the floor (decided).
 - Keyboard shortcuts A/S/D/K/L/J (Shift = add) exist for automated testing;
   keep them for now even though they make play faster than dragging.
 
