@@ -29,6 +29,9 @@
            (Shift adds instead of removing),  r = restart (time and moves keep running)
      Puzzles are generated backwards from x = n by adding the same thing
      to both sides, so every state stays non-negative and solvable.
+     Esittely: a guided intro on the same scale before level 1 and before
+     level 3 (first time on a device, or from the Esittely button); see the
+     intro section in the script.
      ════════════════════════════════════════════════════════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -153,6 +156,37 @@
   .mini .ann .bar{ color:var(--accent); opacity:.7; margin-right:.2em; }
   @media (max-width:380px){ .cmp{ grid-template-columns:1fr; } }
 
+  /* ── Esittely (intro): progress bar, question on top, answer tiles under the chain ── */
+  .introbar{
+    width:min(820px,100%); display:flex; align-items:center; gap:14px;
+    padding:12px clamp(16px,4vw,28px) 0;
+  }
+  .progress{ flex:1; display:flex; gap:4px; }
+  .progress span{ flex:1; height:5px; border-radius:3px; background:var(--line); transition:background .3s ease; }
+  .progress span.done{ background:var(--accent); box-shadow:0 0 6px rgba(0,229,255,.5); }
+  .progress span.now{ background:var(--magenta); box-shadow:0 0 6px rgba(255,61,242,.5); }
+  .prompt{
+    width:min(620px,100%); margin:10px 0 0; padding:0 clamp(16px,4vw,28px);
+    font-size:16px; line-height:1.45; text-align:center; color:var(--ink); min-height:calc(3 * 1.45em);
+  }
+  .answers{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:4px 16px; min-height:58px; }
+  .answers .op-btn{ padding:12px 12px; min-width:58px; }      /* four equations fit on one row on a phone */
+  .answers .op-btn.right{ border-color:var(--green); color:var(--green-ink); box-shadow:0 0 14px rgba(57,255,158,.55); opacity:1; }
+  .answers .op-btn.wrong{ border-color:var(--red); color:var(--red); opacity:.55; }
+  .answers .op-btn.wrong span{ color:inherit; }
+  .hint.good{ color:var(--green-ink); }
+  body.intro .hint{ font-size:15px; line-height:1.4; min-height:calc(3 * 1.4em); padding-top:8px; }
+  .eqzone{ transition:opacity .35s ease; }
+  .eqzone.veiled{ opacity:0; }
+  body.intro .statusrow, body.intro .legend, body.intro .hud, body.intro #introBtn, body:not(.intro) #introSkip{ display:none; }
+  /* room for the question, the chain (3 rows), feedback and the answer tiles */
+  body.intro #stage{ max-height:calc(100dvh - 372px - 3 * clamp(32px,7.4vw,46px)); min-height:170px; }
+  .ghost-hand path{
+    fill:rgba(232,247,255,.22); stroke:rgba(232,247,255,.9); stroke-width:2; stroke-linejoin:round;
+    vector-effect:non-scaling-stroke;
+  }
+  .ghost-hand{ pointer-events:none; transition:opacity .3s ease; }
+
   /* ── what the box held, in the win dialog ── */
   .win .gems{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin:8px auto 0; max-width:260px; }
   .win .gems svg{ width:22px; height:24px; overflow:visible; }
@@ -171,6 +205,11 @@
       <span class="lives" id="lives" aria-label="Elämät"></span>
       <span>Siirrot: <b id="moves">0</b></span>
     </div>
+    <!-- Esittely (intro): progress and the step's question -->
+    <div class="introbar" id="introBar" hidden>
+      <div class="progress" id="introProgress" role="img"></div>
+    </div>
+    <p class="prompt" id="introPrompt" aria-live="polite" hidden></p>
     <div class="stage-wrap">
       <svg id="stage" viewBox="0 -145 1100 1215" aria-label="Vaaka, jossa on kaksi kuppia">
         <line class="floor" x1="20" y1="1051" x2="1080" y2="1051"/>
@@ -209,16 +248,19 @@
       </svg>
     </div>
 
-    <div class="eqzone"><div class="chain" id="chain" aria-live="polite"></div></div>
+    <div class="eqzone" id="eqzone"><div class="chain" id="chain" aria-live="polite"></div></div>
     <div class="legend">
       <span><svg viewBox="-17 -17 34 34"><rect x="-15" y="-15" width="30" height="30" rx="6" class="box-body" style="stroke-width:2.2"/></svg>= x</span>
       <span><svg viewBox="-11 -11 22 22"><polygon points="-6,-10 6,-10 10,-4 0,11 -10,-4" class="gem-body"/></svg>= 1</span>
       <span id="legendBalloon" hidden><svg viewBox="-15 -18 30 40"><ellipse rx="14" ry="17" class="balloon-body"/></svg>= −1</span>
     </div>
     <div class="hint" id="hint"></div>
+    <div class="answers" id="introAnswers" hidden></div>
 
     <div class="subctrl">
       <button id="restart">↺ Alusta</button>
+      <button id="introBtn">Esittely</button>
+      <button id="introSkip">Ohita esittely</button>
     </div>
   </main>
 
@@ -265,7 +307,7 @@ document.querySelectorAll(".cup-scale").forEach(g=>g.setAttribute("transform",`s
 let SUPPLY = {};                 // shelf pick areas, set by renderShelf()
 const MAX_LEVEL = 10;             // difficulty stops growing here, so the game ends after level 10
 const BALLOON_LEVEL = 3;
-const balloonsOn = () => level >= BALLOON_LEVEL;
+const balloonsOn = () => intro ? !!intro.step.balloons : level >= BALLOON_LEVEL;
 
 /* ── shapes ─────────────────────────────────────────────────────────── */
 const boxShape = label =>
@@ -312,6 +354,7 @@ const SHARD_R = "M-90,-18 L90,-18 Q76,16 30,18 L-90,18 L-82,6 L-96,-5 Z";
    spread evenly along it. */
 const SHELF_Y = 50;
 function renderShelf(){
+  if(intro && !intro.step.shelf){ $("shelf").innerHTML=""; SUPPLY={}; return; }   // most intro steps have no shelf
   const kinds = balloonsOn() ? ["b","d","p"] : ["b","d"];
   const W = balloonsOn() ? 1100*0.75 : 1100*0.5, x0 = 550 - W/2;
   let h=`<line class="shelf" x1="${x0}" y1="${SHELF_Y}" x2="${x0+W}" y2="${SHELF_Y}"/>`;
@@ -475,6 +518,7 @@ const BONUS_FINISH = 1000, BONUS_LIFE = 500;
 let score=0, lives=LIVES, moves=0, elapsed=0, lastWin=null, lastPenalty=0;
 const fmt = n => Math.round(n).toLocaleString("fi-FI");
 let level=1, puzzle, cur, tilt, tiltV=0, needFlip=false, flipT=0, status, settle, particles=[], drag=null, flash=null;
+let intro=null;                 // the Esittely while it runs (see the intro section)
 // status: play | winning | identity | won | crash | over
 
 const svg=$("stage");
@@ -670,6 +714,7 @@ const INTRO = {1:DRAG_TIP, 2:DRAG_TIP,
   [NEG_LEVEL]:"Laatikossa voi nyt olla myös ilmapalloja."};
 function updateUI(){
   renderChain();
+  if(intro) return introHint();
   const hint=$("hint");
   let msg = (INTRO[level] && tries[level] <= 2 ? INTRO[level] + " " : "") + (level>=NEG_LEVEL
     ? "Tavoite: yksi laatikko yksin toisessa kupissa, toisessa pelkkiä timantteja tai pelkkiä palloja."
@@ -685,6 +730,7 @@ function flashHint(msg){ flash={msg, until:performance.now()+2000}; updateUI(); 
 
 /* after every completed move: did we win, or lose the unknown? */
 function checkEnd(){
+  if(intro) return introCheck();
   if(status!=="play" || tiltSign()!==0) return;
   const {L,R}=cur;
   const alone = c => c.b===1 && c.d===0 && !c.p;     // just the box
@@ -728,6 +774,7 @@ function svgPt(e){
 function pick(p){
   for(const t of balloonsOn() ? ["b","d","p"] : ["b","d"]){
     const s=SUPPLY[t];
+    if(!s) continue;
     if(Math.abs(p.x-s.x)<=s.w && Math.abs(p.y-s.y)<=s.h) return {from:"S", t, x:p.x, y:p.y};
   }
   // generous touch radius: at least ~22 screen pixels around each diamond
@@ -755,7 +802,7 @@ function pick(p){
    Mouse: a plain click does nothing; moving a few pixels takes the item out.
    A taken-out item released anywhere except the OTHER cup falls / flies away. */
 const DRAG_START_PX = 6;
-const TOUCH_GROW = {b:2, d:5, p:2};          // the held item's size on a touch screen (× its size in the cup)
+const TOUCH_GROW = {b:2, d:5, p:4};          // the held item's size on a touch screen (× its size in the cup)
 let pending=null;
 
 function heldOffset(t, touch){
@@ -777,14 +824,14 @@ function endPreview(){
 }
 
 svg.addEventListener("pointerdown",e=>{
-  if(status!=="play" || drag || pending) return;
+  if(status!=="play" || drag || pending || (intro && intro.lock)) return;
   const p=svgPt(e), hit=pick(p);
   if(!hit) return;
   e.preventDefault();
   try{ svg.setPointerCapture(e.pointerId); }catch(_){}
   const touch=e.pointerType!=="mouse";
   pending={hit, id:e.pointerId, cx:e.clientX, cy:e.clientY, p, touch};
-  if(touch){                                   // show it big above the finger right away
+  if(touch){                                   // show it big at the finger right away
     const o=heldOffset(hit.t, true);
     pending.g=makeHeld(hit.t); placeHeld(pending.g, p.x+o.ox, p.y+o.oy, o.grow);
     if(hit.from!=="S") renderPan(hit.from, false, hit);            // dim the original
@@ -899,7 +946,7 @@ function cancelDrag(){
 
 /* keyboard fallback: remove one (Shift = add one) */
 function nudge(side, t, add){
-  if(status!=="play" || drag) return;
+  if(status!=="play" || drag || (intro && intro.lock)) return;
   if(add){ if(cur[side][t]>=CAP[t]) return flashHint("Kuppi on täynnä."); cur[side][t]++; }
   else { if(!cur[side][t]) return; cur[side][t]--; }
   countMove(); renderPan(side); updateUI(); checkEnd();
@@ -1013,7 +1060,12 @@ function showOverlay(kind){
       `<div><h3>Sinun ratkaisusi</h3>${miniChain(mine)}${steps(mine)}</div>` +
       `<div><h3>Mallivastaus</h3>${miniChain(model)}${steps(model)}</div>`;
     $("ovSolution").open = false; $("ovSolution").hidden = false;
-    if(level<MAX_LEVEL) first=btn("Seuraava taso",()=>{ level++; newPuzzle(); },true);
+    if(level<MAX_LEVEL) first=btn("Seuraava taso",()=>{
+      level++;
+      // balloons come in: their short intro first, the first time on this device
+      if(level===BALLOON_LEVEL && !seen("balloons")) startIntro(["balloons"], newPuzzle, `Aloita taso ${level}`);
+      else newPuzzle();
+    },true);
     else first=btn("Jatka",()=>showOverlay("complete"),true);         // the last level: on to the finish
   } else if(kind==="complete"){
     const fromLevels=score, lifeBonus=BONUS_LIFE*lives;
@@ -1044,6 +1096,13 @@ function showOverlay(kind){
     }
     $("ovMsg").textContent += " Tehtävä alkaa alusta, mutta aika ja siirrot jatkavat kulumistaan.";
     first=btn("Yritä uudestaan",retryKeep,true);
+  } else if(kind==="introDone"){
+    $("ovTitle").textContent="Valmista!";
+    $("ovResult").innerHTML="";
+    $("ovMsg").textContent = intro.chapters.includes("balloons")
+      ? "Ilmapallo vähentää kupin painoa yhdellä, ja pallon poistaminen lisää sitä yhdellä. Muuten kaikki toimii samoin: tee sama muutos kumpaankin kuppiin."
+      : "Olet nyt valmis pelaamaan! Sinun täytyy olla nopea, koska pelissä vaakakuppi hajoaa, jos se osuu lattiaan.";
+    first=btn(intro.doneLabel, exitIntro, true);
   } else if(kind==="gameover"){
     $("ovTitle").textContent="Game Over";
     $("ovResult").innerHTML=`<div class="bigscore">${fmt(score)} pistettä</div>`;
@@ -1068,10 +1127,11 @@ let last=performance.now();
 function frame(now){
   const realDt=(now-last)/1000;
   const dt=Math.min(.05,realDt); last=now;
-  if(status==="play" && $("overlay").classList.contains("show")===false)
+  if(status==="play" && !intro && $("overlay").classList.contains("show")===false)
     elapsed += Math.min(0.25, realDt);          // (ignores a pause if the tab was in the background)
 
-  if(status==="play" || status==="winning" || status==="identity"){
+  if(intro) introTilt(dt);                       // the intro's scale leans and waits, it never breaks
+  else if(status==="play" || status==="winning" || status==="identity"){
     const s=tiltSign();
     if(s!==0){
       const toward=Math.max(0, tilt*s)/MAX_TILT;                      // 0 … 1 in the falling direction
@@ -1130,18 +1190,317 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 
+/* ── Esittely (intro) ───────────────────────────────────────────────────
+   A short guided demo on the real scale, not a game: no lives, points or
+   clock, and the scale never breaks (it leans more the bigger the
+   difference, and waits). Each step sets up the cups, asks one thing at the
+   top and checks the answer. Kinds of steps:
+     act   — the player does something on the scale; done() says when it's done
+     ask   — answer tiles; a wrong number opens the box with that many
+             diamonds, so the scale itself shows why it's wrong
+     ghost — a ghost hand solves an equation while the player watches
+   "basics" runs before level 1 and "balloons" before level 3, the first
+   time on a device (localStorage remembers it); the Esittely button
+   replays them. */
+const VIEW_FULL = "0 -145 1100 1215";            // the game's view, with the shelf
+const VIEW_INTRO = "0 150 1100 920";             // without the shelf band, so the scale is bigger
+const INTRO_TILT = 0.55*MAX_TILT;                // the most the scale leans in the intro
+const SEEN_KEY = "yhtalovaaka.intro.";
+const seen = ch => { try{ return localStorage.getItem(SEEN_KEY+ch)==="1"; }catch(_){ return false; } };
+const markSeen = ch => { try{ localStorage.setItem(SEEN_KEY+ch, "1"); }catch(_){} };
+const nGems = n => n===1 ? "1 timantti" : `${n} timanttia`;
+// equations in the texts don't break across lines: no-break spaces around = − + |
+const nb = t => t.replace(/ ([=−+|]) /g, "\u00a0$1\u00a0");
+const box = (b=0, d=0, p=0) => ({b, d, p});
+const isLevel = () => tiltSign()===0;
+const aloneBox = c => c.b===1 && !c.d && !c.p;
+const pureSide = c => !c.b && (!c.d || !c.p);
+const solvedNow = () => isLevel() && ((aloneBox(cur.L) && pureSide(cur.R)) || (aloneBox(cur.R) && pureSide(cur.L)));
+// pieces of the equations on the answer tiles
+const TX = '<span class="xterm">x</span>', TPLUS = '<span class="op">+</span>', TEQ = '<span class="eq">=</span>';
+const TC = n => `<span class="cterm">${n}</span>`;
+
+const INTRO_STEPS = {
+  basics: [
+    { kind:"act", L:box(0,3), R:box(0,3),
+      prompt:"Kummassakin kupissa on 3 timanttia, joten vaaka on tasapainossa: 3 = 3. Ota yksi timantti pois jommastakummasta kupista.",
+      done:() => !isLevel(),
+      ok:"Vaaka kallistui: kupit eivät enää paina yhtä paljon, eikä yhtälö enää päde." },
+    { kind:"act", L:box(0,3), R:box(0,3),
+      prompt:"Ota nyt yksi timantti pois kummastakin kupista.",
+      tip:"Vaaka kallistui. Ota timantti myös toisesta kupista.",
+      done:() => isLevel() && chain.length > 1,
+      ok:"Vaaka pysyi tasapainossa! Kun kummastakin kupista otetaan sama määrä, yhtälö pätee edelleen. Pystyviivan perässä lukee, mitä kummallekin puolelle tehtiin." },
+    { kind:"ask", x:3, L:box(1), R:box(0,3), chain:"after", reveal:true,
+      prompt:"Laatikko ei itse paina mitään, mutta sen sisällä on timantteja. Montako timanttia laatikossa on?",
+      tiles:[1,2,3,4],
+      ok:"Oikein! Laatikon sisältöä merkitään kirjaimella x. Vaaka kertoo yhtälön x = 3." },
+    { kind:"ask", x:3, L:box(2), R:box(0,6), chain:"after",
+      prompt:"Kummassakin laatikossa on yhtä monta timanttia. Mikä yhtälö kuvaa vaakaa?",
+      tiles:[
+        {html:TX+TPLUS+TC(2)+TEQ+TC(6), why:"x + 2 tarkoittaisi yhtä laatikkoa ja kahta timanttia. Vasemmalla on kaksi laatikkoa."},
+        {html:'<span class="xterm">2x</span>'+TEQ+TC(6), ok:true},
+        {html:TX+TEQ+TC(6), why:"x = 6 tarkoittaisi, että vasemmalla on yksi laatikko. Niitä on kaksi."},
+        {html:TC(2)+TEQ+'<span class="xterm">6x</span>', why:"Yhtälön vasen puoli kertoo vasemman kupin sisällön. 2 = 6x tarkoittaisi 2 timanttia vasemmalla ja 6 laatikkoa oikealla."} ],
+      ok:"Oikein! Kaksi laatikkoa on x + x eli 2x, ja oikealla on 6 timanttia." },
+    { kind:"ask", x:3, L:box(2), R:box(0,6), reveal:true,
+      prompt:"Montako timanttia yhdessä laatikossa on?",
+      tiles:[2,3,4,6],
+      ok:"Oikein! 3 + 3 = 6, joten x = 3." },
+    { kind:"ask", x:1, L:box(2), R:box(1,1), reveal:true, interactive:true,
+      prompt:"Montako timanttia yhdessä laatikossa nyt on? Vinkki: voit ottaa laatikon pois kummastakin kupista.",
+      tip:"Vaaka kallistui. Tee sama myös toiselle kupille.",
+      tiles:[1,2,3,4],
+      // answered right without solving it on the scale: the ghost hand shows how
+      solveSay:"Oikein! Katso, mitä tapahtuu, kun laatikko otetaan pois kummastakin kupista.",
+      solve:[["take","L","b"], ["take","R","b"], ["wait",900]],
+      ok:"Laatikko jäi yksin: x = 1. Kun yhtälöä muuttaa samalla tavalla kummaltakin puolelta, vastauksen näkee suoraan." },
+    { kind:"ghost", x:3, L:box(2,1), R:box(1,4),
+      prompt:"Näin ratkaiset minkä tahansa yhtälön. Tavoite: yksi laatikko yksin toisessa kupissa.",
+      script:[
+        ["say","Ensin timantti pois kummastakin kupista."], ["take","L","d"], ["take","R","d"], ["wait",900],
+        ["say","Sitten laatikko pois kummastakin kupista."], ["take","L","b"], ["take","R","b"], ["wait",1000],
+        ["say","Laatikko on yksin. Avataan se…"], ["wait",600], ["reveal"], ["wait",400] ],
+      ok:"x = 3. Juuri näin peli ratkaistaan: tee sama kummallekin kupille, kunnes laatikko on yksin." },
+  ],
+  balloons: [
+    { kind:"act", L:box(0,1,1), R:box(), balloons:true,
+      prompt:"Uusi esine: ilmapallo. Se nostaa kuppia yhden timantin verran, joten vaaka on tasapainossa: 1 − 1 = 0. Ota ilmapallo pois.",
+      tip:"Kuppi nousi, koska siihen jäi vain ilmapallo. Paina ↺ Alusta ja ota ilmapallo.",
+      done:() => cur.L.p===0 && cur.L.d===1,
+      ok:"Kuppi painui alas! Ilmapallon poistaminen tekee kupista painavamman, ihan kuin siihen lisättäisiin timantti." },
+    { kind:"act", L:box(0,3,1), R:box(0,3,1), balloons:true,
+      prompt:"Ota nyt ilmapallo pois kummastakin kupista.",
+      tip:"Vaaka kallistui. Ota ilmapallo myös toisesta kupista.",
+      done:() => isLevel() && cur.L.p===0 && cur.R.p===0,
+      ok:"Vaaka pysyi tasapainossa. Kumpikin puoli kasvoi yhdellä, joten merkintä on | +1." },
+    { kind:"act", x:3, L:box(1,0,1), R:box(0,2), balloons:true, shelf:true, reveal:true,
+      prompt:"Irrota ilmapallo vasemmasta kupista ja siirrä timantti hyllyltä oikeanpuolimmaiseen kuppiin tasapainon saavuttamiseksi.",
+      tip:() => tiltSign()<0
+        ? "Vasen kuppi painui. Tee oikeasta kupista yhtä paljon painavampi: lisää siihen timantti hyllyltä."
+        : "Oikea kuppi painui. Tee vasemmasta kupista yhtä paljon painavampi.",
+      done:solvedNow,
+      ok:"Hyvä!" },
+  ],
+};
+
+function startIntro(chapters, then, doneLabel){
+  cancelDrag();
+  intro = {chapters, steps:chapters.flatMap(c => INTRO_STEPS[c]), then, doneLabel, token:0, i:0, hand:null};
+  document.body.classList.add("intro");
+  ["introBar","introPrompt","introAnswers"].forEach(id => $(id).hidden = false);
+  introStep(0);
+}
+function introStep(i){
+  const st = intro.steps[i];
+  Object.assign(intro, {i, step:st, done:false, busy:false, msg:"", cls:""});
+  const tok = ++intro.token;                     // stops the scripts of the step before
+  dragLayer.querySelectorAll(".ghost").forEach(n => n.remove()); intro.hand = null;
+  svg.setAttribute("viewBox", st.shelf ? VIEW_FULL : VIEW_INTRO);
+  startPuzzle({x:st.x ?? 1, L:{...st.L}, R:{...st.R}, par:0}, true);
+  fitEqZone();
+  intro.lock = !(st.kind==="act" || st.interactive);   // can the scale be touched?
+  $("introPrompt").textContent = nb(st.prompt);
+  $("eqzone").classList.toggle("veiled", st.chain==="after");
+  const pr = $("introProgress");
+  pr.innerHTML = intro.steps.map((_, k) => `<span class="${k<i ? "done" : k===i ? "now" : ""}"></span>`).join("");
+  pr.setAttribute("aria-label", `Vaihe ${i+1}/${intro.steps.length}`);
+  renderTiles(st);
+  if(st.kind==="ghost") runScript(st.script, tok).then(ok => {
+    if(!ok) return;
+    intro.done = true; say(st.ok, "good"); showNext(); if(motion) burst();
+  });
+}
+function renderTiles(st){
+  const el = $("introAnswers"); el.innerHTML = "";
+  for(const t of st.tiles || []){
+    const tile = typeof t==="number" ? {n:t, ok:t===st.x, html:`${t}`} : t;
+    const b = document.createElement("button");
+    b.className = "op-btn " + (typeof t==="number" ? "c" : "n");
+    b.innerHTML = tile.html;
+    b.addEventListener("click", () => introAnswer(tile, b));
+    el.appendChild(b);
+  }
+}
+function showNext(){
+  const el = $("introAnswers"), last = intro.i===intro.steps.length-1;
+  el.innerHTML = `<button class="btn primary">${last ? "Valmis" : "Jatka"}</button>`;
+  const b = el.firstChild;
+  b.addEventListener("click", () => last ? finishIntro() : introStep(intro.i+1));
+  b.focus({preventScroll:true});
+}
+function say(msg, cls=""){ intro.msg = nb(msg); intro.cls = cls; updateUI(); }
+// the hint line in the intro: feedback, or what to do when the scale has tipped
+function introHint(){
+  const st = intro.step, hint = $("hint");
+  let msg = intro.msg;
+  const gone = chain[0].L.b + chain[0].R.b > 0 && !cur.L.b && !cur.R.b;
+  if(!intro.done && gone) msg = "Laatikko lähti pois molemmista kupeista. Paina ↺ Alusta ja yritä uudestaan.";
+  else if(!intro.done && !msg && st.tip && !isLevel() && !drag) msg = typeof st.tip==="function" ? st.tip() : st.tip;
+  hint.textContent = msg || "";
+  hint.classList.remove("warn"); hint.classList.toggle("good", intro.cls==="good" && msg===intro.msg);
+}
+// after every move the player makes
+function introCheck(){
+  const st = intro.step;
+  if(intro.done) return;
+  intro.msg = "";
+  if(st.kind==="act" && st.done()){
+    intro.done = true; intro.lock = true;
+    if(st.reveal) revealBoxes();
+    say(st.ok, "good"); showNext();
+  } else updateUI();
+}
+async function introAnswer(tile, b){
+  if(!intro || intro.busy || intro.done || drag) return;
+  const st = intro.step, tok = intro.token;
+  if(!tile.ok){
+    b.disabled = true; b.classList.add("wrong");
+    if(tile.n!=null) tryValue(tile.n, tok); else say(tile.why);
+    return;
+  }
+  intro.done = true; intro.lock = true; intro.busy = true;
+  b.classList.add("right");
+  $("introAnswers").querySelectorAll("button").forEach(x => x.disabled = true);
+  $("eqzone").classList.remove("veiled");
+  if(st.solve && !solvedNow()){
+    if(!sameState(cur, chain[0])) startPuzzle({x:st.x ?? 1, L:{...st.L}, R:{...st.R}, par:0}, true);   // tidy up first
+    say(st.solveSay, "good");
+    if(!await runScript(st.solve, tok)) return;
+  }
+  if(st.reveal) revealBoxes();
+  intro.busy = false;
+  say(st.ok, "good"); showNext();
+}
+// a wrong number: open the box(es) with that many diamonds and let the scale tip
+async function tryValue(n, tok){
+  intro.busy = true;
+  const lock = intro.lock, real = puzzle.x;
+  intro.lock = true; puzzle.x = n; revealBoxes();
+  const wL = weight(cur.L), wR = weight(cur.R);
+  say(`Jos laatikossa olisi ${nGems(n)}, vasemmassa kupissa olisi yhteensä ${nGems(wL)} ja oikeassa ${nGems(wR)}, joten vaaka kallistuisi. Kokeile toista vastausta.`);
+  if(!await wait(2600, tok)) return;             // (the step was restarted meanwhile)
+  puzzle.x = real; renderPan("L"); renderPan("R");
+  intro.busy = false; intro.lock = lock;
+}
+function revealBoxes(){ ["L","R"].forEach(s => { if(cur[s].b) renderPan(s, true); }); }
+
+function finishIntro(){
+  intro.chapters.forEach(markSeen);
+  intro.token++;
+  showOverlay("introDone"); if(motion) burst();
+}
+function exitIntro(){
+  const then = intro.then;
+  intro.token++;
+  dragLayer.querySelectorAll(".ghost").forEach(n => n.remove());
+  intro = null;
+  document.body.classList.remove("intro");
+  ["introBar","introPrompt","introAnswers"].forEach(id => $(id).hidden = true);
+  $("eqzone").classList.remove("veiled"); $("hint").classList.remove("good");
+  svg.setAttribute("viewBox", VIEW_FULL);
+  then();
+  fitEqZone();
+}
+
+// the intro's scale: a spring towards a lean that grows with the difference
+function introTilt(dt){
+  const dw = weight(cur.L) - weight(cur.R);
+  const target = dw===0 ? 0 : -Math.sign(dw) * INTRO_TILT * Math.min(1, 0.45 + 0.2*Math.abs(dw));
+  tiltV += (-SWING_W*SWING_W*(tilt-target) - 2*SWING_Z*SWING_W*tiltV)*dt;
+  tilt += tiltV*dt;
+}
+
+/* ghost hand: scripts of ["say", text] ["take", side, type] ["wait", ms] ["reveal"].
+   Every await checks the step's token, so restarting or leaving the step stops it. */
+const alive = tok => !!intro && intro.token===tok;
+const wait = (ms, tok) => new Promise(r => setTimeout(() => r(alive(tok)), ms));
+const ease = e => e<.5 ? 2*e*e : 1 - (2-2*e)**2/2;
+function tween(ms, f, tok){
+  return new Promise(r => {
+    if(!motion){ f(1); return r(alive(tok)); }
+    const t0 = performance.now();
+    const go = now => {
+      if(!alive(tok)) return r(false);
+      const e = Math.min(1, (now-t0)/ms); f(e);
+      if(e<1) requestAnimationFrame(go); else r(true);
+    };
+    requestAnimationFrame(go);
+  });
+}
+async function runScript(script, tok){
+  for(const [op, a, b] of script){
+    if(!alive(tok)) return false;
+    if(op==="say"){ say(a); if(!await wait(1100, tok)) return false; }
+    else if(op==="take"){ if(!await ghostTake(a, b, tok) || !await wait(250, tok)) return false; }
+    else if(op==="wait"){ if(!await wait(a, tok)) return false; }
+    else if(op==="reveal") revealBoxes();
+  }
+  hideHand();
+  return alive(tok);
+}
+// a pointing hand, fingertip at (0, 0)
+const HAND_PATH = "M-7,7 A7,7 0 0 1 7,7 L7,34 Q7,29 13,29 Q19,29 19,35 L19,38 Q19,33 25,33 Q31,33 31,39 L31,42 " +
+                  "Q31,38 36,38 Q41,39 41,45 L41,62 Q41,80 26,84 L10,84 Q-2,84 -8,72 L-18,55 Q-22,47 -16,44 Q-10,42 -7,49 Z";
+function moveHand(h, x, y){ h.x = x; h.y = y; h.g.setAttribute("transform", `translate(${x.toFixed(1)},${(y+8).toFixed(1)}) rotate(-14) scale(2.4)`); }
+function hideHand(){
+  const h = intro && intro.hand; if(!h) return;
+  intro.hand = null; h.g.style.opacity = 0; setTimeout(() => h.g.remove(), 320);
+}
+// the hand takes the topmost item of type t out of a cup and lets it fall beside it
+async function ghostTake(side, t, tok){
+  const its = layout(cur[side]).filter(it => it.t===t);
+  if(!its.length) return true;
+  const it = its[its.length-1];
+  const at = () => { const c = cupPos(side); return {x:c.x+it.x*S, y:c.y+it.y*S}; };
+  let h = intro.hand;
+  if(!h){
+    const g = document.createElementNS(SVGNS, "g");
+    g.setAttribute("class", "ghost ghost-hand"); g.innerHTML = `<path d="${HAND_PATH}"/>`;
+    dragLayer.appendChild(g);
+    h = intro.hand = {g}; moveHand(h, PIV.x, 1010);
+  }
+  const sx = h.x, sy = h.y;                       // glide to the item (its cup may be moving)
+  if(!await tween(650, e => { const p = at(), k = ease(e); moveHand(h, sx+(p.x-sx)*k, sy+(p.y-sy)*k); }, tok)) return false;
+  const p0 = at();
+  cur[side][t]--; renderPan(side); updateUI();    // its weight comes off now, as when a player grabs it
+  const g = makeHeld(t); g.classList.add("ghost"); dragLayer.appendChild(h.g);   // the hand on top
+  const dir = side==="L" ? -1 : 1, x1 = Math.max(90, Math.min(1000, p0.x + dir*170)), y1 = p0.y - 260;
+  let x = p0.x, y = p0.y;
+  const ok = await tween(800, e => {
+    const k = ease(e); x = p0.x+(x1-p0.x)*k; y = p0.y+(y1-p0.y)*k - Math.sin(Math.PI*k)*40;
+    placeHeld(g, x, y, 1.15); moveHand(h, x, y);
+  }, tok);
+  g.remove();
+  if(!ok) return false;
+  dropToFloor(t, x, y, dir*120, 0); updateUI();
+  return true;
+}
+
 /* ── other input ────────────────────────────────────────────────────── */
 document.addEventListener("keydown",e=>{
   if($("overlay").classList.contains("show")) return;
   const k=e.key.toLowerCase();
   const map={a:["L","b"], s:["L","d"], d:["L","p"], k:["R","b"], l:["R","d"], j:["R","p"]};
   if(map[k] && (map[k][1]!=="p" || balloonsOn())) nudge(...map[k], e.shiftKey);
-  else if(k==="r") restart();
+  else if(k==="r") intro ? introStep(intro.i) : restart();
 });
-$("restart").addEventListener("click",restart);
+$("restart").addEventListener("click",()=> intro ? introStep(intro.i) : restart());   // in the intro: the step from the start
+$("introSkip").addEventListener("click",()=>{ intro.chapters.forEach(markSeen); exitIntro(); });
+// replay the intro mid-game; afterwards the same puzzle starts over, with its
+// time and moves as they were (the intro's own time doesn't count)
+$("introBtn").addEventListener("click",()=>{
+  if(intro || status!=="play" || drag) return;
+  const snap={level, score, lives, puzzle, moves, elapsed};
+  startIntro(level>=BALLOON_LEVEL ? ["basics","balloons"] : ["basics"], ()=>{
+    ({level, score, lives} = snap);
+    startPuzzle(snap.puzzle, true); moves=snap.moves; elapsed=snap.elapsed; updateHud();
+  }, "Jatka peliä");
+});
 
 fitEqZone();
-newRun();
+if(seen("basics")) newRun();
+else startIntro(["basics"], newRun, "Aloita peli");      // the first time on this device
 requestAnimationFrame(frame);
 </script>
 </body>

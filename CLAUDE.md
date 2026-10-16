@@ -111,19 +111,39 @@ games/<category>/<course>/<game>/index.html
   0.6 of the original size). Releasing over its own cup elsewhere drops it to
   the floor (decided).
 - Touch screens: the held item stays centred on the fingertip and grows
-  (diamond 5×, box and balloon 2×; `TOUCH_GROW`) so it shows around the
+  (diamond 5×, balloon 4×, box 2×; `TOUCH_GROW`) so it shows around the
   finger. It used to rise above the finger; Vadim didn't like that. Being
   trialled.
 - Keyboard shortcuts A/S/D/K/L/J (Shift = add) exist for automated testing;
   keep them for now even though they make play faster than dragging.
 
-## Plans for Yhtälövaaka (agreed, not built yet)
+## Esittely (the intro, built)
 
-- **Intro demo at the start of level 1:** a semi-transparent ghost hand drags a
-  diamond out of one cup (scale tips), then the same from the other cup (scale
-  levels), with the text "Ota sama esine kummastakin kupista". About 5 s, a tap
-  skips it, and its time doesn't count. Possibly a similar short demo when
-  balloons first appear at level 3.
+- A guided demo on the real scale, not a game: no lives, points or clock, and
+  the scale never breaks (it leans more the bigger the difference, up to about
+  half the game's tilt, and waits). Inspired by Brilliant's lessons (one idea
+  per screen, progress bar, answer tiles), not copied.
+- "basics" (7 steps) runs before level 1 and "balloons" (3 steps) before
+  level 3, the first time on a device (localStorage
+  `yhtalovaaka.intro.basics` / `.balloons`). "Ohita esittely" beside
+  "↺ Alusta" skips the whole intro, and that counts as seen. The
+  "Esittely" button under the game replays it (basics, plus balloons from
+  level 3 on); afterwards the same puzzle starts over with its time and moves
+  as they were.
+- basics: 3 = 3, take one diamond (tips) → take one from each (stays level,
+  `| −1`) → x = 3 "how many diamonds in the box" → 2x = 6 "which equation"
+  (x + 2 = 6, 2x = 6, x = 6, 2 = 6x: the left side of the equation is
+  the left cup) → 2x = 6 "how many in one box" →
+  2x = x + 1 (hint: take a box from each; if answered without doing it, the
+  ghost hand shows it) → ghost hand solves 2x + 1 = x + 4.
+- balloons: 1 − 1 = 0, take the balloon (the cup goes down) → 3 − 1 = 3 − 1,
+  a balloon from each (`| +1`) → x − 1 = 2 with the shelf (add a diamond).
+- A wrong number on a tile opens the box with that many diamonds, so the
+  scale itself tips and shows why ("vasemmassa kupissa olisi yhteensä …").
+- Vadim chose: first time + button; the final solve is watched (ghost hand),
+  not done; answers are tiles; the balloon intro comes just before level 3.
+- Without the shelf the intro crops the shelf band off the picture so the
+  scale is bigger. On a 375×667 phone two steps scroll a little (≤ 35 px).
 ## Equation chain (built)
 
 - Under the scale, where the single equation used to be. A row is written
@@ -157,7 +177,6 @@ games/<category>/<course>/<game>/index.html
   row in the chain simply has no annotation.
 - Division (e.g. 3x = 12 with ÷2/÷3/÷4 tokens that split a cup into equal
   piles): as extra levels in this game, or a separate game "Yhtälövaaka 2"?
-- Intro demo: every time level 1 starts, or only the first time on a device?
 - Unlockable visual skins (e.g. a "Metalli" skin for finishing the game):
   liked as an idea, not decided.
 
