@@ -263,8 +263,6 @@
 
     <div class="subctrl" id="subctrl">
       <button id="clear">↺ Tyhjennä pisteet</button>
-      <!-- TEMP testing: skip to the next level; remove before release -->
-      <button id="skipLevel">⏭ Ohita taso (testi)</button>
     </div>
   </main>
 
@@ -1131,7 +1129,7 @@ function checkPoints(){
     if(answered) return;
     tipHint(bad.length === 1 ? "Kaikki ratkaisut ovat mukana, mutta yksi piste on ylimääräinen."
                              : `Kaikki ratkaisut ovat mukana, mutta ${bad.length} pistettä on ylimääräisiä.`);
-  }, 1000);
+  }, 3000);
 }
 
 /* "Ei ratkaisuja" / "Jokainen piste": right wins; wrong counts as one hint
@@ -1345,10 +1343,6 @@ $("tri45").addEventListener("click", () => showTriangle(45));
 $("shClose").addEventListener("click", closeSheet);
 $("sheet").addEventListener("click", e => { if(e.target === $("sheet")) closeSheet(); });
 $("clear").addEventListener("click", clearPoints);
-// TEMP testing: skip to the next level; remove before release
-$("skipLevel").addEventListener("click", () => {
-  if(level < MAX_LEVEL){ level++; startLevel(); } else showOverlay("complete");
-});
 // the memory-triangle name in a hint is a link that opens the card
 $("hint").addEventListener("click", e => {
   const a = e.target.closest(".trilink"); if(!a) return;

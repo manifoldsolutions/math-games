@@ -18,6 +18,10 @@ games/<category>/<course>/<game>/index.html
   `../../../../#/<category>/<course>` (e.g. `#/lukio/maa1-2`).
 - Adding a game: create its folder, then add an entry to the right course in
   `CATALOG` in `index.html` (`game: null` shows it as "Coming soon").
+- Card glyphs: every catalog entry may have `icon`, either a drawing from
+  `GLYPHS` in `index.html` or a short text (`"f(x)"`, `"sin x"`). Without one a
+  card shows its parent's glyph. New drawings follow the same family: 26×26
+  grid, thin cyan lines (stroke 1.6, helper lines 1.2 and dimmer), no fills.
 - Catalog ids become URL parts: short, lowercase, digits and hyphens only.
 - Shared JS goes in `assets/` too, loaded with a plain `<script src>` before the
   game's own script (no modules). Yhtälövaaka and Yksikköympyrä use
@@ -98,7 +102,7 @@ games/<category>/<course>/<game>/index.html
 
 - No "Tarkista" button: a task is solved the moment every solution is marked
   (within 5°) and no wrong point is left. If all solutions are marked but
-  there is an extra point, the hint line says so after about 1 s.
+  there is an extra point, the hint line says so after about 3 s.
 - Levels 0–7, 6 tasks each. Solving the last task of a level starts the
   fireworks, and 1.5 s later the level dialog opens by itself (no button).
   Level 0 shows the angle (arc + degrees) while aiming and next to placed

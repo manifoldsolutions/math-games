@@ -346,7 +346,7 @@ Tarkennuksia:
     kierrosta π." → tehtävästä 3 alkaen "Täysi kierros on 2π ja puoli
     kierrosta π."
 - **Ylimääräinen piste** (ilmainen, ei vihje): kun kaikki ratkaisut on merkitty
-  ja mukana on väärä piste, noin 1 s kuluttua tulee "Kaikki ratkaisut ovat
+  ja mukana on väärä piste, noin 3 s kuluttua tulee "Kaikki ratkaisut ovat
   mukana, mutta yksi piste on ylimääräinen." / "… mutta 2 pistettä on
   ylimääräisiä."
 

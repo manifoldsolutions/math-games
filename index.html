@@ -169,7 +169,8 @@
   }
   .card::before{ top:-1px; left:-1px; border-width:2px 0 0 2px; }
   .card::after{ bottom:-1px; right:-1px; border-width:0 2px 2px 0; border-color:var(--magenta); }
-  .card .glyph{ color:var(--accent); filter:var(--glow-cyan); }
+  .card .glyph{ color:var(--accent); filter:var(--glow-cyan); align-self:flex-start; }
+  .card .glyph.txt{ font-family:var(--ui); font-weight:700; font-size:19px; line-height:26px; height:26px; letter-spacing:.02em; white-space:nowrap; }
   .card .title{
     font-family:var(--ui);
     font-weight:700;
@@ -289,27 +290,33 @@
    Each game's `game` is a path to a folder containing that game's own
    index.html. Use `game: null` for a game that isn't ready yet.
    Keep every `id` short and url-safe (lowercase, digits, hyphens).
+   `icon` (optional, on any level) picks the card's glyph: a name from
+   GLYPHS below (e.g. "scale") or a short text such as "f(x)". A course
+   without one shows its category's glyph, a game its course's.
    ══════════════════════════════════════════════════════════════════════ */
 const CATALOG = [
   {
     id: "lukio",
     title: "Lukiomatikkaa",
+    icon: "lyre",
     blurb: "Finnish upper-secondary curriculum, in Finnish.",
     courses: [
       {
           id: "maa1-2",
           title: "MAA 1–2",
           blurb: "Funktiot ja yhtälöt",
+          icon: "f(x)",
           games: [
-          { id: "game0", title: "Yhtälövaaka", blurb: "", game: "games/lukio/maa1-2/yhtalovaaka/" },
-          { id: "game1", title: "Yhtälön ratkaisu 1", blurb: "", game: "games/lukio/maa1-2/yhtalo1/" },
-          { id: "game2", title: "Yhtälön ratkaisu 2", blurb: "", game: "games/lukio/maa1-2/yhtalo2/" },
+          { id: "game0", title: "Yhtälövaaka", blurb: "", icon: "scale", game: "games/lukio/maa1-2/yhtalovaaka/" },
+          { id: "game1", title: "Yhtälön ratkaisu 1", blurb: "", icon: "boxedx", game: "games/lukio/maa1-2/yhtalo1/" },
+          { id: "game2", title: "Yhtälön ratkaisu 2", blurb: "", icon: "boxedx", game: "games/lukio/maa1-2/yhtalo2/" },
         ],
       },
       {
           id: "maa3",
           title: "MAA 3",
           blurb: "Geometria",
+          icon: "geometry",
           games: [
           ],
       },
@@ -317,8 +324,9 @@ const CATALOG = [
           id: "maa5",
           title: "MAA 5",
           blurb: "Trigonometria",
+          icon: "sin x",
           games: [
-	      { id: "1-ympyra1", title: "Yksikköympyrä", blurb: "", game: "games/lukio/maa5/yksikkoympyra/" },
+	      { id: "1-ympyra1", title: "Yksikköympyrä", blurb: "", icon: "unitcircle", game: "games/lukio/maa5/yksikkoympyra/" },
           ],
       },
 	
@@ -327,6 +335,7 @@ const CATALOG = [
     {
 	id: "ib",
 	title: "IB math",
+	icon: "globe",
 	blurb: "International Baccalaureate, in English.",
 	courses: [
 	],
@@ -334,14 +343,16 @@ const CATALOG = [
     {
 	id: "artsy",
 	title: "Matikkataiteilua\nArtsy Math",
+	icon: "spiral",
 	blurb: "Visualisointeja\nVisualizations",
 	courses: [
 	    {
 		id: "fractals",
 		title: "Fraktaaleja\nFractals",
 		blurb: "Attraktoreita ja fraktaaleja\nAttractors and fractals",
+		icon: "sierpinski",
 		games: [
-		    {id: "ifs_explorer", title: "IFS explorer", blurb: "Iterated Function Systems and the Flame Algorithm", game: "games/artsy_math/fractals/ifs_explorer/"},
+		    {id: "ifs_explorer", title: "IFS explorer", blurb: "Iterated Function Systems and the Flame Algorithm", icon: "sierpinski", game: "games/artsy_math/fractals/ifs_explorer/"},
 		],
 	    },
 	],
@@ -354,10 +365,33 @@ const crumb = document.getElementById('crumb');
 const catById    = id => CATALOG.find(c => c.id === id);
 const courseById = (cat, id) => cat.courses.find(c => c.id === id);
 
-// glyph shown on each card — small, quiet, geometric
-const glyph = `<svg class="glyph" width="26" height="26" viewBox="0 0 26 26" aria-hidden="true">
-  <circle cx="13" cy="13" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/>
-  <path d="M3,13 h20 M13,3 v20" stroke="currentColor" stroke-width="1.2" opacity=".5"/></svg>`;
+// card glyphs: one family of thin neon line drawings on a 26×26 grid.
+// `faint` is for helper lines (axes, grids) drawn thinner and dimmer.
+const faint = d => `<path d="${d}" stroke-width="1.2" opacity=".45"/>`;
+const AXES = faint("M1,13 H25 M13,1 V25");
+const GLYPHS = {
+  lyre:       `<path d="M10,22.5 C5.5,20.5 3,15.5 4.6,12 C5.8,9.6 7.8,8.6 7.6,6.4 C7.5,4.6 5.6,3.6 4.4,4.8 M16,22.5 C20.5,20.5 23,15.5 21.4,12 C20.2,9.6 18.2,8.6 18.4,6.4 C18.5,4.6 20.4,3.6 21.6,4.8"/>`   // the ylioppilaslakki lyre
+            + `<path d="M10,22.5 Q13,24.4 16,22.5 M7.6,8.2 H18.4"/>` + `<path d="M11.2,8.2 V23.2 M13,8.2 V23.6 M14.8,8.2 V23.2" stroke-width="1.1"/>`,
+  crosshair:  `<circle cx="13" cy="13" r="10"/>` + faint("M3,13 H23 M13,3 V23"),
+  parabola:   faint("M1,16 H25 M13,2 V24") + `<path d="M2.5,5 Q13,31 23.5,5"/>`,
+  globe:      `<circle cx="13" cy="13" r="10"/><ellipse cx="13" cy="13" rx="4.5" ry="10"/>` + faint("M3,13 H23 M4.3,8 H21.7 M4.3,18 H21.7"),
+  spiral:     faint("M1.04,5.64 H24.96 V20.36 H1.04 Z M15.76,5.64 V20.36 M15.76,14.84 H24.96 M19.44,14.84 V20.36 M15.76,16.68 H19.44 M17.6,14.84 V16.68")
+            + `<path d="M1.04,20.36 A14.72,14.72 0 0 1 15.76,5.64 A9.2,9.2 0 0 1 24.96,14.84 A5.52,5.52 0 0 1 19.44,20.36 A3.68,3.68 0 0 1 15.76,16.68 A1.84,1.84 0 0 1 17.6,14.84 A1.84,1.84 0 0 1 19.44,16.68"/>`,
+  geometry:   `<path d="M4,22 L22,22 L4,4 Z"/><path d="M4,17 H9 V22" stroke-width="1.2"/>`,   // right isosceles, with the right-angle mark
+  unitcircle: AXES + `<circle cx="13" cy="13" r="9"/><path d="M13,13 L18.8,6.1"/>`
+            + `<circle cx="18.8" cy="6.1" r="1.9" fill="currentColor" stroke="none"/>`,
+  sierpinski: `<path d="M2,23.5 L24,23.5 L13,4.4 Z M13,23.5 L18.5,14 L7.5,14 Z M7.5,23.5 L10.2,18.7 L4.8,18.7 Z M18.5,23.5 L21.2,18.7 L15.8,18.7 Z M13,14 L15.8,9.2 L10.2,9.2 Z"/>`,
+  scale:      `<path d="M13,6 V22 M8,22 H18 M3,8 H23 M3,8 L0.8,15 M3,8 L5.2,15 M23,8 L20.8,15 M23,8 L25.2,15"/>`
+            + `<path d="M0.5,15 Q3,19.5 5.5,15 Z M20.5,15 Q23,19.5 25.5,15 Z"/><circle cx="13" cy="5" r="1.3"/>`,
+  boxedx:     `<rect x="3" y="3" width="20" height="20" rx="3"/><path d="M8.5,9.5 Q11.5,8 13,13 Q14.5,18 17.5,16.5 M17.5,9 Q14.5,9.5 13,13 Q11.5,16.5 8.5,17"/>`,   // a curved maths x, not ×
+};
+// the first icon given (game, course, category); a name from GLYPHS draws it, anything else is text
+function glyph(...icons){
+  const icon = icons.find(Boolean) || 'crosshair';
+  if (!GLYPHS[icon]) return `<span class="glyph txt" aria-hidden="true">${esc(icon)}</span>`;
+  return `<svg class="glyph" width="26" height="26" viewBox="0 0 26 26" aria-hidden="true" fill="none"
+    stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${GLYPHS[icon]}</svg>`;
+}
 const arrow = `<svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M2,7 h9 M7,3 l4,4 -4,4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
 function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
@@ -372,8 +406,8 @@ function setCrumb(parts){
 }
 
 // one reusable card builder. `soon:true` → renders a disabled "coming soon" card.
-function card({ href, title, blurb, meta, soon }){
-  const inner = `${glyph}
+function card({ href, title, blurb, meta, soon, icon }){
+  const inner = `${icon}
     <span class="title">${esc(title)}</span>
     ${blurb ? `<span class="blurb">${esc(blurb)}</span>` : ''}
     <span class="meta">${meta}</span>`;
@@ -391,6 +425,7 @@ function renderCategories(){
     const n = c.courses.length;
     return card({
       href: `#/${enc(c.id)}`,
+      icon: glyph(c.icon),
       title: c.title,
       blurb: c.blurb,
       meta: `${n} ${n === 1 ? 'course' : 'courses'} ${arrow}`,
@@ -408,6 +443,7 @@ function renderCourses(cat){
     const n = co.games.length;
     return card({
       href: `#/${enc(cat.id)}/${enc(co.id)}`,
+      icon: glyph(co.icon, cat.icon),
       title: co.title,
       blurb: co.blurb,
       meta: `${n} ${n === 1 ? 'game' : 'games'} ${arrow}`,
@@ -428,6 +464,7 @@ function renderGames(cat, course){
   const cards = course.games.map(g => card({
     href: g.game ? esc(g.game) : null,
     soon: !g.game,
+    icon: glyph(g.icon, course.icon, cat.icon),
     title: g.title,
     blurb: g.blurb,
     meta: g.game ? `Play ${arrow}` : 'Coming soon',
