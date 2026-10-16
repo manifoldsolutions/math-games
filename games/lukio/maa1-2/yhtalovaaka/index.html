@@ -30,7 +30,7 @@
      Puzzles are generated backwards from x = n by adding the same thing
      to both sides, so every state stays non-negative and solvable.
      Esittely: a guided intro on the same scale before level 1 and before
-     level 3 (first time on a device, or from the Esittely button); see the
+     level 3 (every time, or from the Esittely button); see the
      intro section in the script.
      ════════════════════════════════════════════════════════════════════ -->
 
@@ -156,36 +156,12 @@
   .mini .ann .bar{ color:var(--accent); opacity:.7; margin-right:.2em; }
   @media (max-width:380px){ .cmp{ grid-template-columns:1fr; } }
 
-  /* ── Esittely (intro): progress bar, question on top, answer tiles under the chain ── */
-  .introbar{
-    width:min(820px,100%); display:flex; align-items:center; gap:14px;
-    padding:12px clamp(16px,4vw,28px) 0;
-  }
-  .progress{ flex:1; display:flex; gap:4px; }
-  .progress span{ flex:1; height:5px; border-radius:3px; background:var(--line); transition:background .3s ease; }
-  .progress span.done{ background:var(--accent); box-shadow:0 0 6px rgba(0,229,255,.5); }
-  .progress span.now{ background:var(--magenta); box-shadow:0 0 6px rgba(255,61,242,.5); }
-  .prompt{
-    width:min(620px,100%); margin:10px 0 0; padding:0 clamp(16px,4vw,28px);
-    font-size:16px; line-height:1.45; text-align:center; color:var(--ink); min-height:calc(3 * 1.45em);
-  }
-  .answers{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:4px 16px; min-height:58px; }
-  .answers .op-btn{ padding:12px 12px; min-width:58px; }      /* four equations fit on one row on a phone */
-  .answers .op-btn.right{ border-color:var(--green); color:var(--green-ink); box-shadow:0 0 14px rgba(57,255,158,.55); opacity:1; }
-  .answers .op-btn.wrong{ border-color:var(--red); color:var(--red); opacity:.55; }
-  .answers .op-btn.wrong span{ color:inherit; }
-  .hint.good{ color:var(--green-ink); }
-  body.intro .hint{ font-size:15px; line-height:1.4; min-height:calc(3 * 1.4em); padding-top:8px; }
+  /* ── Esittely (intro): the shared look is in theme.css; here only this game's part ── */
   .eqzone{ transition:opacity .35s ease; }
   .eqzone.veiled{ opacity:0; }
-  body.intro .statusrow, body.intro .legend, body.intro .hud, body.intro #introBtn, body:not(.intro) #introSkip{ display:none; }
+  body.intro .statusrow, body.intro .legend, body.intro .hud, body.intro #introBtn, body.intro #skipLevel, body:not(.intro) #introSkip{ display:none; }
   /* room for the question, the chain (3 rows), feedback and the answer tiles */
   body.intro #stage{ max-height:calc(100dvh - 372px - 3 * clamp(32px,7.4vw,46px)); min-height:170px; }
-  .ghost-hand path{
-    fill:rgba(232,247,255,.22); stroke:rgba(232,247,255,.9); stroke-width:2; stroke-linejoin:round;
-    vector-effect:non-scaling-stroke;
-  }
-  .ghost-hand{ pointer-events:none; transition:opacity .3s ease; }
 
   /* ── what the box held, in the win dialog ── */
   .win .gems{ display:flex; flex-wrap:wrap; gap:4px; justify-content:center; margin:8px auto 0; max-width:260px; }
@@ -207,6 +183,7 @@
     </div>
     <!-- Esittely (intro): progress and the step's question -->
     <div class="introbar" id="introBar" hidden>
+      <span class="introtag">Esittely</span>
       <div class="progress" id="introProgress" role="img"></div>
     </div>
     <p class="prompt" id="introPrompt" aria-live="polite" hidden></p>
@@ -260,7 +237,8 @@
     <div class="subctrl">
       <button id="restart">↺ Alusta</button>
       <button id="introBtn">Esittely</button>
-      <button id="introSkip">Ohita esittely</button>
+      <button class="btn" id="introSkip">Ohita esittely</button>
+      <button id="skipLevel" hidden>⏭ Ohita taso (testi)</button>
     </div>
   </main>
 
@@ -280,6 +258,7 @@
   </div>
 
 <script src="../../../../assets/celebrate.js"></script>
+<script src="../../../../assets/intro.js"></script>
 <script>
 "use strict";
 const motion = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -557,7 +536,16 @@ const newPuzzle = ()=> startPuzzle(genPuzzle(level));
 const restart   = ()=> { if(status==="play") startPuzzle(puzzle, true); };   // ↺ Alusta
 const retryKeep = ()=> startPuzzle(puzzle, true);
 const retryFresh= ()=> startPuzzle(puzzle);
-function newRun(){ level=1; score=0; lives=LIVES; newPuzzle(); }
+// a run starts with the basics intro, every time (it can be skipped; Vadim
+// dropped remembering it)
+function newRun(){ startIntro(["basics"], beginRun, "Aloita peli"); }
+function beginRun(){ level=1; score=0; lives=LIVES; newPuzzle(); }
+function nextLevel(){
+  level++;
+  // balloons come in: their short intro first, every time
+  if(level===BALLOON_LEVEL) startIntro(["balloons"], newPuzzle, `Aloita taso ${level}`);
+  else newPuzzle();
+}
 
 /* life icons: a small cup, and the same cup broken in two */
 const CUP_ICON = `<path class="life-cup" d="M2,5 L38,5 Q36,17 27,18 L13,18 Q4,17 2,5 Z"/><line class="life-rim" x1="1" y1="5" x2="39" y2="5"/>`;
@@ -1060,12 +1048,7 @@ function showOverlay(kind){
       `<div><h3>Sinun ratkaisusi</h3>${miniChain(mine)}${steps(mine)}</div>` +
       `<div><h3>Mallivastaus</h3>${miniChain(model)}${steps(model)}</div>`;
     $("ovSolution").open = true; $("ovSolution").hidden = false;
-    if(level<MAX_LEVEL) first=btn("Seuraava taso",()=>{
-      level++;
-      // balloons come in: their short intro first, the first time on this device
-      if(level===BALLOON_LEVEL && !seen("balloons")) startIntro(["balloons"], newPuzzle, `Aloita taso ${level}`);
-      else newPuzzle();
-    },true);
+    if(level<MAX_LEVEL) first=btn("Seuraava taso",nextLevel,true);
     else first=btn("Jatka",()=>showOverlay("complete"),true);         // the last level: on to the finish
   } else if(kind==="complete"){
     const fromLevels=score, lifeBonus=BONUS_LIFE*lives;
@@ -1199,18 +1182,14 @@ function frame(now){
      ask   — answer tiles; a wrong number opens the box with that many
              diamonds, so the scale itself shows why it's wrong
      ghost — a ghost hand solves an equation while the player watches
-   "basics" runs before level 1 and "balloons" before level 3, the first
-   time on a device (localStorage remembers it); the Esittely button
+   "basics" runs before level 1 and "balloons" before level 3, every time
+   (nothing is remembered; "Ohita esittely" skips); the Esittely button
    replays them. */
 const VIEW_FULL = "0 -145 1100 1215";            // the game's view, with the shelf
 const VIEW_INTRO = "0 150 1100 920";             // without the shelf band, so the scale is bigger
 const INTRO_TILT = 0.55*MAX_TILT;                // the most the scale leans in the intro
-const SEEN_KEY = "yhtalovaaka.intro.";
-const seen = ch => { try{ return localStorage.getItem(SEEN_KEY+ch)==="1"; }catch(_){ return false; } };
-const markSeen = ch => { try{ localStorage.setItem(SEEN_KEY+ch, "1"); }catch(_){} };
 const nGems = n => n===1 ? "1 timantti" : `${n} timanttia`;
-// equations in the texts don't break across lines: no-break spaces around = − + |
-const nb = t => t.replace(/ ([=−+|]) /g, "\u00a0$1\u00a0");
+const nb = IntroKit.nb;               // equations in the texts don't break across lines
 const box = (b=0, d=0, p=0) => ({b, d, p});
 const isLevel = () => tiltSign()===0;
 const aloneBox = c => c.b===1 && !c.d && !c.p;
@@ -1302,32 +1281,21 @@ function introStep(i){
   intro.lock = !(st.kind==="act" || st.interactive);   // can the scale be touched?
   $("introPrompt").textContent = nb(st.prompt);
   $("eqzone").classList.toggle("veiled", st.chain==="after");
-  const pr = $("introProgress");
-  pr.innerHTML = intro.steps.map((_, k) => `<span class="${k<i ? "done" : k===i ? "now" : ""}"></span>`).join("");
-  pr.setAttribute("aria-label", `Vaihe ${i+1}/${intro.steps.length}`);
+  IntroKit.progress($("introProgress"), intro.steps.length, i);
   renderTiles(st);
   if(st.kind==="ghost") runScript(st.script, tok).then(ok => {
     if(!ok) return;
     intro.done = true; say(st.ok, "good"); showNext(); if(motion) burst();
   });
 }
+// a number tile is a count of diamonds (yellow); the others are equations
 function renderTiles(st){
-  const el = $("introAnswers"); el.innerHTML = "";
-  for(const t of st.tiles || []){
-    const tile = typeof t==="number" ? {n:t, ok:t===st.x, html:`${t}`} : t;
-    const b = document.createElement("button");
-    b.className = "op-btn " + (typeof t==="number" ? "c" : "n");
-    b.innerHTML = tile.html;
-    b.addEventListener("click", () => introAnswer(tile, b));
-    el.appendChild(b);
-  }
+  const list = (st.tiles || []).map(t => typeof t==="number" ? {n:t, ok:t===st.x, html:`${t}`, cls:"c"} : t);
+  IntroKit.tiles($("introAnswers"), list, introAnswer);
 }
 function showNext(){
-  const el = $("introAnswers"), last = intro.i===intro.steps.length-1;
-  el.innerHTML = `<button class="btn primary">${last ? "Valmis" : "Jatka"}</button>`;
-  const b = el.firstChild;
-  b.addEventListener("click", () => last ? finishIntro() : introStep(intro.i+1));
-  b.focus({preventScroll:true});
+  const last = intro.i===intro.steps.length-1;
+  IntroKit.next($("introAnswers"), last, () => last ? finishIntro() : introStep(intro.i+1));
 }
 function say(msg, cls=""){ intro.msg = nb(msg); intro.cls = cls; updateUI(); }
 // the hint line in the intro: feedback, or what to do when the scale has tipped
@@ -1386,7 +1354,6 @@ async function tryValue(n, tok){
 function revealBoxes(){ ["L","R"].forEach(s => { if(cur[s].b) renderPan(s, true); }); }
 
 function finishIntro(){
-  intro.chapters.forEach(markSeen);
   intro.token++;
   showOverlay("introDone"); if(motion) burst();
 }
@@ -1414,20 +1381,7 @@ function introTilt(dt){
 /* ghost hand: scripts of ["say", text] ["take", side, type] ["wait", ms] ["reveal"].
    Every await checks the step's token, so restarting or leaving the step stops it. */
 const alive = tok => !!intro && intro.token===tok;
-const wait = (ms, tok) => new Promise(r => setTimeout(() => r(alive(tok)), ms));
-const ease = e => e<.5 ? 2*e*e : 1 - (2-2*e)**2/2;
-function tween(ms, f, tok){
-  return new Promise(r => {
-    if(!motion){ f(1); return r(alive(tok)); }
-    const t0 = performance.now();
-    const go = now => {
-      if(!alive(tok)) return r(false);
-      const e = Math.min(1, (now-t0)/ms); f(e);
-      if(e<1) requestAnimationFrame(go); else r(true);
-    };
-    requestAnimationFrame(go);
-  });
-}
+const {wait, tween} = IntroKit.timing(alive), ease = IntroKit.ease;
 async function runScript(script, tok){
   for(const [op, a, b] of script){
     if(!alive(tok)) return false;
@@ -1439,9 +1393,6 @@ async function runScript(script, tok){
   hideHand();
   return alive(tok);
 }
-// a pointing hand, fingertip at (0, 0)
-const HAND_PATH = "M-7,7 A7,7 0 0 1 7,7 L7,34 Q7,29 13,29 Q19,29 19,35 L19,38 Q19,33 25,33 Q31,33 31,39 L31,42 " +
-                  "Q31,38 36,38 Q41,39 41,45 L41,62 Q41,80 26,84 L10,84 Q-2,84 -8,72 L-18,55 Q-22,47 -16,44 Q-10,42 -7,49 Z";
 function moveHand(h, x, y){ h.x = x; h.y = y; h.g.setAttribute("transform", `translate(${x.toFixed(1)},${(y+8).toFixed(1)}) rotate(-14) scale(2.4)`); }
 function hideHand(){
   const h = intro && intro.hand; if(!h) return;
@@ -1456,7 +1407,7 @@ async function ghostTake(side, t, tok){
   let h = intro.hand;
   if(!h){
     const g = document.createElementNS(SVGNS, "g");
-    g.setAttribute("class", "ghost ghost-hand"); g.innerHTML = `<path d="${HAND_PATH}"/>`;
+    g.setAttribute("class", "ghost ghost-hand"); g.innerHTML = `<path d="${IntroKit.HAND_PATH}"/>`;
     dragLayer.appendChild(g);
     h = intro.hand = {g}; moveHand(h, PIV.x, 1010);
   }
@@ -1485,8 +1436,18 @@ document.addEventListener("keydown",e=>{
   if(map[k] && (map[k][1]!=="p" || balloonsOn())) nudge(...map[k], e.shiftKey);
   else if(k==="r") intro ? introStep(intro.i) : restart();
 });
-$("restart").addEventListener("click",()=> intro ? introStep(intro.i) : restart());   // in the intro: the step from the start
-$("introSkip").addEventListener("click",()=>{ intro.chapters.forEach(markSeen); exitIntro(); });
+$("restart").addEventListener("click",()=> intro ? introStep(intro.i) : restart());
+/* testing (Vadim): typing "xyz", or the page opened with ?testi, shows a
+   button that skips to the next level. Students never see it. */
+const TEST_CODE="xyz"; let typed="";
+const showTestTools=()=>{ $("skipLevel").hidden=false; };
+if(new URLSearchParams(location.search).has("testi")) showTestTools();
+document.addEventListener("keydown",e=>{ typed=(typed+e.key.toLowerCase()).slice(-TEST_CODE.length); if(typed===TEST_CODE) showTestTools(); });
+$("skipLevel").addEventListener("click",()=>{
+  if(intro || drag || status==="crash") return;
+  if(level<MAX_LEVEL) nextLevel(); else showOverlay("complete");
+});   // in the intro: the step from the start
+$("introSkip").addEventListener("click",exitIntro);
 // replay the intro mid-game; afterwards the same puzzle starts over, with its
 // time and moves as they were (the intro's own time doesn't count)
 $("introBtn").addEventListener("click",()=>{
@@ -1499,8 +1460,7 @@ $("introBtn").addEventListener("click",()=>{
 });
 
 fitEqZone();
-if(seen("basics")) newRun();
-else startIntro(["basics"], newRun, "Aloita peli");      // the first time on this device
+newRun();                                              // the basics intro first
 requestAnimationFrame(frame);
 </script>
 </body>

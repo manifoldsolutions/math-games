@@ -22,7 +22,7 @@
      status row with lives (.statusrow .lives) · equation colours
      (.xterm .cterm .pterm .op .eq) · buttons (.btn .op-btn) · .hint
      .subctrl · result dialog (.overlay > .win) with score table
-     SVG helpers (.neon, .neon-magenta)
+     Esittely (guided intro, with assets/intro.js) · SVG helpers (.neon, .neon-magenta)
    ══════════════════════════════════════════════════════════════════════ */
 
 @import url("https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;500;600;700&family=Orbitron:wght@600;700;800&display=swap");
@@ -131,7 +131,7 @@ body.game{ min-height:100dvh; display:flex; flex-direction:column; }
 .hint{ text-align:center; color:var(--muted); font-size:13px; padding:4px 16px 8px; min-height:2.6em; max-width:520px; }
 .hint.warn{ color:var(--red); font-weight:600; }
 
-.subctrl{ display:flex; gap:18px; justify-content:center; padding:6px 0 22px; font-family:var(--ui); font-size:13px; }
+.subctrl{ display:flex; gap:18px; justify-content:center; align-items:center; padding:6px 0 22px; font-family:var(--ui); font-size:13px; }
 .subctrl button{
   background:none; border:none; color:var(--muted); cursor:pointer; font:inherit;
   padding:4px 6px; border-radius:var(--radius); letter-spacing:.04em;
@@ -154,6 +154,11 @@ body.game{ min-height:100dvh; display:flex; flex-direction:column; }
   box-shadow:0 0 14px rgba(0,229,255,.5);
 }
 .btn:focus-visible, .win .btns :focus-visible{ outline:2px solid var(--magenta); outline-offset:3px; }
+/* a framed button among the .subctrl text buttons (e.g. "Ohita esittely") */
+.subctrl .btn{ font:600 13px var(--ui); letter-spacing:.08em; padding:9px 16px; border:1px solid var(--line); color:var(--ink); }
+/* danger: costs something ("Näytä ratkaisu" costs a life) */
+.btn.danger, .subctrl .btn.danger{ border-color:var(--red); color:var(--red); }
+.btn.danger:hover, .subctrl .btn.danger:hover{ border-color:var(--red); color:var(--red); box-shadow:0 0 12px rgba(255,61,110,.45); }
 
 /* game controls (big operation buttons, e.g. +x  −1):
    <button class="op-btn x">  x = variable, c = constant, n = neutral */
@@ -207,6 +212,59 @@ body.game{ min-height:100dvh; display:flex; flex-direction:column; }
   text-shadow:0 0 12px rgba(255,225,77,.45); margin:8px 0 0;
 }
 .win .btns{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+
+/* ── Esittely: a game's guided intro (see assets/intro.js) ──────────────
+   <body class="game intro"> while it runs: a lighter page, so it never looks
+   like the game itself. Under the header:
+     <div class="introbar"><span class="introtag">Esittely</span><div class="progress"></div></div>
+     <p class="prompt">the step's question</p>
+   and under the board .hint (feedback; .good = right) and
+     <div class="answers"> tiles (.op-btn, then .right / .wrong) or Jatka </div> */
+body.game.intro{
+  --bg:#1e1a47;          /* every var(--bg) cut-out (label halos, open rings) follows */
+  background:
+    linear-gradient(rgba(255,61,242,.07) 1px, transparent 1px) 0 0/28px 28px,
+    linear-gradient(90deg, rgba(255,61,242,.07) 1px, transparent 1px) 0 0/28px 28px,
+    radial-gradient(90% 60% at 50% 30%, #3a3080 0%, var(--bg) 70%) fixed,
+    var(--bg);
+}
+.introbar{
+  width:min(820px,100%); display:flex; align-items:center; gap:12px;
+  padding:12px clamp(16px,4vw,28px) 0;
+}
+.introtag{
+  font-family:var(--ui); font-weight:700; font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--magenta-ink); border:1px solid var(--magenta); border-radius:var(--radius); padding:3px 8px;
+}
+.progress{ flex:1; display:flex; gap:4px; }
+.progress span{ flex:1; height:5px; border-radius:3px; background:var(--line); transition:background .3s ease; }
+.progress span.done{ background:var(--accent); box-shadow:0 0 6px rgba(0,229,255,.5); }
+.progress span.now{ background:var(--magenta); box-shadow:0 0 6px rgba(255,61,242,.5); }
+.prompt{
+  width:min(620px,100%); margin:10px 0 0; padding:0 clamp(16px,4vw,28px);
+  font-size:16px; line-height:1.45; text-align:center; color:var(--ink); min-height:calc(3 * 1.45em);
+}
+.answers{ display:flex; flex-wrap:wrap; gap:8px; justify-content:center; padding:4px 16px; min-height:58px; }
+.answers .op-btn{ padding:12px 12px; min-width:58px; }      /* four equations fit on one row on a phone */
+.answers .op-btn.right{ border-color:var(--green); color:var(--green-ink); box-shadow:0 0 14px rgba(57,255,158,.55); opacity:1; }
+.answers .op-btn.wrong{ border-color:var(--red); color:var(--red); opacity:.55; }
+.answers .op-btn.wrong span{ color:inherit; }
+.hint.good{ color:var(--green-ink); }
+body.intro .hint{ font-size:15px; line-height:1.4; min-height:calc(3 * 1.4em); padding-top:8px; }
+/* the Esittely button's menu (IntroKit.menu), in the result dialog; every chapter looks the same (Vadim) */
+.intro-menu{ display:flex; flex-direction:column; gap:8px; margin:4px 0 2px; }
+.win .result .intro-q{ font-family:var(--ui); font-weight:400; font-size:15px; margin:4px 0 14px; }   /* the menu's question */
+.intro-menu .btn{
+  display:flex; justify-content:space-between; align-items:baseline; gap:14px;
+  text-transform:none; letter-spacing:.02em; text-align:left; font-size:15px;
+}
+.intro-menu small{ font-weight:500; font-size:12px; color:var(--muted); white-space:nowrap; }
+/* the ghost hand that shows a move: <g class="ghost-hand"><path d="IntroKit.HAND_PATH"/></g> */
+.ghost-hand{ pointer-events:none; transition:opacity .3s ease; }
+.ghost-hand path{
+  fill:rgba(232,247,255,.22); stroke:rgba(232,247,255,.9); stroke-width:2; stroke-linejoin:round;
+  vector-effect:non-scaling-stroke;
+}
 
 /* ── SVG helpers for drawings ─────────────────────────────────────────── */
 .neon{ stroke:var(--accent); fill:none; filter:var(--glow-cyan); }

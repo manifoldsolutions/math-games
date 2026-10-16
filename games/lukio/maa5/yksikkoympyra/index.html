@@ -18,7 +18,8 @@
      Levels 0–7, 6 tasks each. Level 0 shows the angle while aiming; levels
      1–6 have their own themes, level 7 mixes levels 3–6.
      Help: "Vihje" (plan in VIHJEET.md). Press 1, 2, 3 gives a random hint of
-     hint level 1, 2, 3 (levels 0–2: two presses); level 1 is general, level 2
+     hint level 1, 2, 3 (levels 0–2: two presses; 6–7: a fourth, anything
+     left); level 1 is general, level 2
      says roughly where, level 3 draws the helper line. Hints comment on the
      placed points or on the task, and some are pictures. After the last
      press "Näytä ratkaisu" appears. From level 3 two buttons show the memory
@@ -32,6 +33,12 @@
      Finishing level 7 gives 1000 + 500 per life left.
      Keys: ← / → turn the ray 15° (Shift: 1°), Space = place/remove,
            Enter = next, r = clear points
+     Esittely: a guided intro on the same circle before levels 0, 3, 5 and 6
+     (every time, or picked from the Esittely button's menu); see the
+     intro section in the script. Inverse functions are written arcsin,
+     arccos, arctan (never sin⁻¹), always in radians, with their ranges
+     [−π/2, π/2], [0, π] and (−π/2, π/2); an answer is the function's value
+     (arcsin(−√3/2) = −π/3), not the point 5π/3.
      ════════════════════════════════════════════════════════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -61,6 +68,7 @@
   }
   .al{ font-style:normal; color:var(--accent-ink); }
   .fn{ color:var(--ink); }
+  .iv{ font-family:"IBM Plex Sans", sans-serif; }   /* interval brackets: Chakra Petch's "(" looks like "[" */
   .frac{
     display:inline-flex; flex-direction:column; vertical-align:middle; text-align:center;
     font-size:.62em; line-height:1.08; margin:0 .08em;
@@ -118,6 +126,10 @@
   .hmark{ stroke-width:4; stroke-linecap:round; }
   .hmark.sin{ stroke:var(--brown); } .hmark.cos{ stroke:var(--green); } .hmark.tan{ stroke:var(--accent); }
   .harc, .hband{ fill:none; stroke:var(--magenta); stroke-width:12; stroke-linecap:round; opacity:.45; }
+  .harc-end{ fill:var(--magenta); }
+  .innerray{ stroke:var(--magenta); stroke-width:2.5; stroke-dasharray:9 7; }
+  .innerdot{ fill:none; stroke:var(--magenta); stroke-width:3; }
+  .harc-end.open{ fill:var(--bg); stroke:var(--magenta); stroke-width:3; }
   .pt.ok{ fill:var(--green); }
   .pt.bad{ fill:var(--red); }
   .xmark{ stroke:var(--ink); stroke-width:3.5; stroke-linecap:round; }
@@ -144,6 +156,8 @@
 
   .hint{ padding:6px 16px; }
   .hint.tip{ color:var(--accent-ink); font-size:14px; line-height:1.55; }
+  .hint .free{ display:block; }
+  .hint .free:not(:first-child){ margin-top:4px; }
   .hint .frac{ font-size:.8em; }
   .hint .trilink{ color:var(--accent-ink); text-decoration:underline; text-underline-offset:3px; }
 
@@ -199,12 +213,17 @@
 
   .statusrow{ width:min(560px,100%); }
   /* giving up costs a life: red, so it stands apart from "Ei ratkaisuja" / "Jokainen piste" */
-  #giveup{ border-color:var(--red); color:var(--red); }
-  #giveup:hover{ border-color:var(--red); box-shadow:0 0 12px rgba(255,61,110,.45); }
   .btn.shake{ animation:mp-shake .5s ease; border-color:var(--red); }
   @media (prefers-reduced-motion: reduce){ .btn.shake{ animation:none; } }
 
   .subctrl{ padding-top:4px; }
+
+  /* ── Esittely (intro): the shared look is in theme.css; here only this game's part ── */
+  .prompt{ font-family:var(--math); }             /* α and π need IBM Plex Sans */
+  body.intro .statusrow, body.intro .hud, body.intro .readout, body.intro .tools, body.intro .actions,
+  body.intro #fb, body.intro #clear, body.intro #introBtn, body.intro #skipLevel,
+  body:not(.intro) #introSkip, body:not(.intro) #introRestart{ display:none; }
+  body.intro #stage{ max-height:calc(100dvh - 390px); min-height:200px; }
 </style>
 </head>
 <body class="game">
@@ -220,6 +239,9 @@
       <span class="lives" id="lives" aria-label="Elämät"></span>
       <span>Klikkaukset: <b id="clicks">0</b></span>
     </div>
+    <!-- Esittely (intro): progress and the step's question -->
+    <div class="introbar" id="introBar" hidden><span class="introtag">Esittely</span><div class="progress" id="introProgress" role="img"></div></div>
+    <p class="prompt" id="introPrompt" aria-live="polite" hidden></p>
     <div class="readout" id="readout" aria-live="polite"></div>
 
     <div class="stage-wrap">
@@ -231,6 +253,7 @@
         <g id="aimLayer"></g>
         <g id="points"></g>
         <circle class="origin" r="6"/>
+        <g id="introLayer"></g>
       </svg>
     </div>
 
@@ -247,11 +270,12 @@
     </div>
 
     <div class="hint" id="hint"></div>
+    <div class="answers" id="introAnswers" hidden></div>
 
     <div class="actions" id="actions">
       <button class="btn" id="none">Ei ratkaisuja</button>
       <button class="btn" id="all">Jokainen piste</button>
-      <button class="btn" id="giveup" hidden>Näytä ratkaisu</button>
+      <button class="btn danger" id="giveup" hidden>Näytä ratkaisu</button>
     </div>
 
     <div class="fb" id="fb" hidden aria-live="polite">
@@ -263,6 +287,10 @@
 
     <div class="subctrl" id="subctrl">
       <button id="clear">↺ Tyhjennä pisteet</button>
+      <button id="introBtn">Esittely</button>
+      <button id="introRestart">↺ Alusta</button>
+      <button class="btn" id="introSkip">Ohita esittely</button>
+      <button id="skipLevel" hidden>⏭ Ohita taso (testi)</button>
     </div>
   </main>
 
@@ -285,6 +313,7 @@
   </div>
 
 <script src="../../../../assets/celebrate.js"></script>
+<script src="../../../../assets/intro.js"></script>
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -308,15 +337,19 @@ const A   = `<span class="al">α</span>`;
 const fr  = (n,d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
 const sq  = x => `√<span class="rad">${x}</span>`;
 const fn  = s => `<span class="fn">${s}</span>`;
-const inv = s => `<span class="fn">${s}<sup>−1</sup></span>`;
+const inv = s => `<span class="fn">arc${s}</span>`;          // arcsin, arccos, arctan (never sin⁻¹)
 const eq  = (l,r) => `${l}<span class="eq">=</span>${r}`;
 const SIN = `${fn("sin")}&thinsp;`, COS = `${fn("cos")}&thinsp;`, TAN = `${fn("tan")}&thinsp;`;
 const SIN2 = `${fn("sin")}<sup>2</sup>&thinsp;`, COS2 = `${fn("cos")}<sup>2</sup>&thinsp;`;
 const PM = "&thinsp;±&thinsp;";
 const pi = (n,d) => d ? fr(n+"π", d) : n+"π";
+// an interval [a, b] or (a, b)
+const iv = (l, a, b, r) => `<span class="iv">${l}</span>${a},&nbsp;${b}<span class="iv">${r}</span>`;
+// the ranges of arcsin, arccos and arctan, always in radians; arctan's is open
+const RANGE = {sin:iv("[", "−"+pi("",2), pi("",2), "]"), cos:iv("[", "0", "π", "]"), tan:iv("(", "−"+pi("",2), pi("",2), ")")};
 
 /* a task: equation, solutions (degrees), what to draw when checking, how to print answers */
-const P = (html, sols, guide, o={}) => ({html, sols, guide, unit:o.unit||"both", note:o.note||"", all:!!o.all, hint:o.hint||"", inv:o.inv||"", split:o.split||"", easy:o.easy||"", band:o.band||null, turn:!!o.turn, first:!!o.first});
+const P = (html, sols, guide, o={}) => ({html, sols, guide, unit:o.unit||"both", note:o.note||"", all:!!o.all, hint:o.hint||"", inv:o.inv||"", inner:o.inner||"", lin:o.lin||null, il:o.il||"", split:o.split||"", easy:o.easy||"", band:o.band||null, turn:!!o.turn, first:!!o.first});
 const NONE = [];
 
 /* levels 0–2: "split" breaks a hard angle into easy parts for the first hint;
@@ -371,7 +404,7 @@ const BANK = {
   P(eq(SIN+A,fr(1,2)), [30,150], {t:"h", v:.5, vh:fr(1,2)}),
   P(eq(SIN+A,"−"+fr(1,2)), [210,330], {t:"h", v:-.5, vh:"−"+fr(1,2)}),
   P(eq(COS+A,fr(1,2)), [60,300], {t:"v", v:.5, vh:fr(1,2)}),
-  P(eq(COS+A,"−"+fr(sq(2),2)), [135,225], {t:"v", v:-Math.SQRT1_2, vh:"−"+fr(sq(2),2)}),
+  P(eq(COS+A,"−"+fr(1,sq(2))), [135,225], {t:"v", v:-Math.SQRT1_2, vh:"−"+fr(1,sq(2))}),
   P(eq(SIN+A,fr(sq(3),2)), [60,120], {t:"h", v:Math.sqrt(3)/2, vh:fr(sq(3),2)}),
   P(eq(COS+A,"−"+fr(sq(3),2)), [150,210], {t:"v", v:-Math.sqrt(3)/2, vh:"−"+fr(sq(3),2)}),
   P(eq(SIN+A,"±1"), [90,270], {t:"hh", v:1}, {hint:`Etsi pisteet, joiden y-koordinaatti on 1 tai −1.`, note:`Pisteet, joiden y-koordinaatti on 1 tai −1, ovat ympyrän ylin ja alin piste.`}),
@@ -380,51 +413,51 @@ const BANK = {
   P(eq(COS+A,"−1"), [180], {t:"v", v:-1, vh:"−1"}, {note:"Pystysuora suora x = −1 vain sivuaa ympyrää, joten ratkaisuja on yksi."}),
   P(eq(SIN+A,"2"), NONE, {t:"none"}, {band:{axis:"y", v:2}, hint:"Mitä arvoja pisteen y-koordinaatti voi saada yksikköympyrällä?", note:`${SIN}${A} on pisteen y-koordinaatti, joten se on aina välillä −1 … 1.`}),
   P(eq(COS+A,"−"+fr(3,2)), NONE, {t:"v", v:-1.5, vh:"−"+fr(3,2)}, {band:{axis:"x", v:-1.5}, hint:"Mitä arvoja pisteen x-koordinaatti voi saada yksikköympyrällä?", note:`${COS}${A} on pisteen x-koordinaatti, joten se on aina välillä −1 … 1. Suora x = −${fr(3,2)} ei osu ympyrään.`}),
-  P(eq(SIN+A,"−"+fr(sq(2),2)), [225,315], {t:"h", v:-Math.SQRT1_2, vh:"−"+fr(sq(2),2)}),
+  P(eq(SIN+A,"−"+fr(1,sq(2))), [225,315], {t:"h", v:-Math.SQRT1_2, vh:"−"+fr(1,sq(2))}),
 ],
 4: [ // tangent, relations, squares
   P(eq(SIN+A,COS+A), [45,225], {t:"tan", v:1, vh:"1"}, {hint:"Etsi pisteet, joiden x- ja y-koordinaatti ovat yhtä suuret.", note:"Pisteet, joiden x- ja y-koordinaatti ovat samat, ovat suoralla y = x."}),
   P(eq(SIN+A,"−"+COS+A), [135,315], {t:"tan", v:-1, vh:"−1"}, {hint:"Etsi pisteet, joiden x- ja y-koordinaatti ovat toistensa vastalukuja.", note:"Pisteet, joiden koordinaatit ovat toistensa vastalukuja, ovat suoralla y = −x."}),
   P(eq(TAN+A,"1"), [45,225], {t:"tan", v:1, vh:"1"}),
   P(eq(TAN+A,"−"+sq(3)), [120,300], {t:"tan", v:-Math.sqrt(3), vh:"−"+sq(3)}),
-  P(eq(TAN+A,fr(sq(3),3)), [30,210], {t:"tan", v:1/Math.sqrt(3), vh:fr(sq(3),3)}),
+  P(eq(TAN+A,fr(1,sq(3))), [30,210], {t:"tan", v:1/Math.sqrt(3), vh:fr(1,sq(3))}),
   P(eq(TAN+A,sq(3)), [60,240], {t:"tan", v:Math.sqrt(3), vh:sq(3)}),
   P(eq(TAN+A,"0"), [0,180], {t:"tan", v:0, vh:"0"}),
   P(eq(SIN2+A,fr(1,4)), [30,150,210,330], {t:"hh", v:.5}, {hint:`Jos ${SIN2}${A} = ${fr(1,4)}, mitä ${SIN}${A} voi olla? Muista molemmat merkit, + ja −.`, note:`${SIN2}${A} = ${fr(1,4)} tarkoittaa, että ${SIN}${A} = ${fr(1,2)} tai ${SIN}${A} = −${fr(1,2)}. Kaksi vaakasuoraa suoraa, neljä pistettä.`}),
-  P(eq(COS2+A,fr(1,2)), [45,135,225,315], {t:"vv", v:Math.SQRT1_2}, {hint:`Jos ${COS2}${A} = ${fr(1,2)}, niin ${COS}${A} = ±${fr(1,sq(2))}. Laventamalla ${fr(1,sq(2))} = ${fr(sq(2),2)}. Katso 45°-kolmiota.`, note:`${COS}${A} = ±${fr(1,sq(2))} = ±${fr(sq(2),2)}. Kaksi pystysuoraa suoraa, neljä pistettä.`}),
+  P(eq(COS2+A,fr(1,2)), [45,135,225,315], {t:"vv", v:Math.SQRT1_2}, {hint:`Jos ${COS2}${A} = ${fr(1,2)}, niin ${COS}${A} = ±${fr(1,sq(2))}. Katso 45°-kolmiota.`, note:`${COS}${A} = ±${fr(1,sq(2))}. Kaksi pystysuoraa suoraa, neljä pistettä.`}),
   P(eq(`|${COS}${A}|`,"1"), [0,180], {t:"vv", v:1}, {hint:`Itseisarvo on 1, joten ${COS}${A} = 1 tai ${COS}${A} = −1.`, note:`${COS}${A} = 1 tai ${COS}${A} = −1.`}),
   P(eq(SIN2+A+"&thinsp;+&thinsp;"+COS2+A,"1"), null, {t:"all"}, {all:true, hint:`Sovella Pythagoraan lausetta suorakulmaiseen kolmioon, jonka kärjet ovat origossa, ympyrän pisteessä (${COS}${A}, ${SIN}${A}) ja pisteessä (${COS}${A}, 0). Kolmion kateetit ovat |${COS}${A}| ja |${SIN}${A}|, ja hypotenuusa on 1.`, note:"Tämä on Pythagoraan lause yksikköympyrässä: se pätee jokaisella kulmalla."}),
   P(eq(SIN+A+"&thinsp;·&thinsp;"+COS+A,"0"), [0,90,180,270], {t:"axes"}, {first:true, hint:`Tulon nollasäännöstä seuraa, että kaikki kulmat, joilla ${SIN}${A} = 0 tai ${COS}${A} = 0, ovat ratkaisuja.`, note:`Tulo on nolla, kun ${SIN}${A} = 0 tai ${COS}${A} = 0, eli pisteet ovat akseleilla.`}),
   P(eq(COS2+A,"−1"), NONE, {t:"none"}, {band:{axis:"x", text:`${COS}${A} on aina korostetulla välillä, joten ${COS2}${A} on aina vähintään 0.`}, hint:"Voiko luvun neliö olla negatiivinen?", note:"Neliö ei voi olla negatiivinen."}),
 ],
 5: [ // inverse functions, non-special tangents
-  P(eq(A,inv("tan")+"&thinsp;"+fr(1,2)), [Math.atan(.5)/D2R], {t:"tanray", v:.5, vh:fr(1,2)}, {note:`${inv("tan")} antaa vain yhden kulman, väliltä −90° … 90°. Säde kulkee pisteen (1, ${fr(1,2)}) kautta.`}),
+  P(eq(A,inv("tan")+"&thinsp;"+fr(1,2)), [Math.atan(.5)/D2R], {t:"tanray", v:.5, vh:fr(1,2)}, {inv:"tan", note:`${inv("tan")} antaa vain yhden kulman, väliltä ${RANGE.tan}. Säde kulkee pisteen (1, ${fr(1,2)}) kautta.`}),
   P(eq(TAN+A,fr(1,2)), [Math.atan(.5)/D2R, 180+Math.atan(.5)/D2R], {t:"tan", v:.5, vh:fr(1,2)}, {note:`Suora origosta pisteeseen (1, ${fr(1,2)}) leikkaa ympyrän kahdesti: tangentin jakso on 180°.`}),
   P(eq(TAN+A,"2"), [Math.atan(2)/D2R, 180+Math.atan(2)/D2R], {t:"tan", v:2, vh:"2"}, {note:`Kulmakerroin 2: suora kulkee pisteen (${fr(1,2)}, 1) kautta.`}),
-  P(eq(A,inv("tan")+"(−2)"), [360-Math.atan(2)/D2R], {t:"tanray", v:-2, vh:"−2"}, {note:`${inv("tan")}(−2) ≈ −63,4°. Säde kulkee pisteen (${fr(1,2)}, −1) kautta.`}),
+  P(eq(A,inv("tan")+"(−2)"), [360-Math.atan(2)/D2R], {t:"tanray", v:-2, vh:"−2"}, {inv:"tan", note:`${inv("tan")}(−2) ≈ −1,11. Säde kulkee pisteen (${fr(1,2)}, −1) kautta.`}),
   P(eq(TAN+A,"−"+fr(1,2)), [180-Math.atan(.5)/D2R, 360-Math.atan(.5)/D2R], {t:"tan", v:-.5, vh:"−"+fr(1,2)}),
-  P(eq(A,inv("sin")+"&thinsp;"+fr(1,2)), [30], {t:"h", v:.5, vh:fr(1,2)}, {inv:"sin", note:`${inv("sin")} antaa vain yhden kulman, väliltä −90° … 90°. Siksi 150° ei kelpaa, vaikka sen sini on myös ${fr(1,2)}.`}),
-  P(eq(A,inv("sin")+"(−"+fr(sq(3),2)+")"), [300], {t:"h", v:-Math.sqrt(3)/2, vh:"−"+fr(sq(3),2)}, {inv:"sin", note:`${inv("sin")} antaa kulman väliltä −90° … 90°, eli tässä −60°, joka on sama piste kuin 300°.`}),
-  P(eq(A,inv("cos")+"(−"+fr(1,2)+")"), [120], {t:"v", v:-.5, vh:"−"+fr(1,2)}, {inv:"cos", note:`${inv("cos")} antaa vain yhden kulman, väliltä 0° … 180°. Siksi 240° ei kelpaa.`}),
-  P(eq(A,inv("cos")+"&thinsp;0"), [90], {t:"v", v:0, vh:"0"}, {inv:"cos", note:`${inv("cos")} antaa kulman väliltä 0° … 180°.`}),
-  P(eq(A,inv("tan")+"(−1)"), [315], {t:"tanray", v:-1, vh:"−1"}, {note:`${inv("tan")}(−1) = −45°, sama piste kuin 315°.`}),
-  P(eq(A,inv("cos")+"(−"+fr(sq(2),2)+")"), [135], {t:"v", v:-Math.SQRT1_2, vh:"−"+fr(sq(2),2)}, {inv:"cos", note:`${inv("cos")} antaa kulman väliltä 0° … 180°, joten vain 135° kelpaa.`}),
+  P(eq(A,inv("sin")+"&thinsp;"+fr(1,2)), [30], {t:"h", v:.5, vh:fr(1,2)}, {inv:"sin", note:`${inv("sin")} antaa vain yhden kulman, väliltä ${RANGE.sin}. Siksi ${pi(5,6)} ei kelpaa, vaikka sen sini on myös ${fr(1,2)}.`}),
+  P(eq(A,inv("sin")+"(−"+fr(sq(3),2)+")"), [300], {t:"h", v:-Math.sqrt(3)/2, vh:"−"+fr(sq(3),2)}, {inv:"sin", note:`${inv("sin")} antaa kulman väliltä ${RANGE.sin}, eli tässä −${pi("",3)}. Ympyrällä se on sama piste kuin ${pi(5,3)}.`}),
+  P(eq(A,inv("cos")+"(−"+fr(1,2)+")"), [120], {t:"v", v:-.5, vh:"−"+fr(1,2)}, {inv:"cos", note:`${inv("cos")} antaa vain yhden kulman, väliltä ${RANGE.cos}. Siksi ${pi(4,3)} ei kelpaa.`}),
+  P(eq(A,inv("cos")+"&thinsp;0"), [90], {t:"v", v:0, vh:"0"}, {inv:"cos", note:`${inv("cos")} antaa kulman väliltä ${RANGE.cos}.`}),
+  P(eq(A,inv("tan")+"(−1)"), [315], {t:"tanray", v:-1, vh:"−1"}, {inv:"tan", note:`${inv("tan")}(−1) = −${pi("",4)}. Ympyrällä se on sama piste kuin ${pi(7,4)}.`}),
+  P(eq(A,inv("cos")+"(−"+fr(1,sq(2))+")"), [135], {t:"v", v:-Math.SQRT1_2, vh:"−"+fr(1,sq(2))}, {inv:"cos", note:`${inv("cos")} antaa kulman väliltä ${RANGE.cos}, joten vain ${pi(3,4)} kelpaa.`}),
   P(eq(A,inv("sin")+"&thinsp;1"), [90], {t:"h", v:1, vh:"1"}, {inv:"sin"}),
   P(eq(TAN+A,"−2"), [180-Math.atan(2)/D2R, 360-Math.atan(2)/D2R], {t:"tan", v:-2, vh:"−2"}, {note:`Kulmakerroin −2: suora kulkee pisteen (−${fr(1,2)}, 1) kautta.`}),
 ],
 6: [ // multiple angles
-  P(eq(SIN+"2"+A,"1"), [45,225], {t:"rays"}, {hint:`Millä kulmalla sini on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 90° + n · 360°, joten ${A} = 45° + n · 180°.`}),
-  P(eq(COS+"2"+A,"0"), [45,135,225,315], {t:"rays"}, {hint:`Millä kulmilla kosini on 0? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 90° + n · 180°, joten ${A} = 45° + n · 90°.`}),
-  P(eq(SIN+"2"+A,"0"), [0,90,180,270], {t:"rays"}, {hint:`Millä kulmilla sini on 0? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = n · 180°, joten ${A} = n · 90°.`}),
-  P(eq(COS+"2"+A,"1"), [0,180], {t:"rays"}, {hint:`Millä kulmalla kosini on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = n · 360°, joten ${A} = n · 180°.`}),
-  P(eq(COS+"2"+A,"−1"), [90,270], {t:"rays"}, {hint:`Millä kulmalla kosini on −1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 180° + n · 360°, joten ${A} = 90° + n · 180°.`}),
-  P(eq(SIN+"3"+A,"1"), [30,150,270], {t:"rays"}, {hint:`Millä kulmalla sini on 1? Ne ovat 3${A}:n arvoja, joten jaa kolmella. Kun ${A} kiertää yhden kierroksen, 3${A} kiertää kolme, joten ratkaisuja on kolme kertaa enemmän.`, note:`3${A} = 90° + n · 360°, joten ${A} = 30° + n · 120°.`}),
-  P(eq(COS+"3"+A,"1"), [0,120,240], {t:"rays"}, {hint:`Millä kulmalla kosini on 1? Ne ovat 3${A}:n arvoja, joten jaa kolmella. Kun ${A} kiertää yhden kierroksen, 3${A} kiertää kolme, joten ratkaisuja on kolme kertaa enemmän.`, note:`3${A} = n · 360°, joten ${A} = n · 120°.`}),
-  P(eq(TAN+"2"+A,"1"), [22.5,112.5,202.5,292.5], {t:"rays"}, {hint:`Millä kulmilla tangentti on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 45° + n · 180°, joten ${A} = 22,5° + n · 90°.`}),
-  P(eq(SIN+"("+A+"&thinsp;−&thinsp;"+pi("",4)+")","0"), [45,225], {t:"rays"}, {unit:"rad", hint:`Millä kulmilla sini on 0? Ne ovat ${A} − ${pi("",4)}:n arvoja, joten lisää niihin ${pi("",4)}.`, note:`${A} − ${pi("",4)} = nπ, joten ${A} = ${pi("",4)} + nπ.`}),
-  P(eq(COS+"("+A+"&thinsp;+&thinsp;30°)","0"), [60,240], {t:"rays"}, {unit:"deg", hint:`Millä kulmilla kosini on 0? Ne ovat ${A} + 30°:n arvoja, joten vähennä niistä 30°.`, note:`${A} + 30° = 90° + n · 180°, joten ${A} = 60° + n · 180°.`}),
-  P(eq(SIN+fr(A,2),"0"), [0], {t:"rays"}, {hint:`Millä kulmilla sini on 0? Ne ovat ${fr(A,2)}:n arvoja, joten kerro kahdella. Huomaa: kun ${A} kiertää yhden kierroksen, ${fr(A,2)} kiertää vain puoli.`, note:`${fr(A,2)} = n · 180°, joten ${A} = n · 360°: ympyrällä vain yksi piste.`}),
-  P(eq(COS+"2"+A,fr(1,2)), [30,150,210,330], {t:"rays"}, {hint:`Millä kulmilla kosini on ${fr(1,2)}? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = ±60° + n · 360°, joten ${A} = ±30° + n · 180°.`}),
+  P(eq(SIN+"2"+A,"1"), [45,225], {t:"rays"}, {inner:`2${A}`, lin:[2,0], il:"2α", hint:`Millä kulmalla sini on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 90° + n · 360°, joten ${A} = 45° + n · 180°.`}),
+  P(eq(COS+"2"+A,"0"), [45,135,225,315], {t:"rays"}, {inner:`2${A}`, lin:[2,0], il:"2α", hint:`Millä kulmilla kosini on 0? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 90° + n · 180°, joten ${A} = 45° + n · 90°.`}),
+  P(eq(SIN+"2"+A,"0"), [0,90,180,270], {t:"rays"}, {inner:`2${A}`, lin:[2,0], il:"2α", hint:`Millä kulmilla sini on 0? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = n · 180°, joten ${A} = n · 90°.`}),
+  P(eq(COS+"2"+A,"1"), [0,180], {t:"rays"}, {inner:`2${A}`, lin:[2,0], il:"2α", hint:`Millä kulmalla kosini on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = n · 360°, joten ${A} = n · 180°.`}),
+  P(eq(COS+"2"+A,"−1"), [90,270], {t:"rays"}, {inner:`2${A}`, lin:[2,0], il:"2α", hint:`Millä kulmalla kosini on −1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 180° + n · 360°, joten ${A} = 90° + n · 180°.`}),
+  P(eq(SIN+"3"+A,"1"), [30,150,270], {t:"rays"}, {inner:`3${A}`, lin:[3,0], il:"3α", hint:`Millä kulmalla sini on 1? Ne ovat 3${A}:n arvoja, joten jaa kolmella. Kun ${A} kiertää yhden kierroksen, 3${A} kiertää kolme, joten ratkaisuja on kolme kertaa enemmän.`, note:`3${A} = 90° + n · 360°, joten ${A} = 30° + n · 120°.`}),
+  P(eq(COS+"3"+A,"1"), [0,120,240], {t:"rays"}, {inner:`3${A}`, lin:[3,0], il:"3α", hint:`Millä kulmalla kosini on 1? Ne ovat 3${A}:n arvoja, joten jaa kolmella. Kun ${A} kiertää yhden kierroksen, 3${A} kiertää kolme, joten ratkaisuja on kolme kertaa enemmän.`, note:`3${A} = n · 360°, joten ${A} = n · 120°.`}),
+  P(eq(TAN+"2"+A,"1"), [22.5,112.5,202.5,292.5], {t:"rays"}, {inner:`2${A}`, lin:[2,0], il:"2α", hint:`Millä kulmilla tangentti on 1? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = 45° + n · 180°, joten ${A} = 22,5° + n · 90°.`}),
+  P(eq(SIN+"("+A+"&thinsp;−&thinsp;"+pi("",4)+")","0"), [45,225], {t:"rays"}, {unit:"rad", inner:`${A} − ${pi("",4)}`, lin:[1,-45], il:"α − π/4", hint:`Millä kulmilla sini on 0? Ne ovat ${A} − ${pi("",4)}:n arvoja, joten lisää niihin ${pi("",4)}.`, note:`${A} − ${pi("",4)} = nπ, joten ${A} = ${pi("",4)} + nπ.`}),
+  P(eq(COS+"("+A+"&thinsp;+&thinsp;30°)","0"), [60,240], {t:"rays"}, {unit:"deg", inner:`${A} + 30°`, lin:[1,30], il:"α + 30°", hint:`Millä kulmilla kosini on 0? Ne ovat ${A} + 30°:n arvoja, joten vähennä niistä 30°.`, note:`${A} + 30° = 90° + n · 180°, joten ${A} = 60° + n · 180°.`}),
+  P(eq(SIN+fr(A,2),"0"), [0], {t:"rays"}, {inner:fr(A,2), lin:[.5,0], il:"α/2", hint:`Millä kulmilla sini on 0? Ne ovat ${fr(A,2)}:n arvoja, joten kerro kahdella. Huomaa: kun ${A} kiertää yhden kierroksen, ${fr(A,2)} kiertää vain puoli.`, note:`${fr(A,2)} = n · 180°, joten ${A} = n · 360°: ympyrällä vain yksi piste.`}),
+  P(eq(COS+"2"+A,fr(1,2)), [30,150,210,330], {t:"rays"}, {inner:`2${A}`, lin:[2,0], il:"2α", hint:`Millä kulmilla kosini on ${fr(1,2)}? Ne ovat 2${A}:n arvoja, joten jaa kahdella. Kun ${A} kiertää yhden kierroksen, 2${A} kiertää kaksi, joten ratkaisuja on kaksi kertaa enemmän.`, note:`2${A} = ±60° + n · 360°, joten ${A} = ±30° + n · 180°.`}),
 ],
 };
 const LEVEL_INTRO = {
@@ -432,8 +465,8 @@ const LEVEL_INTRO = {
   1:"Nyt kulmaa ei enää näytetä. Merkitse ympyrälle kaikki kohdat, joissa yhtälö on totta.",   // first sentence: tasks 1–2 only
   2:"Nyt kulmat ovat radiaaneina. Täysi kierros on 2π ja puoli kierrosta π.",   // first sentence: tasks 1–2 only
   3:"cos α on pisteen x-koordinaatti ja sin α sen y-koordinaatti. Jos ratkaisuja ei ole, paina Ei ratkaisuja.",
-  4:"tan α on säteen kulmakerroin. Pystysuoralla apuviivalla x = 1 se näkyy korkeutena.",
-  5:"sin⁻¹, cos⁻¹ ja tan⁻¹ antavat aina vain yhden kulman. Ruudukon väli on ½.",
+  4:"tan α on säteen kulmakerroin.",
+  5:"arcsin, arccos ja arctan antavat aina vain yhden kulman. Ruudukon väli on ½.",
   6:"Kun kulma on kerrottu, ratkaisuja voi olla enemmän kuin kaksi.",
   7:"Sekoitus kaikesta. Onnea matkaan!",
 };
@@ -444,6 +477,16 @@ const LEVEL_NEWS = {1:"Nyt kulmaa ei enää näytetä. ", 2:"Nyt kulmat ovat rad
 function introText(){
   const t = LEVEL_INTRO[Math.min(level,7)];
   return idx >= 2 && LEVEL_NEWS[level] ? t.replace(LEVEL_NEWS[level], "") : t;
+}
+
+/* 1/√2 and 1/√3 are written so, as the memory triangles give them; on
+   level 7 half of the tasks that have them write them the harder way,
+   √2/2 and √3/3 (Vadim) */
+const HARD = [[fr(1,sq(2)), fr(sq(2),2)], [fr(1,sq(3)), fr(sq(3),3)]];
+function hardForm(p){
+  if(!HARD.some(([a]) => p.html.includes(a))) return p;
+  const swap = t => HARD.reduce((t, [a, b]) => t.split(a).join(b), t);
+  return {...p, hard:true, html:swap(p.html), note:swap(p.note), hint:swap(p.hint), guide:{...p.guide, vh:p.guide.vh && swap(p.guide.vh)}};
 }
 
 /* ── helpers ────────────────────────────────────────────────────────── */
@@ -470,9 +513,17 @@ function radText(d){
 }
 function angleText(d, unit){
   const r = radText(d);
+  if(unit === "rad") return r || `≈&nbsp;${(norm(d)/180).toFixed(2).replace(".", ",")}π`;
   if(unit === "deg" || !r) return degText(d);
-  if(unit === "rad") return r;
   return r === "0" ? "0°" : `${degText(d)} eli ${r}`;
+}
+
+/* the answer to α = arcsin …, arccos …, arctan …: the function's value, in
+   radians and from its range (arcsin(−√3/2) = −π/3, not 5π/3) */
+function invText(p){
+  const d = p.sols[0], a = p.inv === "cos" ? norm(d) : norm(d + 180) - 180;
+  const r = radText(Math.abs(a)), sign = a < 0 ? "−" : "";
+  return r ? sign + r : `≈&nbsp;${sign}${(Math.abs(a)*D2R).toFixed(2).replace(".", ",")}`;
 }
 
 /* ── state ──────────────────────────────────────────────────────────── */
@@ -481,9 +532,12 @@ let score = 0, levelScore = 0, lives = LIVES;
 let levelDone = false;          // last task solved: the level dialog is on its way
 let clicks = 0, hintsUsed = 0, taskStart = 0, lastWin = null, gameOver = false;
 const task = () => tasks[idx];
-const showAngle = () => level === 0 || !!hintFx.angle;
-const tanOn = () => level >= 4;
-const specialOn = () => level >= 3;
+let intro = null;                // the Esittely while it runs (see the intro section)
+const showAngle = () => intro ? !!intro.step.angle : level === 0 || !!hintFx.angle;
+// the tangent picture (the line x = 1, the extended ray, the blue segment,
+// "tan α" in the legend): in the game only after a hint has brought it in
+const tanOn = () => intro ? !!intro.step.tan : !!hintFx.tan;
+const specialOn = () => !intro && level >= 3;
 
 /* ── static drawing ─────────────────────────────────────────────────── */
 function drawStatic(){
@@ -526,6 +580,16 @@ function drawAim(){
     if(Math.abs(t) > 0.04)
       h += `<text class="hlabel tan" x="${R + 14}" y="${f1(ly)}" text-anchor="start" dominant-baseline="central">tan α</text>`;
   }
+  // the ray is always α (Vadim); a dashed ray shows the angle inside the
+  // function, u = m·α + c: 2α, α/2, α − 30° … In the intro's ghost turns α
+  // is the whole turn so far (past 360°), so α/2 goes on past 180°.
+  if(hintFx.inner && task().lin){
+    const [m, c0] = task().lin, a = intro && (intro.step.kind === "ghost" || intro.demoOn) ? intro.acc : norm(aim);
+    const q = pt(norm(m*a + c0)), k = (R - 40)/R;
+    h += `<text class="hlabel tan" x="${f1((R + 34)*c)}" y="${f1(-(R + 34)*s)}" text-anchor="middle" dominant-baseline="central">α</text>`;
+    h += `<line class="innerray" x1="0" y1="0" x2="${f1(q.x)}" y2="${f1(q.y)}"/><circle class="innerdot" cx="${f1(q.x)}" cy="${f1(q.y)}" r="9"/>`;
+    h += `<text class="hlabel hi" x="${f1(q.x*k)}" y="${f1(q.y*k)}" text-anchor="middle" dominant-baseline="central">${task().il}</text>`;
+  }
   if(showAngle() && aim > 0.5){
     const r = ARC_R, q = {x: r*c, y: -r*s};
     h += `<path class="angarc" d="M${r},0 A${r},${r} 0 ${aim > 180 ? 1 : 0} 0 ${f1(q.x)},${f1(q.y)}"/>`;
@@ -550,6 +614,7 @@ const ARC_R = 70;                 // radius of the angle arc (level 0)
    (unless the task itself is in degrees), as a multiple of π: 7π/6 when it is
    within 1.5° of a 15° step, otherwise ≈ 1,23π. Otherwise whole degrees. */
 function angleStr(d){
+  if(intro && intro.labelFn) return intro.labelFn(d);      // the intro's turning demos count past 360°
   const u = task().unit, rad = u === "rad" || (level >= 3 && u !== "deg");
   if(!rad) return `${Math.round(norm(d)) % 360}°`;
   const k = Math.round(norm(d)/15) % 24;
@@ -597,7 +662,7 @@ function drawGuide(p){
     const k = 420 / Math.max(1, Math.abs(g.v));
     const x0 = g.t === "tan" ? -k : 0;
     h += `<line class="guide" x1="${f1(x0)}" y1="${f1(g.v*x0*-1)}" x2="${f1(k)}" y2="${f1(-g.v*k)}"/>`;
-    h += `<line class="tanseg" x1="${R}" y1="0" x2="${R}" y2="${f1(-R*g.v)}"/>`;
+    if(tanOn()) h += `<line class="tanseg" x1="${R}" y1="0" x2="${R}" y2="${f1(-R*g.v)}"/>`;
   }
   if(g.t === "rays") for(const d of p.sols){
     const q = pt(d);
@@ -607,10 +672,17 @@ function drawGuide(p){
 }
 
 /* ── task flow ──────────────────────────────────────────────────────── */
-function newRun(){ level = 0; score = 0; lives = LIVES; gameOver = false; startLevel(); }
+function newRun(){ level = 0; score = 0; lives = LIVES; gameOver = false; enterLevel(); }
+// a level that brings something new starts with its intro chapter, every time
+// (it can be skipped; Vadim dropped remembering it)
+function enterLevel(){
+  const ch = INTRO_AT[level];
+  if(ch) startIntro([ch], startLevel, level === 0 ? "Aloita peli" : `Aloita taso ${level}`);
+  else startLevel();
+}
 function startLevel(){
   const pool = level <= 6 ? BANK[level] : [3,4,5,6].flatMap(k => BANK[k]);
-  tasks = shuffle(pool).slice(0, TASKS);
+  tasks = shuffle(pool).slice(0, TASKS).map(p => level >= 7 && Math.random() < .5 ? hardForm(p) : p);
   idx = 0; levelScore = 0;
   $("overlay").classList.remove("show");
   drawStatic();
@@ -622,6 +694,7 @@ function showTask(){
   clicks = 0; hintsUsed = 0; hintPress = 0; lastWin = null; taskStart = performance.now();
   usedHints.clear(); usedTopics.clear(); hintGreen.clear(); hintPulse.clear(); hintFx = {};
   clearTimeout(hintTimer); clearTimeout(almostTimer);
+  drawStatic();                                   // a hint's line x = 1 goes with its task
   $("readout").innerHTML = task().html;
   $("guide").innerHTML = ""; $("hintLayer").innerHTML = "";
   drawPoints(); drawAim();
@@ -660,11 +733,20 @@ function tipHint(html){
   clearTimeout(hintTimer);
   const el = $("hint"); el.innerHTML = html; el.classList.remove("warn"); el.classList.add("tip");
 }
+/* the free hint "Kaikki ratkaisut ovat mukana …" goes under a hint that is
+   already shown, never in its place; a newer free hint replaces the older */
+function freeHint(text){
+  const el = $("hint");
+  if(!el.classList.contains("tip")) return tipHint(`<span class="free">${text}</span>`);
+  el.querySelector(".free")?.remove();
+  el.insertAdjacentHTML("beforeend", `<span class="free">${text}</span>`);
+}
 
 /* ── hints ───────────────────────────────────────────────────────────
    The plan is in VIHJEET.md next to this file. In short:
    - press 1 gives a hint of hint level 1, press 2 of level 2, press 3 of
-     level 2 or 3 (levels 0–2 of the game: only two presses).
+     level 2 or 3 (levels 0–2 of the game: only two presses; levels 6–7: a
+     fourth press, any level).
    - each press draws at random from every hint that fits right now:
      A = feedback on the placed points, B = about the task itself
      (texts and pictures). The same hint is never given twice in a task.
@@ -677,24 +759,25 @@ const usedHints = new Set(), usedTopics = new Set();
 /* every hint has a topic; a press prefers a topic not used yet in this task,
    so "the point is close" is not followed by "the solution is left of the y-axis" */
 const TOPIC = {
-  "a-near":"sijainti", "a-far":"sijainti", "a-closest":"sijainti", "a-quad":"sijainti",
+  "a-near":"sijainti", "a-far":"sijainti", "a-closest":"sijainti", "a-missing":"sijainti", "a-quad":"sijainti",
   "a-half-x":"sijainti", "a-half-y":"sijainti", "quad":"sijainti", "half-x":"sijainti",
   "half-y":"sijainti", "axes":"sijainti", "vis-arc":"sijainti",
   "a-good":"oikeellisuus", "a-nosol":"oikeellisuus", "a-green":"oikeellisuus",
   "count":"rakenne", "sym-x":"rakenne", "sym-y":"rakenne", "sym-o":"rakenne", "even":"rakenne",
   "same-h":"rakenne", "same-v":"rakenne", "pm":"rakenne", "ident":"rakenne", "inv-one":"rakenne",
   "split":"kulma", "easy":"kulma", "neg":"kulma", "rad":"kulma",
+  "inner":"kulma",                                // so the task's own hint ("menetelmä") can still follow
   "task":"menetelmä", "method":"menetelmä", "inv-range":"menetelmä", "vis-labels":"menetelmä",
   "vis-mark":"menetelmä", "vis-band":"menetelmä",
   "none-think":"rakenne", "all-try":"rakenne",     // about the whole set of solutions
-  "tri":"muistikolmio", "vis-angle":"työkalu", "vis-quarters":"työkalu",
+  "tri":"muistikolmio", "vis-angle":"työkalu", "vis-inner":"työkalu", "vis-quarters":"työkalu",
   "vis-eighths":"kahdeksasosat",                  // a finer scale: may follow the quarters
   "guide":"apuviiva", "vis-tri":"apuviiva",
 };
 const topicOf = id => TOPIC[id] || id;
 const hintGreen = new Set(), hintPulse = new Set();   // placed points coloured by a hint
 let hintFx = {};                  // pictures switched on by hints (drawHintLayer, drawAim)
-const maxPresses = () => level <= 2 ? 2 : 3;
+const maxPresses = () => level <= 2 ? 2 : level >= 6 ? 4 : 3;     // levels 6–7: four (Vadim)
 const near = (a,b) => angDist(a,b) < 1e-6;
 const onAxis = d => near(d % 90, 0);
 
@@ -720,14 +803,15 @@ function side(d, axis){
 /* a value in one line for pictures and short hints: ½, −√3/2 … The radicand
    gets its roof from .rad in HTML, or from roofs() in SVG (svg = true). */
 function valText(v, svg = false){
-  const a = Math.abs(v), sgn = v < 0 ? "−" : "";
+  const a = Math.abs(v), sgn = v < 0 ? "−" : "", hard = !!(task() && task().hard);   // √2/2 or 1/√2, as the task writes it
   const r = n => svg ? `√<tspan class="rt">${n}</tspan>` : sq(n);
-  for(const [x, t] of [[.5,"½"], [Math.sqrt(3)/2,r(3)+"/2"], [Math.SQRT1_2,r(2)+"/2"], [1/Math.sqrt(3),r(3)+"/3"], [Math.sqrt(3),r(3)], [1.5,"3/2"]])
+  for(const [x, t] of [[.5,"½"], [Math.sqrt(3)/2,r(3)+"/2"], [Math.SQRT1_2, hard ? r(2)+"/2" : "1/"+r(2)],
+                       [1/Math.sqrt(3), hard ? r(3)+"/3" : "1/"+r(3)], [Math.sqrt(3),r(3)], [1.5,"3/2"]])
     if(Math.abs(a - x) < 1e-9) return sgn + t;
   return sgn + String(a).replace(".", ",");
 }
 
-/* which memory triangle helps: 30 (√3, ½), 45 (√2/2), or 0. Only where
+/* which memory triangle helps: 30 (√3, ½), 45 (1/√2), or 0. Only where
    the solutions are special angles that the triangle shows directly. */
 function triKind(p){
   if(!specialOn() || !hasSols(p)) return 0;
@@ -753,8 +837,12 @@ const cosType = p => ["v","vv"].includes(p.guide.t);
 const tanType = p => ["tan","tanray"].includes(p.guide.t) && !p.hint;   // not sin α = cos α etc.
 
 /* A: feedback on the points placed right now */
+/* four solutions, one in each quadrant: naming a quadrant tells nothing (Vadim) */
+const fourQuads = p => hasSols(p) && p.sols.length === 4 && new Set(p.sols.map(quadrant)).size === 4 && !p.sols.some(onAxis);
+
 function aHints(p, tier){
-  const out = [], add = (id, text, fx) => out.push({id, text, fx});
+  // w: weight in the draw (default 1)
+  const out = [], add = (id, text, fx, w = 1) => out.push({id, text, fx, w});
   if(!placed.length) return out;
   const one = placed.length === 1;
   if(p.all){
@@ -769,6 +857,16 @@ function aHints(p, tier){
   }
   const good = placed.filter(d => isOk(p, d)), bad = placed.filter(d => !isOk(p, d));
   const closest = bad.length ? bad.reduce((a,d) => solDist(p,d) < solDist(p,a) ? d : a) : null;
+  const pulseW = bad.length > 1 ? 2 : 1;             // the pulsing point is drawn twice as often with 2+ wrong points (Vadim)
+  // some right, some wrong, some still missing: the wrong point nearest to a
+  // missing solution pulses (none when every wrong point is far)
+  const miss = missingSols(p);
+  if(n >= 2 && good.length && bad.length && miss.length){
+    const dm = d => Math.min(...miss.map(s => angDist(s, d)));
+    const c = bad.reduce((a, d) => dm(d) < dm(a) ? d : a);
+    if(tier === 1 && dm(c) < NEAR) add("a-missing", "Sykkivä piste on lähellä puuttuvaa ratkaisua.", () => hintPulse.add(c), pulseW);
+    if(tier === 2 && dm(c) >= NEAR && dm(c) < FAR) add("a-missing", "Sykkivä piste on lähimpänä puuttuvaa ratkaisua.", () => hintPulse.add(c), pulseW);
+  }
   const sol = n === 1 ? "oikeaa ratkaisua" : "yhtä oikeista ratkaisuista";
   if(tier === 1){
     if(good.length && bad.length)
@@ -779,7 +877,7 @@ function aHints(p, tier){
     if(!good.length && solDist(p, closest) < NEAR)
       add("a-near", one ? "Merkitsemäsi piste on lähellä oikeaa ratkaisua."
                         : `Merkitsemäsi pisteet ovat väärin, mutta sykkivä piste on niistä lähimpänä ${sol}.`,
-          one ? null : () => hintPulse.add(closest));
+          one ? null : () => hintPulse.add(closest), pulseW);
     // (one point, one solution: that it is wrong is obvious, the task would be solved)
     if(!good.length && solDist(p, closest) >= NEAR && !(one && n === 1))
       add("a-nosol", one ? "Merkitsemäsi piste ei ole ratkaisu." : "Yksikään merkitsemäsi piste ei ole ratkaisu.");
@@ -791,11 +889,11 @@ function aHints(p, tier){
   }
   if(tier === 2){
     if(!good.length && !one && solDist(p, closest) >= NEAR && solDist(p, closest) < FAR)
-      add("a-closest", "Sykkivä piste on lähimpänä oikeaa ratkaisua.", () => hintPulse.add(closest));
+      add("a-closest", "Sykkivä piste on lähimpänä oikeaa ratkaisua.", () => hintPulse.add(closest), pulseW);
     if(one && bad.length && solDist(p, closest) >= NEAR){
       const d = placed[0], s = nearestSol(p, d), qs = quadrant(s);
       const it = n === 1 ? "ratkaisu" : "yksi ratkaisuista", It = n === 1 ? "Oikea ratkaisu" : "Yksi ratkaisuista";
-      if(qs !== null) add("a-quad", quadrant(d) === qs ? "Merkitsemäsi piste on oikeassa neljänneksessä."
+      if(qs !== null && !fourQuads(p)) add("a-quad", quadrant(d) === qs ? "Merkitsemäsi piste on oikeassa neljänneksessä."
                                                        : `${n === 1 ? "Ratkaisu" : "Yksi ratkaisuista"} on ${QUAD[qs]}.`);
       for(const ax of ["x","y"]){
         const ss = side(s, ax), sd = side(d, ax);
@@ -822,11 +920,16 @@ function bHints(p, tier){
     return `Aivan oikein, ${text[0].toLowerCase()}${text.slice(1, -1)}, mutta ei merkitsemässäsi ${placed.length === 1 ? "kohdassa" : "kohdissa"}.`;
   };
   const rad = p.unit === "rad", half = rad ? "π" : "180°";
+  // sin 2α = 1, cos(α + 30°) = 0 …: while the ray (α) turns, a dashed ray
+  // shows the angle inside the function, 2α (α + 30° …) (Vadim). Any hint level.
+  if(p.lin && n && tier <= 3)
+    add("vis-inner", `Kun käännät sädettä ${A}, katkoviiva näyttää nyt kulman ${p.inner}.`, () => { hintFx.inner = true; });
   // the angle shown while aiming: level 2 hint, from game level 5 also level 1.
   // Only for tasks whose answers are angles to find (α = π ± π/2, sin 2α = 1 …);
   // where a line or a value leads to the points the readout adds nothing.
   const angleTier = level >= 5 ? [1,2] : [2];
-  if(level >= 1 && n && g.t === "rays" && angleTier.includes(tier))
+  // (not for sin 2α, sin(α + 30°) …: the readout shows α, the task is about 2α or α + 30°)
+  if(level >= 1 && n && g.t === "rays" && angleTier.includes(tier) && !p.inner)
     add("vis-angle", "Kulma on nyt merkitty tehtävän loppuun saakka.", () => { hintFx.angle = true; });
   // sin α · cos α = 0 has no angle readout any more: name both axes at level 2
   if(tier === 2 && g.t === "axes")
@@ -841,6 +944,8 @@ function bHints(p, tier){
     add("vis-eighths", "Kahdeksasosakulmat on merkitty ympyrään.", () => { hintFx.quarters = hintFx.eighths = true; });
 
   if(tier === 1){
+    // sin 2α = 1, sin(α + 30°) = 0 …: the angle inside first (Vadim)
+    if(p.inner) add("inner", `Mieti ensin kulman ${p.inner} suuruutta ja ratkaise sitten ${A} muodostuneesta yhtälöstä.`);
     if(p.hint) add("task", p.hint);
     if(isAngleTask(p)){
       if(p.split) add("split", `Huomaa, että ${p.split}.`);
@@ -850,16 +955,16 @@ function bHints(p, tier){
       if(rad && !p.split) add("rad", "π on puoli kierrosta ja 2π täysi kierros.");
     }
     if(!p.hint && !noSols(p)){
-      const range = p.inv === "sin" ? `${inv("sin")} antaa vain yhden kulman, väliltä −90° … 90°. `
-                  : p.inv === "cos" ? `${inv("cos")} antaa vain yhden kulman, väliltä 0° … 180°. ` : "";
+      const range = p.inv === "sin" || p.inv === "cos" ? `${inv(p.inv)} antaa vain yhden kulman, väliltä ${RANGE[p.inv]}. ` : "";
       if(g.t === "h") add("method", range + `${SIN}${A} on pisteen y-koordinaatti. Etsi ympyrältä pisteet, joiden y-koordinaatti on ${g.vh}.`);
       if(g.t === "v") add("method", range + `${COS}${A} on pisteen x-koordinaatti. Etsi ympyrältä pisteet, joiden x-koordinaatti on ${g.vh}.`);
       if(g.t === "tan" || g.t === "tanray"){
-        const pre = g.t === "tanray" ? `${inv("tan")} antaa vain yhden kulman, väliltä −90° … 90°, eli ympyrän oikealta puoliskolta. `
+        const pre = g.t === "tanray" ? `${inv("tan")} antaa vain yhden kulman, väliltä ${RANGE.tan}, eli ympyrän oikealta puoliskolta. `
                                      : `${TAN}${A} on säteen kulmakerroin. `;
         add("method", pre + (Math.abs(g.v) <= 1.4
           ? `Etsi säde, joka osuu pystysuoraan apuviivaan x = 1 korkeudella ${g.vh}.`
-          : `Säde nousee ${g.vh} yksikköä, kun x kasvaa yhdellä. Käytä ruudukkoa tai muistikolmiota.`));
+          : `Säde nousee ${g.vh} yksikköä, kun x kasvaa yhdellä. Käytä ruudukkoa tai muistikolmiota.`),
+        Math.abs(g.v) <= 1.4 ? () => { hintFx.tan = true; } : undefined);
       }
     }
     // identities, only where they give a second point
@@ -868,16 +973,15 @@ function bHints(p, tier){
       if(cosType(p)) add("ident", `Huomaa, että ${fn("cos")}(−${A}) = ${COS}${A} kaikilla ${A}.`);
     }
     if(g.t === "tan" && !p.hint) add("ident", `Huomaa, että ${fn("tan")}(${A} + ${half}) = ${TAN}${A} kaikilla ${A}.`);
-    if(p.inv === "sin") add("inv-range", `Huomaa, että funktion ${inv("sin")} määrittelyjoukko on −1 … 1 ja päähaaran arvojoukko −90° … 90°.`);
-    if(p.inv === "cos") add("inv-range", `Huomaa, että funktion ${inv("cos")} määrittelyjoukko on −1 … 1 ja päähaaran arvojoukko 0° … 180°.`);
-    if(g.t === "tanray") add("inv-range", `Huomaa, että funktio ${inv("tan")} on määritelty kaikilla luvuilla ja sen päähaaran arvojoukko on −90° … 90°.`);
-    if(p.inv || g.t === "tanray") add("inv-one", "Käänteisfunktio antaa aina vain yhden kulman.");
+    if(p.inv === "sin" || p.inv === "cos") add("inv-range", `Huomaa, että funktion ${inv(p.inv)} määrittelyjoukko on ${iv("[", "−1", "1", "]")} ja arvojoukko ${RANGE[p.inv]}.`);
+    if(p.inv === "tan") add("inv-range", `Huomaa, että funktio ${inv("tan")} on määritelty kaikilla reaaliluvuilla ja sen arvojoukko on ${RANGE.tan}.`);
+    if(p.inv) add("inv-one", "Käänteisfunktio antaa aina vain yhden kulman.");
     const k = triKind(p);
     if(k) add("tri", triHint(k), () => $(k === 30 ? "tri30" : "tri45").classList.add("pulse"));
     // pictures: name the axes
     if(sinType(p) || (p.band && p.band.axis === "y")) add("vis-labels", `Pisteen y-koordinaatti on ${SIN}${A}.`, () => { hintFx.labels = "sincos"; });
     if(cosType(p)) add("vis-labels", `Pisteen x-koordinaatti on ${COS}${A}.`, () => { hintFx.labels = "sincos"; });
-    if(tanType(p)) add("vis-labels", `${TAN}${A} näkyy korkeutena suoralla x = 1.`, () => { hintFx.labels = "tan"; });
+    if(tanType(p)) add("vis-labels", `Apuviiva x = 1 on nyt piirretty: ${TAN}${A} näkyy sillä korkeutena.`, () => { hintFx.labels = "tan"; hintFx.tan = true; });
     // how many solutions, and their symmetry
     if(n && !(isAngleTask(p) && n === 1)){          // α = 120° obviously has one point
       let t = n === 1 ? "Ympyrällä on vain yksi ratkaisupiste." : `Ympyrällä on ${n} ratkaisupistettä.`;
@@ -904,10 +1008,15 @@ function bHints(p, tier){
       // where the solutions are, never exactly
       if(n === 2 && near(S[0] + S[1], 180)) add("same-h", "Molemmat ratkaisut ovat samalla vaakasuoralla suoralla.");
       if(n === 2 && near(S[0] + S[1], 0)) add("same-v", "Molemmat ratkaisut ovat samalla pystysuoralla suoralla.");
-      const inQ = S.filter(d => quadrant(d) !== null);
-      if(inQ.length){
+      // a quadrant with a solution still to find, and none found there yet:
+      // never the quadrant of a solution the player already has (Vadim)
+      const found = S.filter(s => placed.some(d => angDist(s, d) <= TOL));
+      const done = new Set(found.map(quadrant));
+      const inQ = S.filter(d => quadrant(d) !== null && !found.includes(d) && !done.has(quadrant(d)));
+      if(inQ.length && !fourQuads(p)){
         const s = inQ[Math.floor(Math.random() * inQ.length)];
-        add("quad", where(`${n === 1 ? "Ratkaisu" : "Yksi ratkaisuista"} on ${QUAD[quadrant(s)]}.`, d => quadrant(d) === quadrant(s)));
+        const who = n === 1 ? "Ratkaisu" : !found.length ? "Yksi ratkaisuista" : n === 2 ? "Toinen ratkaisu" : "Yksi puuttuvista ratkaisuista";
+        add("quad", where(`${who} on ${QUAD[quadrant(s)]}.`, d => quadrant(d) === quadrant(s)));
       }
       for(const [ax, plus, minus] of [["x","x-akselin yläpuolella","x-akselin alapuolella"], ["y","y-akselin oikealla puolella","y-akselin vasemmalla puolella"]]){
         const sides = S.map(d => side(d, ax));
@@ -924,9 +1033,8 @@ function bHints(p, tier){
           () => { hintFx.mark = true; });
     }
     if(tanType(p) && Math.abs(g.v) <= 1.36)
-      add("vis-mark", `Arvo ${valText(g.v)} on merkitty suoralle x = 1.`, () => { hintFx.mark = true; });
-    if(p.inv === "sin" || p.inv === "cos" || g.t === "tanray")
-      add("vis-arc", "Ratkaisu on korostetulla kaarella.", () => { hintFx.arc = p.inv === "cos" ? "upper" : "right"; });
+      add("vis-mark", `Arvo ${valText(g.v)} on merkitty suoralle x = 1.`, () => { hintFx.mark = hintFx.tan = true; });
+    if(p.inv) add("vis-arc", "Ratkaisu on korostetulla kaarella.", () => { hintFx.arc = p.inv; });
     if(noSols(p)){
       add("none-think", "Voiko yhtälö olla totta millään kulmalla? Mieti, mitä arvoja vasen puoli voi saada.");
       if(p.band) add("vis-band", p.band.text || `${p.band.axis === "y" ? SIN : COS}${A} on aina korostetulla välillä.`, () => { hintFx.band = true; });
@@ -948,23 +1056,30 @@ function bHints(p, tier){
 
 const hintPool = (p, tier) => [...aHints(p, tier), ...bHints(p, tier)].filter(h => !usedHints.has(h.id));
 
+/* one of the hints, by weight (w, default 1) */
+function weighted(list){
+  let r = Math.random() * list.reduce((t, h) => t + (h.w || 1), 0);
+  return list.find(h => (r -= h.w || 1) < 0) || list[list.length - 1];
+}
 function giveHint(){
   if(answered || hintPress >= maxPresses()) return;
   const p = task();
   hintPress++; hintsUsed++;
-  // press 1: level 1; press 2: level 2; press 3: levels 2 and 3 together.
-  // Then lower levels; within that, a topic not used yet beats a used one.
-  const groups = hintPress === 3 ? [[3, 2], [1]] : hintPress === 2 ? [[2], [1]] : [[1]];
+  // press 1: level 1; press 2: level 2; press 3: levels 2 and 3 together;
+  // press 4 (levels 6–7): whatever is left. Then lower levels; within that,
+  // a topic not used yet beats a used one.
+  const groups = hintPress >= 4 ? [[3, 2, 1]] : hintPress === 3 ? [[3, 2], [1]] : hintPress === 2 ? [[2], [1]] : [[1]];
   const pools = groups.map(ts => {
     const seen = new Set();
     return ts.flatMap(t => hintPool(p, t)).filter(h => !seen.has(h.id) && seen.add(h.id));
   });
   const fresh = pools.map(q => q.filter(h => !usedTopics.has(topicOf(h.id)))).find(q => q.length);
   let pool = fresh || pools.find(q => q.length) || [];
-  // first hint without a draw: the memory triangle for √2/2, √3 …, and the
+  // first hint without a draw: the memory triangle for 1/√2, √3 …, and the
   // task's own hint where the task says so (first:true)
   const tri = hintPress === 1 && (p.html.includes("√") && pool.find(h => h.id === "tri")
-                                 || p.first && pool.find(h => h.id === "task"));
+                                 || p.first && pool.find(h => h.id === "task")
+                                 || p.inner && pool.find(h => h.id === "inner"));
   // priority hints come before the angle readout and the helper line: the
   // identities (sin(180° − α) = sin α …) and, with more than two solutions,
   // their number. One of them is drawn on press 1 (the readout left out) or
@@ -973,15 +1088,19 @@ function giveHint(){
   const isPrio = id => id === "ident" || (id === "count" && many);
   const prio = hintPool(p, 1).filter(h => isPrio(h.id));
   const prioGiven = [...usedHints].some(isPrio);
+  // the picture of α for sin 2α, cos(α + 30°) …: on the last press at the latest
+  const visInner = p.lin && hintPress === maxPresses() && !usedHints.has("vis-inner") && hintPool(p, 1).find(h => h.id === "vis-inner");
   if(tri) pool = [tri];
+  else if(visInner) pool = [visInner];
   else if(prio.length && !prioGiven && hintPress >= 2) pool = prio;
   else if(prio.length && !prioGiven && pool.some(h => h.id !== "vis-angle")) pool = pool.filter(h => h.id !== "vis-angle");
-  const h = pool.length ? pool[Math.floor(Math.random() * pool.length)]
+  const h = pool.length ? weighted(pool)
     : {id:"generic", text: noSols(p) ? "Mieti, mitä arvoja yhtälön vasen puoli voi saada." : "Mieti, missä kohdissa ympyrää yhtälö on totta."};
   usedHints.add(h.id); usedTopics.add(topicOf(h.id));
   if(h.fx) h.fx();
-  drawHintLayer(); drawPoints(); drawAim();
-  tipHint(h.text);
+  drawStatic(); drawHintLayer(); drawPoints(); drawAim();   // drawStatic: the line x = 1 may come in
+  const free = $("hint").querySelector(".free");          // a free hint stays, under the new one
+  tipHint(h.text); if(free) $("hint").appendChild(free);
   afterHintPress();
 }
 /* the last press used: no more hints, "Näytä ratkaisu" instead */
@@ -1028,9 +1147,12 @@ function drawHintLayer(){
     });
   }
   if(fx.arc){
-    const [a0, a1, a2] = fx.arc === "upper" ? [0, 90, 180] : [-90, 0, 90];
+    // the range of arccos (upper half) or arcsin/arctan (right half); as on the
+    // graphs, its ends are filled where they belong to it and open for arctan
+    const [a0, a1, a2] = fx.arc === "cos" ? [0, 90, 180] : [-90, 0, 90];
     const P0 = pt(a0), P1 = pt(a1), P2 = pt(a2);
     h += `<path class="harc" d="M${f1(P0.x)},${f1(P0.y)} A${R},${R} 0 0 0 ${f1(P1.x)},${f1(P1.y)} A${R},${R} 0 0 0 ${f1(P2.x)},${f1(P2.y)}"/>`;
+    for(const q of [P0, P2]) h += `<circle class="harc-end${fx.arc === "tan" ? " open" : ""}" cx="${f1(q.x)}" cy="${f1(q.y)}" r="8"/>`;
   }
   if(fx.band && p.band){
     const b = p.band, cls = b.axis === "y" ? "sin" : "cos";
@@ -1098,7 +1220,7 @@ function showTriangle(kind){
     </svg>`;
     lead = `Tasakylkinen suorakulmainen kolmio. Yksikköympyrässä hypotenuusa on 1, joten sivut jaetaan luvulla ${sq(2)}: kateetit ovat ${fr(1,sq(2))} = ${fr(sq(2),2)}.`;
     table = `<tr><th>kulma</th><th>sin</th><th>cos</th><th>tan</th></tr>
-      <tr><td>45° = ${pi("",4)}</td><td>${fr(sq(2),2)}</td><td>${fr(sq(2),2)}</td><td>1</td></tr>`;
+      <tr><td>45° = ${pi("",4)}</td><td>${fr(1,sq(2))} = ${fr(sq(2),2)}</td><td>${fr(1,sq(2))} = ${fr(sq(2),2)}</td><td>1</td></tr>`;
   }
   $("shBody").innerHTML = svg + `<p class="lead">${lead}</p><table class="vt">${table}</table>`;
   $("sheet").classList.add("show"); $("shClose").focus();
@@ -1107,7 +1229,8 @@ function showTriangle(kind){
 function closeSheet(){ $("sheet").classList.remove("show"); }
 
 function toggle(d){
-  if(answered) return;
+  if(answered || (intro && intro.lock)) return;
+  if(intro) placed = placed.filter(q => isOk(task(), q));   // the intro clears a wrong point at the next try
   d = norm(Math.round(d*2)/2);
   const i = placed.findIndex(q => angDist(q,d) < TOGGLE);
   if(i >= 0){ const [r] = placed.splice(i,1); hintGreen.delete(r); hintPulse.delete(r); }
@@ -1120,14 +1243,18 @@ function toggle(d){
 /* the task is solved the moment every solution is marked and nothing is wrong */
 function checkPoints(){
   clearTimeout(almostTimer);
+  if(intro) return introCheck();
   const p = task();
   if(p.all || !p.sols.length) return;
   const bad = badPoints(p), missed = missingSols(p);
   if(!bad.length && !missed.length){ win(); return; }
+  // a free hint that is no longer true goes (a solution was removed)
+  const free = $("hint").querySelector(".free");
+  if(free && missed.length){ free.remove(); if(!$("hint").textContent) setHint(introText()); }
   // all solutions are there, but so is something extra: say so after a moment
   if(!missed.length) almostTimer = setTimeout(() => {
     if(answered) return;
-    tipHint(bad.length === 1 ? "Kaikki ratkaisut ovat mukana, mutta yksi piste on ylimääräinen."
+    freeHint(bad.length === 1 ? "Kaikki ratkaisut ovat mukana, mutta yksi piste on ylimääräinen."
                              : `Kaikki ratkaisut ovat mukana, mutta ${bad.length} pistettä on ylimääräisiä.`);
   }, 3000);
 }
@@ -1197,6 +1324,7 @@ function showFeedback(p, kind, head){
   else if(g.t === "tan") text += `<p>${TAN}${A} on säteen kulmakerroin. Suora origosta pisteeseen (1, ${g.vh}) leikkaa ympyrän kahdesti.</p>`;
   if(p.all) text += `<p class="sols">Kaikki kulmat ovat ratkaisuja.</p>`;
   else if(p.sols.length === 0) text += `<p class="sols">Ei ratkaisuja.</p>`;
+  else if(p.inv) text += `<p class="sols">Ratkaisu: ${invText(p)}</p>`;
   else {
     const list = p.sols.slice().sort((a,b) => norm(a)-norm(b)).map(d => angleText(d, p.unit));
     text += `<p class="sols">${list.length === 1 ? "Ratkaisu" : "Ratkaisut"}: ${list.join(", ")}</p>`;
@@ -1249,7 +1377,7 @@ function showOverlay(kind){
                            : "Seuraavalla tasolla on sekoitus kaikista tasoista.";
     $("ovScore").innerHTML = row("Pisteet tältä tasolta", fmt(levelScore)) +
       row("Elämiä jäljellä", `${lives}/${LIVES}`) + row("Pisteet yhteensä", fmt(score), "tot");
-    first = btn("Seuraava taso", () => { level++; startLevel(); }, true);
+    first = btn("Seuraava taso", () => { level++; enterLevel(); }, true);
   } else if(kind === "complete"){
     const fromLevels = score, lifeBonus = BONUS_LIFE*lives;
     score += BONUS_FINISH + lifeBonus; updateHud();
@@ -1261,6 +1389,11 @@ function showOverlay(kind){
       row(`Elämät ${lives} × ${BONUS_LIFE}`, "+" + fmt(lifeBonus)) +
       row("Yhteensä", fmt(score), "tot");
     first = btn("Aloita alusta", newRun, true);
+  } else if(kind === "introDone"){
+    $("ovTitle").textContent = "Valmista!";
+    $("ovResult").innerHTML = "";
+    $("ovMsg").innerHTML = INTRO_DONE[intro.chapters[intro.chapters.length - 1]];
+    first = btn(intro.doneLabel, exitIntro, true);
   } else {
     $("ovTitle").textContent = "Game Over";
     $("ovResult").innerHTML = `<div class="bigscore">${fmt(score)} pistettä</div>`;
@@ -1278,6 +1411,334 @@ function burst(){
   celebrate({x: box.left + box.width/2, y: box.top + box.height/2});
 }
 
+/* ── Esittely (intro) ───────────────────────────────────────────────────
+   A short guided demo on the real circle, not a game: no lives, points or
+   clock. Each step asks one thing at the top. Kinds of steps:
+     place — the player marks points; the step's task says where they go
+             (any: one solution is enough). A wrong point turns red and the
+             text says its angle; it goes at the next try.
+     ask   — answer tiles; a tile's show() draws what it means
+     ghost — a ghost hand turns the ray while the player watches
+   A chapter runs before the level that brings its idea in (INTRO_AT), every
+   time; the Esittely button opens a menu
+   of the chapters up to the current level (openIntroMenu). */
+const INTRO_AT = {0:"kulmat", 3:"sincostan", 5:"arc", 6:"sisakulma"};
+const {wait, tween} = IntroKit.timing(tok => !!intro && intro.token === tok);
+const deg = d => ({html:`${d}°`, d});            // an angle tile
+// a task with an angle inside: f(u) = v, u = m·α + c (lin), il its label on the ray
+const IN = (f, v, sols, inner, lin, il) => P(eq(f, v), sols, {t:"rays"}, {unit:"deg", inner, lin, il});
+const showRay = d => { aim = d; drawAim(); };
+const showLine = () => drawGuide(task());
+const showFx = fx => () => { Object.assign(hintFx, fx); drawHintLayer(); };
+// no line breaks inside "sin α = ½" either
+const IV = {sin:iv("[", "−π/2", "π/2", "]"), cos:iv("[", "0", "π", "]"), tan:iv("(", "−π/2", "π/2", ")")};   // RANGE, π/2 on one line
+const nbText = t => IntroKit.nb(t).replace(/\b(sin|cos|tan) (?=<span class="al">)/g, "$1&nbsp;");
+
+const INTRO_STEPS = {
+  kulmat: [
+    { kind:"place", angle:true, task:P(eq(A,"90°"), [90], {t:"rays"}, {unit:"deg"}),
+      prompt:`Kulma ${A} mitataan positiiviselta x-akselilta vastapäivään. Liikuta sädettä ja merkitse piste kohtaan ${A} = 90°.`,
+      ok:"Oikein! 90° on neljännes kierroksesta." },
+    { kind:"place", angle:true, task:P(eq(A,"210°"), [210], {t:"rays"}, {unit:"deg"}),
+      prompt:`Merkitse piste kohtaan ${A} = 210°.`,
+      ok:"Oikein! 210° on puoli kierrosta (180°) ja vielä 30°." },
+    { kind:"ghost", angle:true, task:P(eq(A,"π"), [180], {t:"rays"}, {unit:"rad"}),
+      prompt:"Kulmia mitataan myös radiaaneina. Puoli kierrosta on π ja täysi kierros 2π.",
+      script:[["sweep",0,180,1700], ["say","Puoli kierrosta: π eli 180°."], ["wait",900],
+              ["sweep",180,359,1700], ["say","Täysi kierros: 2π eli 360°."], ["wait",900]],
+      ok:"Siis π = 180° ja 2π = 360°." },
+    { kind:"ask", angle:true, task:P(eq(A,pi("",2)), [90], {t:"rays"}, {unit:"deg"}),
+      prompt:"Kuinka monta astetta on π/2?",
+      tiles:[ {...deg(45), why:"45° on kahdeksasosa kierroksesta eli π/4."},
+              {...deg(90), ok:true},
+              {...deg(180), why:"180° on puoli kierrosta eli π. π/2 on puolet siitä."},
+              {...deg(360), why:"360° on täysi kierros eli 2π."} ].map(t => ({...t, show:() => showRay(t.d)})),
+      ok:"Oikein! π/2 on puolet π:stä eli neljännes kierroksesta: 90°." },
+    { kind:"place", angle:true, task:P(eq(A,pi(3,2)), [270], {t:"rays"}, {unit:"rad"}),
+      prompt:`Merkitse piste kohtaan ${A} = 3π/2.`,
+      ok:"Oikein! 3π/2 = π + π/2 eli 270°." },
+  ],
+  sincostan: [
+    { kind:"place", legend:true, task:P(eq(SIN+A,"1"), [90], {t:"h", v:1, vh:"1"}, {unit:"deg"}),
+      prompt:`Pisteen x-koordinaatti on cos ${A} (vihreä jana) ja y-koordinaatti sin ${A} (keltainen jana). Merkitse piste, jossa sin ${A} = 1.`,
+      ok:"Oikein! Ympyrän ylimmässä pisteessä y-koordinaatti on 1." },
+    { kind:"place", legend:true, task:P(eq(SIN+A,"0"), [0,180], {t:"h", v:0, vh:"0"}, {unit:"deg"}),
+      prompt:`Yhtälöllä voi olla monta ratkaisua. Merkitse kaikki pisteet, joissa sin ${A} = 0.`,
+      more:"Hyvä, yksi löytyi! Missä muualla y-koordinaatti on 0?",
+      ok:"Oikein! Kummassakin pisteessä y-koordinaatti on 0." },
+    { kind:"ask", legend:true, task:P(eq(SIN+A,fr(1,2)), [30,150], {t:"h", v:.5, vh:fr(1,2)}, {unit:"deg"}),
+      prompt:`Montako pistettä ympyrällä on, joissa sin ${A} = ½?`,
+      tiles:[0,1,2,4].map(n => ({html:`${n}`, cls:"c", ok:n === 2, show:showLine,
+        why:"Katso suoraa y = ½: sen jokainen piste on korkeudella ½. Montako kertaa se leikkaa ympyrän?"})),
+      ok:"Oikein! Suora y = ½ leikkaa ympyrän kahdesti." },
+    { kind:"place", legend:true, guide:true, task:P(eq(SIN+A,fr(1,2)), [30,150], {t:"h", v:.5, vh:fr(1,2)}, {unit:"deg"}),
+      prompt:`Merkitse molemmat pisteet, joissa sin ${A} = ½.`,
+      more:"Hyvä, yksi löytyi! Missä suora y = ½ leikkaa ympyrän toisen kerran?",
+      ok:"Oikein! Ratkaisut ovat 30° ja 150°." },
+    { kind:"ask", legend:true, task:P(eq(SIN+A,"2"), NONE, {t:"none"}, {unit:"deg", band:{axis:"y", v:2}}),
+      prompt:`Montako ratkaisua on yhtälöllä sin ${A} = 2?`,
+      tiles:[0,1,2].map(n => ({html:`${n}`, cls:"c", ok:n === 0, show:showFx({band:true}),
+        why:`sin ${A} on pisteen y-koordinaatti. Korostettu jana näyttää, mitä arvoja se voi saada.`})),
+      ok:`Oikein! sin ${A} on aina välillä −1 … 1. Pelissä painat silloin Ei ratkaisuja.` },
+    { kind:"place", tan:true, legend:true, any:true, task:P(eq(TAN+A,"1"), [45,225], {t:"tan", v:1, vh:"1"}, {unit:"deg"}),
+      prompt:`tan ${A} on säteen kulmakerroin. Se näkyy pystysuoralla apuviivalla x = 1 (sininen jana). Merkitse piste, jossa tan ${A} = 1.`,
+      ok:"Oikein! Säde nousee yhtä paljon kuin se etenee, joten sen kulmakerroin on 1." },
+    // the turn plays at once and, after 3 s still at its end, again from the
+    // start until the question is answered (Vadim); the tiles are there from
+    // the start, and only a right answer gives Jatka. A wrong one restarts the turn.
+    { kind:"ghost", tan:true, legend:true, task:P(eq(TAN+A,"1"), [45,225], {t:"tan", v:1, vh:"1"}, {unit:"deg"}),
+      prompt:"Mitä tangentin arvolle tapahtuu, kun sädettä käännetään puoli kierrosta?",
+      script:[["sweep",45,225,2400], ["wait",3000], ["loop"]],
+      tiles:[ {html:"Pysyy samana", ok:true},
+              {html:"Muuttuu", show:() => runScript(intro.step.script, ++intro.token),
+               why:"Katso kierto uudestaan: säteen jatke osuu suoraan x = 1 samassa kohdassa kuin ennen."} ],
+      ok:`Oikein! Säteen jatke on sama suora, joten tan ${A} on taas 1. Tangentti toistuu puolen kierroksen välein.` },
+    { kind:"place", tan:true, legend:true, task:P(eq(TAN+A,"1"), [45,225], {t:"tan", v:1, vh:"1"}, {unit:"deg"}),
+      prompt:`Merkitse molemmat pisteet, joissa tan ${A} = 1.`,
+      more:"Hyvä, yksi löytyi! Missä säteen jatke osuu ympyrään?",
+      ok:"Oikein! Ratkaisut ovat 45° ja 225°." },
+  ],
+  arc: [
+    { kind:"ask", guide:true, given:[30,150], task:P(eq(A,inv("sin")+"&thinsp;"+fr(1,2)), [30], {t:"h", v:.5, vh:fr(1,2)}, {unit:"rad", inv:"sin"}),
+      prompt:`Yhtälöllä sin ${A} = ½ on kaksi ratkaisua, π/6 ja 5π/6. Minkä kulman ${inv("sin")} ½ antaa?`,
+      tiles:[ {html:"π/6", ok:true},
+              {html:"5π/6", why:`5π/6 ei ole korostetulla kaarella. ${inv("sin")} antaa kulman väliltä ${IV.sin}.`},
+              {html:"Molemmat", why:`${inv("sin")} antaa vain yhden kulman: sen, joka on korostetulla kaarella.`} ]
+            .map(t => ({...t, show:() => { showFx({arc:"sin"})(); if(t.ok) drawPoints({bad:[150], missed:[]}); }})),
+      ok:`Oikein! ${inv("sin")} antaa aina vain yhden kulman, väliltä ${IV.sin} (korostettu kaari).` },
+    { kind:"place", arc:"cos", task:P(eq(A,inv("cos")+"(−"+fr(1,2)+")"), [120], {t:"v", v:-.5, vh:"−"+fr(1,2)}, {unit:"rad", inv:"cos"}),
+      prompt:`${inv("cos")} antaa kulman väliltä ${IV.cos} (korostettu kaari). Merkitse ${A} = ${inv("cos")}(−½).`,
+      wrongAt:d => angDist(d, 240) <= TOL ? "Kulman 4π/3 kosini on myös −½, mutta se ei ole korostetulla kaarella." : null,
+      ok:`Oikein! ${inv("cos")}(−½) = 2π/3.` },
+    { kind:"place", arc:"tan", tan:true, task:P(eq(A,inv("tan")+"(−1)"), [315], {t:"tanray", v:-1, vh:"−1"}, {unit:"rad", inv:"tan"}),
+      prompt:`${inv("tan")} antaa kulman väliltä ${IV.tan}. Kaaren päät eivät kuulu siihen, koska tan(±π/2) ei ole määritelty. Merkitse ${A} = ${inv("tan")}(−1).`,
+      wrongAt:d => angDist(d, 135) <= TOL ? "Kulman 3π/4 tangentti on myös −1, mutta se ei ole korostetulla kaarella." : null,
+      ok:`Oikein! ${inv("tan")}(−1) = −π/4. Ympyrällä se on sama piste kuin 7π/4.` },
+  ],
+  // the angle inside the function (Vadim): the ray is α, as always, and a
+  // dashed ray shows α − 30°, α + 45° first, then 2α and α/2. A place step
+  // has the game's hint picture; "demo" plays a turn first, with the
+  // player's input locked.
+  sisakulma: [
+    // a task: the turn plays once first (demo), then the player marks the points
+    { kind:"place", inner:true, task:IN(SIN+"("+A+"&thinsp;−&thinsp;30°)", "0", [30,210], `${A} − 30°`, [1,-30], "α − 30°"),
+      prompt:`Säde on aina kulma ${A}. Katkoviiva on kulma ${A} − 30°: se kulkee 30° säteen jäljessä.`,
+      demo:[["say","Katso ensin, miten katkoviiva kulkee säteen mukana."], ["sweep",0,360,6000], ["wait",500]],
+      after:`Merkitse kaikki pisteet, joissa sin(${A} − 30°) = 0.`,         // the only text once the task starts (Vadim)
+      wrongAt:d => `Tässä ${A} − 30° = ${Math.round(norm(d - 30))}°. Käännä sädettä, kunnes katkoviiva on vaakasuorassa.`,
+      more:`Hyvä, yksi löytyi! Kulma ${A} − 30° voi olla 0° tai 180°.`,
+      ok:`Oikein! ${A} − 30° = 0° tai 180°, joten ${A} = 30° tai 210°.` },
+    { kind:"place", inner:true, task:IN(COS+"("+A+"&thinsp;+&thinsp;45°)", "0", [45,225], `${A} + 45°`, [1,45], "α + 45°"),
+      prompt:`Nyt katkoviiva ${A} + 45° kulkee 45° säteen ${A} edellä. Merkitse kaikki pisteet, joissa cos(${A} + 45°) = 0.`,
+      wrongAt:d => `Tässä ${A} + 45° = ${Math.round(norm(d + 45))}°. Käännä sädettä, kunnes katkoviiva osoittaa suoraan ylös tai alas.`,
+      more:`Hyvä, yksi löytyi! Kulma ${A} + 45° voi olla 90° tai 270°.`,
+      ok:`Oikein! ${A} + 45° = 90° tai 270°, joten ${A} = 45° tai 225°.` },
+    { kind:"ghost", inner:true, task:IN(SIN+"2"+A, "1", [45,225], `2${A}`, [2,0], "2α"),
+      prompt:`Nyt katkoviiva on kulma 2${A}. Montako kierrosta 2${A} kiertää, kun ${A} kiertää yhden?`,
+      script:[["sweep",0,360,6000], ["wait",2000], ["loop"]],
+      tiles:[1,2,4].map(n => ({html:`${n}`, cls:"c", ok:n === 2, show:n === 2 ? null : () => runScript(intro.step.script, ++intro.token),
+        why:`Katso uudestaan: kun säde ${A} kiertää yhden kierroksen, katkoviiva 2${A} kiertää kaksi.`})),
+      ok:`Oikein! 2${A} kiertää kaksi kierrosta, kun ${A} kiertää yhden. Siksi ratkaisuja on kaksi kertaa enemmän.` },
+    // angle:true: the ray's own angle α is shown as it turns (Vadim)
+    { kind:"ghost", inner:true, angle:true, task:IN(SIN+"2"+A, "1", [45,225], `2${A}`, [2,0], "2α"),
+      prompt:`sin&nbsp;2${A} = 1, kun katkoviiva 2${A} osoittaa suoraan ylös. Missä säde ${A} silloin on?`,
+      script:[["sweep",0,45,1600], ["wait",1000], ["sweep",45,225,4000], ["wait",1000], ["sweep",225,360,1600], ["wait",1200], ["loop"]],
+      tiles:[ {html:"90°", why:`90° on katkoviivan 2${A} suunta. Katso, missä säde ${A} on, kun katkoviiva osoittaa ylös.`},
+              {html:"45°", why:`Katso koko kierros: katkoviiva osoittaa ylös kahdesti.`},
+              // right: the turn stops at 45°, the dashed ray up, both points marked
+              {html:"45° ja 225°", ok:true, show:() => { intro.token++; hideHand(); intro.acc = aim = 45; drawAim();
+                                                         placed = [45, 225]; drawPoints({bad:[], missed:[]}); }} ]
+            .map(t => t.ok ? t : {...t, show:() => runScript(intro.step.script, ++intro.token)}),
+      ok:`Oikein! Katkoviiva osoittaa ylös kahdesti: kun ${A} = 45° (2${A} = 90°) ja kun ${A} = 225° (2${A} = 450°).` },
+    { kind:"place", inner:true, task:IN(COS+"2"+A, "−1", [90,270], `2${A}`, [2,0], "2α"),
+      prompt:`Merkitse kaikki pisteet, joissa cos&nbsp;2${A} = −1. Katkoviiva näyttää kulman 2${A}, kun käännät sädettä.`,
+      wrongAt:d => `Tässä 2${A} = ${Math.round(norm(2*d))}°. Käännä sädettä, kunnes katkoviiva 2${A} on kohdassa 180°.`,
+      more:`Hyvä, yksi löytyi! Katkoviiva käy kohdassa 180° kahdesti, kun säde kiertää kierroksen.`,
+      ok:`Oikein! 2${A} = 180° tai 540°, joten ${A} = 90° tai 270°.` },
+    { kind:"ghost", inner:true, task:IN(SIN+fr(A,2), "1", [180], fr(A,2), [.5,0], "α/2"),
+      prompt:`Nyt katkoviiva on kulma ${A}/2. Montako kierrosta ${A}/2 kiertää, kun ${A} kiertää yhden?`,
+      script:[["sweep",0,360,6000], ["wait",2000], ["loop"]],
+      tiles:["½","1","2"].map(n => ({html:n, cls:"c", ok:n === "½", show:n === "½" ? null : () => runScript(intro.step.script, ++intro.token),
+        why:`Katso uudestaan: kun säde ${A} kiertää yhden kierroksen, katkoviiva ${A}/2 kiertää vain puolet.`})),
+      ok:`Oikein! ${A}/2 kiertää vain puoli kierrosta, joten ratkaisuja voi olla vähemmän.` },
+    { kind:"place", inner:true, task:IN(SIN+fr(A,2), "1", [180], fr(A,2), [.5,0], "α/2"),
+      prompt:`Merkitse kaikki pisteet, joissa sin(${A}/2) = 1. Katkoviiva näyttää kulman ${A}/2.`,
+      wrongAt:d => `Tässä ${A}/2 = ${Math.round(norm(d)/2)}°. Käännä sädettä, kunnes katkoviiva ${A}/2 osoittaa suoraan ylös.`,
+      ok:`Oikein! ${A}/2 = 90°, joten ${A} = 180°. Muita ratkaisuja ei ole, koska ${A}/2 kiertää vain puoli kierrosta.` },
+  ],
+};
+// the chapters' names in the Esittely button's menu
+const INTRO_NAME = {kulmat:"Kulmat ja radiaanit", sincostan:"sin, cos ja tan", arc:"arcsin, arccos ja arctan",
+                    sisakulma:`${A} − 30°, 2${A} ja ${A}/2`};
+// the text of the "Valmista!" dialog after a chapter
+const INTRO_DONE = {
+  sisakulma:`Muista: ratkaise ensin funktion sisällä oleva kulma (${A} − 30°, 2${A}, ${A}/2 …) ja vasta sitten ${A}. Kun ${A} kiertää kierroksen, 2${A} kiertää kaksi ja ${A}/2 vain puoli.`,
+  kulmat:"Olet nyt valmis pelaamaan! Merkitse ympyrälle kaikki kohdat, joissa yhtälö on totta.",
+  sincostan:`Muista: cos ${A} on x-koordinaatti, sin ${A} y-koordinaatti ja tan ${A} säteen kulmakerroin. Jos ratkaisuja ei ole, paina Ei ratkaisuja.`,
+  arc:`Muista: ${inv("sin")} antaa kulman väliltä ${IV.sin}, ${inv("cos")} väliltä ${IV.cos} ja ${inv("tan")} väliltä ${IV.tan}.`,
+};
+
+/* the Esittely button: a menu of the chapters up to this level, all alike,
+   the latest last and focused (Vadim); the chosen one runs, then the same task goes on with its
+   clicks, hints and time (the menu's and the intro's time don't count) */
+function openIntroMenu(){
+  const snap = {tasks, idx, clicks, hintsUsed, hintPress, t: performance.now() - taskStart};
+  const resume = () => {
+    tasks = snap.tasks; idx = snap.idx; drawStatic(); showTask();
+    clicks = snap.clicks; hintsUsed = snap.hintsUsed; hintPress = snap.hintPress;
+    taskStart = performance.now() - snap.t; updateHud(); afterHintPress();
+  };
+  const levels = Object.keys(INTRO_AT).map(Number).filter(l => l <= level);
+  $("ovTitle").textContent = "Esittely";
+  $("ovResult").innerHTML = `<p class="intro-q">Minkä esittelyn haluat katsoa?</p><div id="ovMenu"></div>`;   // the question above the list
+  $("ovMsg").textContent = ""; $("ovScore").innerHTML = "";
+  IntroKit.menu($("ovMenu"), levels.map((l, i) => ({ch:INTRO_AT[l], html:INTRO_NAME[INTRO_AT[l]],
+      sub:`taso ${l} · ${INTRO_STEPS[INTRO_AT[l]].length} vaihetta`, latest:i === levels.length - 1})),
+    it => startIntro([it.ch], resume, "Jatka peliä"));
+  const btns = $("ovBtns"); btns.innerHTML = "";
+  const close = document.createElement("button");
+  close.className = "btn"; close.textContent = "Sulje";
+  close.addEventListener("click", () => { $("overlay").classList.remove("show"); taskStart = performance.now() - snap.t; });
+  btns.appendChild(close);
+  $("overlay").classList.add("show");
+  $("ovMenu").querySelector(".latest").focus();
+}
+function startIntro(chapters, then, doneLabel){
+  intro = {chapters, steps:chapters.flatMap(c => INTRO_STEPS[c]), then, doneLabel, token:0, i:0, hand:null};
+  document.body.classList.add("intro");
+  ["introBar","introPrompt","introAnswers"].forEach(id => $(id).hidden = false);
+  $("overlay").classList.remove("show");
+  introStep(0);
+}
+function introStep(i){
+  const st = intro.steps[i];
+  Object.assign(intro, {i, step:st, done:false, labelFn:null, acc:0, demoOn:!!st.demo});
+  const tok = ++intro.token;                     // stops the scripts of the step before
+  $("introLayer").innerHTML = ""; intro.hand = null;
+  tasks = [st.task]; idx = 0;
+  placed = (st.given || []).slice(); answered = false; aim = null; down = false;
+  hintGreen.clear(); hintPulse.clear(); hintFx = {...(st.arc && {arc:st.arc}), ...(st.inner && {inner:true})};
+  clearTimeout(hintTimer); clearTimeout(almostTimer);
+  drawStatic(); drawHintLayer();
+  $("guide").innerHTML = ""; if(st.guide) drawGuide(st.task);
+  drawPoints(); drawAim();
+  $("legend").hidden = !st.legend;
+  intro.lock = st.kind !== "place" || !!st.demo;  // can the player mark points? (not during a demo)
+  $("introPrompt").innerHTML = nbText(st.prompt);
+  say("");
+  IntroKit.progress($("introProgress"), intro.steps.length, i);
+  if(st.tiles) IntroKit.tiles($("introAnswers"), st.tiles, introAnswer);
+  else $("introAnswers").innerHTML = "";
+  if(st.kind === "ghost") runScript(st.script, tok).then(ok => {
+    if(!ok || st.tiles) return;                  // with tiles the answer moves the step on
+    intro.done = true; say(st.ok, "good"); showNext();
+  });
+  // a place step with a demo: the ghost hand plays it once, then the player's
+  // turn, and only the task's sentence (st.after) is left on screen
+  if(st.demo) runScript(st.demo, tok).then(ok => {
+    if(!ok) return;
+    intro.demoOn = false; intro.lock = false;
+    $("introPrompt").innerHTML = nbText(st.after); say("");
+  });
+}
+function say(html, cls = ""){
+  const el = $("hint");
+  el.innerHTML = nbText(html);
+  el.classList.remove("warn", "tip"); el.classList.toggle("good", cls === "good");
+}
+function showNext(){
+  const last = intro.i === intro.steps.length - 1;
+  IntroKit.next($("introAnswers"), last, () => last ? finishIntro() : introStep(intro.i + 1));
+}
+// after every point the player marks or removes
+function introCheck(){
+  if(intro.done) return;
+  const st = intro.step, p = task();
+  const bad = badPoints(p), missed = missingSols(p);
+  drawPoints({bad, missed:[]});                  // right points green, a wrong one red
+  if(bad.length){
+    const d = bad[bad.length - 1];
+    return say((st.wrongAt && st.wrongAt(d)) || `Tämä piste on kulmassa ${angleText(d, p.unit)}. Kokeile uudestaan.`);
+  }
+  if(placed.length && (st.any || !missed.length)){
+    intro.done = true; intro.lock = true; aim = null; drawAim();
+    drawGuide(p); say(st.ok, "good"); showNext();
+  } else say(placed.length ? (st.more || "Hyvä! Löydätkö loput?") : "");
+}
+function introAnswer(t, b){
+  if(!intro || intro.done) return;
+  if(t.show) t.show();                           // draw what the answer means
+  if(!t.ok){ b.disabled = true; b.classList.add("wrong"); say(t.why); return; }
+  intro.done = true; b.classList.add("right");
+  $("introAnswers").querySelectorAll("button").forEach(x => x.disabled = true);
+  say(intro.step.ok, "good"); showNext();
+}
+function finishIntro(){
+  intro.token++;
+  showOverlay("introDone"); if(motion) burst();
+}
+function exitIntro(){
+  if(!intro) return;
+  const then = intro.then;
+  intro.token++;
+  $("introLayer").innerHTML = "";
+  $("overlay").classList.remove("show");        // the "Valmista!" dialog: resuming a task doesn't close it by itself
+  intro = null;
+  document.body.classList.remove("intro");
+  ["introBar","introPrompt","introAnswers"].forEach(id => $(id).hidden = true);
+  $("legend").hidden = false; $("hint").classList.remove("good");
+  then();
+}
+
+/* ghost hand: scripts of ["say", html] ["wait", ms] ["sweep", from, to, ms],
+   ["mark", angle] (a solution the turn has reached) and ["loop"] (from the
+   start again while the step is not yet answered).
+   A sweep turns the ray; its label counts the whole way, past 360° too.
+   Every await checks the step's token, so restarting or leaving the step stops it. */
+async function runScript(script, tok){
+  for(let i = 0; i < script.length; i++){
+    const [op, a, b, c] = script[i];
+    if(op === "say"){ say(a); if(!await wait(1100, tok)) return false; }
+    else if(op === "wait"){ if(!await wait(a, tok)) return false; }
+    else if(op === "sweep"){ if(!await sweep(a, b, c, tok)) return false; }
+    else if(op === "loop" && !intro.done) i = -1;    // again from the start until the step is answered
+    else if(op === "mark"){ placed.push(a); drawPoints({bad:[], missed:[]}); }   // a solution the turn has reached
+  }
+  hideHand();
+  return true;
+}
+function sweepLabel(){
+  const a = intro.acc;
+  if(task().unit !== "rad") return `${Math.round(a)}°`;
+  if(a >= 358.5) return "2π";
+  const k = Math.round(a/15);
+  if(Math.abs(a - 15*k) > 1.5) return `≈ ${(a/180).toFixed(2).replace(".", ",")}π`;
+  if(k === 0) return "0";
+  const g = gcd(k, 12), n = k/g, m = 12/g, num = n === 1 ? "π" : `${n}π`;
+  return m === 1 ? num : `${num}/${m}`;
+}
+function moveHand(h, a){
+  const q = pt(a), k = (R + 18)/R;               // the fingertip just outside the circle, at the ray's end
+  h.setAttribute("transform", `translate(${f1(q.x*k)},${f1(q.y*k + 6)}) rotate(-14) scale(1.9)`);
+}
+function hideHand(){
+  const h = intro && intro.hand; if(!h) return;
+  intro.hand = null; h.style.opacity = 0; setTimeout(() => h.remove(), 320);
+}
+function sweep(from, to, ms, tok){
+  intro.labelFn = sweepLabel;
+  let h = intro.hand;
+  if(!h){
+    h = intro.hand = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    h.setAttribute("class", "ghost-hand"); h.innerHTML = `<path d="${IntroKit.HAND_PATH}"/>`;
+    $("introLayer").appendChild(h);
+  }
+  return tween(ms, e => {
+    const a = from + (to - from)*IntroKit.ease(e);
+    intro.acc = a; aim = norm(a); drawAim(); moveHand(h, a);
+  }, tok);
+}
+
 /* ── input ──────────────────────────────────────────────────────────── */
 const stage = $("stage");
 function toSvg(e){
@@ -1291,20 +1752,21 @@ function angleAt(e){
   return norm(Math.atan2(-p.y, p.x) / D2R);
 }
 let down = false;
+const locked = () => answered || (intro && intro.lock);
 stage.addEventListener("pointerdown", e => {
-  if(answered) return;
+  if(locked()) return;
   down = true; stage.setPointerCapture(e.pointerId);
   const a = angleAt(e); if(a !== null){ aim = a; drawAim(); }
   e.preventDefault();
 });
 stage.addEventListener("pointermove", e => {
-  if(answered) return;
+  if(locked()) return;
   if(e.pointerType !== "mouse" && !down) return;
   const a = angleAt(e); if(a !== null){ aim = a; drawAim(); }
 });
 stage.addEventListener("pointerup", e => {
   if(!down) return; down = false;
-  if(answered) return;
+  if(locked()) return;
   const a = angleAt(e);
   if(a !== null){ aim = a; toggle(a); }
   if(e.pointerType !== "mouse") aim = null;
@@ -1321,6 +1783,7 @@ document.addEventListener("keydown", e => {
     if(k === "Enter" && document.activeElement !== $("next")){ e.preventDefault(); next(); }
     return;
   }
+  if(intro && intro.lock) return;
   if(k === "ArrowLeft" || k === "ArrowRight" || k === "ArrowUp" || k === "ArrowDown"){
     const step = e.shiftKey ? 1 : 15, dir = (k === "ArrowLeft" || k === "ArrowUp") ? 1 : -1;
     aim = norm((aim === null ? 0 : Math.round(aim / step) * step) + dir*step);
@@ -1343,6 +1806,25 @@ $("tri45").addEventListener("click", () => showTriangle(45));
 $("shClose").addEventListener("click", closeSheet);
 $("sheet").addEventListener("click", e => { if(e.target === $("sheet")) closeSheet(); });
 $("clear").addEventListener("click", clearPoints);
+/* testing (Vadim): typing "xyz", or the page opened with ?testi, shows a
+   button that skips to the next level (its intro chapter first, if not seen).
+   Students never see it. */
+const TEST_CODE = "xyz"; let typed = "";
+const showTestTools = () => { $("skipLevel").hidden = false; };
+if(new URLSearchParams(location.search).has("testi")) showTestTools();
+document.addEventListener("keydown", e => { typed = (typed + e.key.toLowerCase()).slice(-TEST_CODE.length); if(typed === TEST_CODE) showTestTools(); });
+$("skipLevel").addEventListener("click", () => {
+  if(intro || gameOver) return;
+  if(level < MAX_LEVEL){ level++; enterLevel(); } else showOverlay("complete");
+});
+$("introRestart").addEventListener("click", () => introStep(intro.i));   // the step from the start
+$("introSkip").addEventListener("click", exitIntro);
+// replay the intro mid-task (the chapters up to this level); afterwards the
+// same task starts over, its clicks, hints and time as they were
+$("introBtn").addEventListener("click", () => {
+  if(intro || answered || $("overlay").classList.contains("show")) return;
+  openIntroMenu();
+});
 // the memory-triangle name in a hint is a link that opens the card
 $("hint").addEventListener("click", e => {
   const a = e.target.closest(".trilink"); if(!a) return;

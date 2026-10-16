@@ -30,10 +30,20 @@ samalla.
 
 ## 2. Painallukset ja vihjetasot
 
-| Pelitaso | Painalluksia | 1. painallus | 2. painallus | 3. painallus |
-|---|---|---|---|---|
-| 0–2 | 2 | vihjetaso 1 | vihjetaso 2 | – |
-| 3–7 | 3 | vihjetaso 1 | vihjetaso 2 | vihjetasot 2 ja 3 yhdessä |
+| Pelitaso | Painalluksia | 1. painallus | 2. painallus | 3. painallus | 4. painallus |
+|---|---|---|---|---|---|
+| 0–2 | 2 | vihjetaso 1 | vihjetaso 2 | – | – |
+| 3–5 | 3 | vihjetaso 1 | vihjetaso 2 | vihjetasot 2 ja 3 yhdessä | – |
+| 6–7 | 4 (Vadim) | vihjetaso 1 | vihjetaso 2 | vihjetasot 2 ja 3 yhdessä | mikä tahansa jäljellä oleva |
+
+**Sisäkulman kuva** (pelitason 6 tehtävät sin 2α, cos 3α, tan 2α, sin(α/2),
+sin(α − π/4), cos(α + 30°), myös tasolla 7): kuuluu kaikkien vihjetasojen
+arvontaan ja tulee viimeistään viimeisellä painalluksella (Vadim). Säde on
+aina α, myös esittelyssä (Vadim); sen päässä lukee "α". Magenta katkoviiva
+näyttää funktion sisällä olevan kulman ja kääntyy säteen mukana: 2α (kaksi
+kertaa säteen kulma), 3α, α/2 (puolet), α − π/4, α + 30° (30° säteen
+edellä). Katkoviivan päässä lukee "2α" ("α/2", "α + 30°" …). Teksti: "Kun
+käännät sädettä α, katkoviiva näyttää nyt kulman 2α."
 
 Kolmannen painalluksen arvonnassa ovat vihjetasojen 2 ja 3 vielä
 käyttämättömät vihjeet. Jos tehtävällä ei ole vihjetason 3 vihjettä (esim.
@@ -50,7 +60,7 @@ kerrannaiskulmat), kolmas vihje on siis toinen vihjetason 2 vihje.
 Jokaisella painalluksella, tässä järjestyksessä:
 
 1. **Ensimmäinen vihje ilman arvontaa** (vain 1. painallus):
-   - kun tehtävän arvossa on neliöjuuri (esim. sin α = −√2/2, tan α = √3):
+   - kun tehtävän arvossa on neliöjuuri (esim. sin α = −1/√2, tan α = √3):
      muistikolmiovihje, ja oikea kolmionappi alkaa sykkiä magentana, kunnes
      sitä painetaan;
    - tehtävässä sin α · cos α = 0: tulon nollasääntö (kohta 6).
@@ -105,17 +115,22 @@ alle 5° päässä ratkaisusta.
 | jokin merkitty oikein + vääriä (ratkaisuja 1 tai enemmän) | Yksi / Kaksi / Kolme … merkitsemistäsi pisteistä on oikein, mutta muut ovat väärin. |
 | ratkaisuja ≥ 2, merkityt kaikki oikein, ratkaisuja puuttuu | Merkitsemäsi pisteet ovat oikein, mutta ratkaisuja on vielä lisää. (yksi piste: Merkitsemäsi piste on oikein, …) |
 | kaikki väärin, yksi piste merkitty, se on lähellä | Merkitsemäsi piste on lähellä oikeaa ratkaisua. |
+| osa oikein, osa väärin, ratkaisuja puuttuu (ratkaisuja ≥ 2), väärä piste lähellä puuttuvaa ratkaisua | sykkii se väärä piste, joka on lähimpänä jotakin puuttuvaa ratkaisua: Sykkivä piste on lähellä puuttuvaa ratkaisua. (Vadim) |
 | kaikki väärin, useita merkitty, lähin on lähellä | lähin piste sykkii magentana: Merkitsemäsi pisteet ovat väärin, mutta sykkivä piste on niistä lähimpänä oikeaa ratkaisua. (useita ratkaisuja: … lähimpänä yhtä oikeista ratkaisuista.) |
 | kaikki väärin, mikään ei lähellä — ei kun ratkaisuja on 1 ja pisteitä 1 (silloin se on selvää: tehtävä olisi muuten ratkennut) | Yksikään merkitsemäsi piste ei ole ratkaisu. / Merkitsemäsi piste ei ole ratkaisu. |
 | kaikki kaukana (myös vihjetasolla 2) | Merkitsemäsi piste on kaukana oikeasta ratkaisusta. / Kaikki merkitsemäsi pisteet ovat kaukana oikeista ratkaisuista. |
+
+Sykkivän pisteen vihjeet (lähin väärä piste sykkii) arvotaan kaksinkertaisella
+painolla, kun vääriä pisteitä on enemmän kuin yksi (Vadim).
 
 ### Vihjetaso 2
 
 | Ehto | Teksti |
 |---|---|
 | useita merkitty, kaikki väärin, mikään ei lähellä, lähin alle 70° päässä | lähin piste sykkii magentana: Sykkivä piste on lähimpänä oikeaa ratkaisua. |
+| osa oikein, osa väärin, ratkaisuja puuttuu, lähin väärä piste 20°–70° päässä puuttuvasta ratkaisusta | Sykkivä piste on lähimpänä puuttuvaa ratkaisua. (yli 70°: ei sykkivää pistettä) |
 | kaikki kaukana | kuten vihjetasolla 1 (sama vihje, annetaan vain kerran) |
-| yksi väärä piste, ei lähellä, samassa neljänneksessä kuin lähin ratkaisu | Merkitsemäsi piste on oikeassa neljänneksessä. |
+| yksi väärä piste, ei lähellä, samassa neljänneksessä kuin lähin ratkaisu (ei, kun neljä ratkaisua on jokaisessa neljänneksessä yksi) | Merkitsemäsi piste on oikeassa neljänneksessä. |
 | yksi väärä piste, ei lähellä, eri neljänneksessä | Ratkaisu on vasemmanpuoleisessa yläneljänneksessä. / Yksi ratkaisuista on … |
 | yksi väärä piste, ei lähellä, samalla puolella akselia kuin ratkaisu | Merkitsemäsi piste on samalla puolella y-akselia (x-akselia) kuin ratkaisu. / … kuin yksi ratkaisuista. |
 | yksi väärä piste, ei lähellä, eri puolella akselia | Oikea ratkaisu on y-akselin (x-akselin) toisella puolella. / Yksi ratkaisuista on … |
@@ -157,12 +172,13 @@ on π, astetehtävissä asteet.
 | 1 | aina, paitsi kulmatehtävissä, joissa on yksi kulma (α = 120° on selvästi yksi piste) | Ympyrällä on vain yksi ratkaisupiste. / Ympyrällä on 2 ratkaisupistettä. (3, 4 …) |
 | 1 | sama, kun ratkaisupisteitä on ≥ 2 ja pelaaja on merkinnyt yhtä monta pistettä | Ympyrällä on 2 ratkaisupistettä, mutta ne ovat eri kuin merkityt pisteet. (jos jokin merkitty on oikein: … mutta kaikki merkityt pisteet eivät ole ratkaisuja.) |
 | 1 | ratkaisut peilikuvia x-akselin suhteen | Ratkaisut ovat symmetrisesti x-akselin ympärillä. |
+| 1 (ensimmäinen vihje) | pelitason 6 tehtävät, joissa funktion sisällä on muu kuin α: sin 2α = 1, cos 3α = 1, tan 2α = 1, sin(α/2) = 0, sin(α − π/4) = 0, cos(α + 30°) = 0 (`inner`) | Mieti ensin kulman 2α suuruutta ja ratkaise sitten α muodostuneesta yhtälöstä. / … kulman α + 30° … (Vadim). Oma aiheensa (kulma), joten tehtävän oma vihje ("Millä kulmalla sini on 1? …") voi tulla myöhemmin. |
 | 1 | ratkaisut peilikuvia y-akselin suhteen | Ratkaisut ovat symmetrisesti y-akselin ympärillä. |
 | 1 | ratkaisut 180° päässä toisistaan | Ratkaisut ovat origon vastakkaisilla puolilla. |
 | 1 | ≥ 3 ratkaisua tasaisin välein | Ratkaisut ovat ympyrällä tasaisin välein. |
 | 2 | 2 ratkaisua, sama y | Molemmat ratkaisut ovat samalla vaakasuoralla suoralla. |
 | 2 | 2 ratkaisua, sama x | Molemmat ratkaisut ovat samalla pystysuoralla suoralla. |
-| 2 | ratkaisu neljänneksessä (useita: yksi arvotaan) | Ratkaisu on vasemmanpuoleisessa alaneljänneksessä. / Yksi ratkaisuista on … |
+| 2 | ratkaisu neljänneksessä (useita: yksi arvotaan; ei koskaan, kun neljä ratkaisua on jokaisessa neljänneksessä yksi, esim. cos 2α = 0, sin²α = ¼ (Vadim)) | Ratkaisu on vasemmanpuoleisessa alaneljänneksessä. / Yksi ratkaisuista on … Jos pelaaja on jo löytänyt ratkaisun, sen neljännestä ei koskaan nimetä (Vadim), vaan neljännes, jossa on vielä löytämätön ratkaisu: "Toinen ratkaisu on …" (2 ratkaisua) / "Yksi puuttuvista ratkaisuista on …". Jos sellaista ei ole, vihjettä ei tule. |
 | 2 | kaikki ratkaisut samalla puolella x-akselia | Ratkaisu on x-akselin yläpuolella. / Kaikki ratkaisut ovat x-akselin alapuolella. |
 | 2 | kaikki ratkaisut samalla puolella y-akselia | Ratkaisu on y-akselin oikealla puolella. / Kaikki ratkaisut ovat y-akselin vasemmalla puolella. |
 | 2 | kaikki ratkaisut akseleilla, alle 4 ratkaisua | Ratkaisu on koordinaattiakselilla. / Ratkaisut ovat koordinaattiakseleilla. |
@@ -213,7 +229,7 @@ tilalla vihjeen, joka liittää kulman suoraan kulmaan tai oikokulmaan:
 | 1 | cos α = c, ei omaa vihjettä | cos α on pisteen x-koordinaatti. Etsi ympyrältä pisteet, joiden x-koordinaatti on ½. |
 | 1 | sin, ≥ 2 ratkaisua, c ≠ ±1, ei käänteisfunktio | Huomaa, että sin(180° − α) = sin α kaikilla α. (radiaanitehtävä: π − α) |
 | 1 | cos, samat ehdot | Huomaa, että cos(−α) = cos α kaikilla α. |
-| 1 | ratkaisut erikoiskulmia, pelitaso ≥ 3 | Tutki tasasivuista muistikolmiota! (√3, ½) / Tutki tasakylkistä muistikolmiota! (√2/2, 45°) |
+| 1 | ratkaisut erikoiskulmia, pelitaso ≥ 3 | Tutki tasasivuista muistikolmiota! (√3, ½) / Tutki tasakylkistä muistikolmiota! (1/√2, 45°) |
 | 3 | apuviiva näkyy kuvassa (\|c\| ≤ 1) | Apuviiva on nyt piirretty ympyrään. (kaksi suoraa, esim. y = ±½: Apuviivat on nyt piirretty ympyrään.) |
 
 Identiteetit ovat etusijavihjeitä (kohta 3). Ne annetaan vain, kun ne antavat
@@ -234,17 +250,23 @@ x- ja y-koordinaatti ovat yhtä suuret." / "… toistensa vastalukuja."), eikä
 niihin tule tan-vihjeitä (menetelmä, identiteetti, akselin nimi, arvo suoralla
 x = 1). Muistikolmio ja apuviiva tulevat.
 
-### Käänteisfunktiot (sin⁻¹, cos⁻¹, tan⁻¹)
+### Käänteisfunktiot (arcsin, arccos, arctan)
 
 | Vihjetaso | Teksti |
 |---|---|
-| 1 | menetelmä, jonka alussa: sin⁻¹ antaa vain yhden kulman, väliltä −90° … 90°. (cos⁻¹: 0° … 180°; tan⁻¹: … eli ympyrän oikealta puoliskolta.) |
-| 1 | Huomaa, että funktion sin⁻¹ määrittelyjoukko on −1 … 1 ja päähaaran arvojoukko −90° … 90°. |
-| 1 | Huomaa, että funktion cos⁻¹ määrittelyjoukko on −1 … 1 ja päähaaran arvojoukko 0° … 180°. |
-| 1 | Huomaa, että funktio tan⁻¹ on määritelty kaikilla luvuilla ja sen päähaaran arvojoukko on −90° … 90°. |
+| 1 | menetelmä, jonka alussa: arcsin antaa vain yhden kulman, väliltä [−π/2, π/2]. (arccos: [0, π]; arctan: (−π/2, π/2), eli ympyrän oikealta puoliskolta.) |
+| 1 | Huomaa, että funktion arcsin määrittelyjoukko on [−1, 1] ja arvojoukko [−π/2, π/2]. |
+| 1 | Huomaa, että funktion arccos määrittelyjoukko on [−1, 1] ja arvojoukko [0, π]. |
+| 1 | Huomaa, että funktio arctan on määritelty kaikilla reaaliluvuilla ja sen arvojoukko on (−π/2, π/2). |
 | 1 | Käänteisfunktio antaa aina vain yhden kulman. |
 | 1 | muistikolmiovihje (erikoiskulmat) |
 | 3 | apuviiva |
+
+Käänteisfunktioista puhutaan aina radiaaneina, ja ne kirjoitetaan arcsin,
+arccos, arctan (ei sin⁻¹). Arvojoukot: arcsin [−1, 1] → [−π/2, π/2], arccos
+[−1, 1] → [0, π], arctan ℝ → (−π/2, π/2). Ratkaisuksi näytetään funktion
+arvo eikä ympyrän piste: arcsin(−√3/2) = −π/3 (ei 5π/3), arctan(−1) = −π/4,
+arctan ½ ≈ 0,46. Selitys kertoo, että piste on sama kuin 5π/3.
 
 ### Neliöt, itseisarvo, tulo (pelitaso 4)
 
@@ -291,17 +313,17 @@ vihjetasollaan ja jää näkyviin tehtävän loppuun.
 | 1 | sin α = c (myös sin α = 2) | y-akselin viereen pystysuoraan "sin α", x-akselin yläpuolelle "cos α" | Pisteen y-koordinaatti on sin α. |
 | 1 | cos α = c | samat nimet | Pisteen x-koordinaatti on cos α. |
 | 2 | sin α · cos α = 0 | samat nimet | Pisteen x-koordinaatti on cos α ja y-koordinaatti sin α. |
-| 1 | tan α = c | suoran x = 1 viereen "tan α" | tan α näkyy korkeutena suoralla x = 1. |
+| 1 | tan α = c, arctan | apuviiva x = 1 ja tangentin kuva tulevat näkyviin, suoran viereen "tan α" | Apuviiva x = 1 on nyt piirretty: tan α näkyy sillä korkeutena. |
 | 1 | kulmatehtävät | neljännesten rajat: 90°, 180°, 270°, 360° (pelitaso 2: π/2, π, 3π/2, 2π) | Neljännesten rajat on merkitty ympyrään. |
 | 2 | kulmatehtävät | kahdeksasosakulmat: lisäksi 45°, 135°, 225°, 315° (pelitaso 2: π/4, 3π/4, 5π/4, 7π/4) | Kahdeksasosakulmat on merkitty ympyrään. |
 | 2 | sin α = c | arvo c merkitään y-akselille pienellä viivalla ja luvulla | Arvo ½ on merkitty y-akselille. (sin²α: Arvot ½ ja −½ on merkitty …) |
 | 2 | cos α = c | arvo c merkitään x-akselille | Arvo ½ on merkitty x-akselille. |
-| 2 | tan α = c | arvo c merkitään suoralle x = 1 | Arvo 1 on merkitty suoralle x = 1. |
-| 2 | sin⁻¹, tan⁻¹ | päähaaran kaari −90° … 90° (oikea puoli) korostetaan | Ratkaisu on korostetulla kaarella. |
-| 2 | cos⁻¹ | päähaaran kaari 0° … 180° (yläpuoli) korostetaan | Ratkaisu on korostetulla kaarella. |
+| 2 | tan α = c | arvo c merkitään suoralle x = 1, ja tangentin kuva tulee näkyviin | Arvo 1 on merkitty suoralle x = 1. |
+| 2 | arcsin, arctan | arvojoukon kaari −π/2 … π/2 (oikea puoli) korostetaan; arcsinille päät täytettyinä pisteinä, arctanille avoimina renkaina (päät eivät kuulu väliin) | Ratkaisu on korostetulla kaarella. |
+| 2 | arccos | arvojoukon kaari 0 … π (yläpuoli) korostetaan, päät täytettyinä pisteinä | Ratkaisu on korostetulla kaarella. |
 | 2 | sin α = 2, cos α = −3/2 | akselille korostetaan väli −1 … 1, ja arvo c merkitään sen ulkopuolelle (kuvan reunaan, jos se ei mahdu) | sin α on aina korostetulla välillä. / cos α on aina korostetulla välillä. |
 | 2 | cos²α = −1 | x-akselille korostetaan väli −1 … 1 | cos α on aina korostetulla välillä, joten cos²α on aina vähintään 0. |
-| 2 (pelitasot 5–7: 1 tai 2) | tehtävät, joiden ratkaisut ovat suoraan kulmia (pelitasot 1–2 ja moninkertaiset kulmat pelitasolla 6, myös sekoituksessa); ei arvo-, tangentti- eikä muita tehtäviä, joissa suora tai arvo johtaa pisteisiin | kulma näytetään tehtävän loppuun asti kuten pelitasolla 0: kaari ja lukema säteen vieressä, merkittyjen pisteiden kulmat | Kulma on nyt merkitty tehtävän loppuun saakka. |
+| 2 | tehtävät, joiden ratkaisut ovat suoraan kulmia (pelitasot 1–2); ei pelitason 6 tehtäviä (sin 2α = 1, sin(α/2) = 0, cos(α + 30°) = 0 …), joissa lukema näyttäisi α:n eikä 2α:aa tai α + 30°:ta (Vadim); ei arvo-, tangentti- eikä muita tehtäviä, joissa suora tai arvo johtaa pisteisiin | kulma näytetään tehtävän loppuun asti kuten pelitasolla 0: kaari ja lukema säteen vieressä, merkittyjen pisteiden kulmat | Kulma on nyt merkitty tehtävän loppuun saakka. |
 | 3 | sin α = c, cos α = c, tan α = c, käänteisfunktiot, sin α · cos α = 0 | apuviiva (kun se näkyy kuvassa) | Apuviiva on nyt piirretty ympyrään. / Apuviivat … |
 | 3 | sin²α + cos²α = 1 | kun sädettä liikutetaan, piirretään kolmio: kateetit cos α ja sin α, hypotenuusa 1 | Kolmion sivut ovat cos α, sin α ja 1. |
 
@@ -315,10 +337,13 @@ Tarkennuksia:
   vasemmalla; "cos α" x-akselin yläpuolella, arvo alapuolella), joten ne eivät
   mene päällekkäin. Pystysuoralla viivalla luku on aina viivan vasemmalla
   puolella: pieni vaakaviiva ja sen oikealla puolella "1" näyttäisi luvulta −1.
-- **Tangentti säteen liikkuessa** (tangenttitasoilla, ei vihje): säteen jatke
-  piirretään suoralle x = 1 asti ja sille cyan jana korkeuteen tan α, jonka
-  päässä lukee "tan α". Kun leikkauspiste on kuvan ulkopuolella, viivat
-  jatkuvat kuvan reunan yli ja "tan α" jää reunaan.
+- **Tangentin kuva** (apuviiva x = 1, säteen jatke ja cyan jana korkeuteen
+  tan α, jonka päässä lukee "tan α", sekä "tan α" selitteessä) näkyy pelissä
+  vain, kun vihje on tuonut sen näkyviin: menetelmävihje "Etsi säde, joka
+  osuu pystysuoraan apuviivaan x = 1 …", "Apuviiva x = 1 on nyt piirretty …"
+  tai "Arvo c on merkitty suoralle x = 1". Se katoaa tehtävän vaihtuessa
+  (Vadim). Esittelyssä se näkyy tangentin vaiheissa. Kun leikkauspiste on
+  kuvan ulkopuolella, viivat jatkuvat kuvan reunan yli ja "tan α" jää reunaan.
 - **Arvon merkintä** vain, kun arvo näkyy kuvassa (|c| ≤ 1; tan: |c| ≤ 1,36) eikä
   ole 0.
 - **Neljännekset ja kahdeksasosat** jätetään pois, jos tehtävän kulma on
@@ -348,7 +373,9 @@ Tarkennuksia:
 - **Ylimääräinen piste** (ilmainen, ei vihje): kun kaikki ratkaisut on merkitty
   ja mukana on väärä piste, noin 3 s kuluttua tulee "Kaikki ratkaisut ovat
   mukana, mutta yksi piste on ylimääräinen." / "… mutta 2 pistettä on
-  ylimääräisiä."
+  ylimääräisiä." Jos vihje on jo näkyvissä, ilmaisvihje kirjoitetaan sen
+  alle eikä sen tilalle (Vadim), ja uusi vihje jättää sen paikalleen. Kun
+  jokin ratkaisu poistetaan, ilmaisvihje ei enää pidä paikkaansa ja katoaa.
 
 ## 9. Perustelut
 
@@ -362,3 +389,11 @@ Tarkennuksia:
 - **Itsestäänselvät vihjeet jätetään pois:** "Merkitsemäsi piste ei ole
   ratkaisu", kun ratkaisuja on yksi ja pisteitä yksi (tehtävä olisi muuten jo
   ratkennut), ja "Ympyrällä on vain yksi ratkaisupiste" tehtävissä α = 120°.
+
+## Juurimuodot
+
+Arvot kirjoitetaan niin kuin muistikolmiot ne antavat: 1/√2 ja 1/√3, ei
+√2/2 ja √3/3 (Vadim). Tasolla 7 puolet tehtävistä, joissa nämä ovat,
+kirjoitetaan vaikeammin, √2/2 ja √3/3 (`hardForm`); silloin myös akselille
+merkitty arvo ja selitys käyttävät samaa muotoa. Muistikolmiokorteissa ovat
+molemmat: 1/√2 = √2/2 ja 1/√3 = √3/3.

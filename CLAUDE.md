@@ -10,6 +10,7 @@ framework, no npm: plain HTML/CSS/JS. Every game is one self-contained
 index.html                         main page; the CATALOG array near the bottom lists everything
 assets/theme.css                   shared look for the whole site (colours, fonts, header, dialogs, buttons)
 assets/celebrate.js                shared streamers + confetti: celebrate({x, y}); usage in its header comment
+assets/intro.js                    shared pieces of a game's "Esittely" (guided intro): IntroKit; usage in its header
 games/<category>/<course>/<game>/index.html
 ```
 
@@ -33,6 +34,15 @@ games/<category>/<course>/<game>/index.html
 - Shared JS goes in `assets/` too, loaded with a plain `<script src>` before the
   game's own script (no modules). Yhtälövaaka and Yksikköympyrä use
   `assets/celebrate.js`; a game must not define its own `celebrate` function.
+  Both have an Esittely built on `assets/intro.js` (progress bar, tiles, Jatka,
+  the Esittely menu, timing, ghost hand) with its styles in theme.css; the steps and
+  how they set up the board stay in each game.
+- An intro must never look like the game (Vadim): while it runs the page is
+  lighter (`body.intro` redefines `--bg`, so label halos and cut-outs follow),
+  an "ESITTELY" tag stands before the progress bar, and "Ohita esittely" is a
+  neutral framed `.btn` (Vadim chose quiet: clearly a button, but students
+  shouldn't be invited to skip). Not red (danger, costs something) nor green
+  (x, cos α, right answers).
 
 ## Look and feel ("Techno" theme)
 
@@ -65,6 +75,22 @@ games/<category>/<course>/<game>/index.html
 
 - Every page uses `assets/theme.css`. Yksikköympyrä adds IBM Plex Sans as a
   fallback in `--math`, because Chakra Petch has no Greek (α, π).
+- Inverse trig functions are always written arcsin, arccos, arctan, never
+  sin⁻¹ (Vadim). In Yksikköympyrä `inv("sin")` gives "arcsin".
+- They are always talked about in radians, with the ranges of Vadim's graphs:
+  arcsin [−1, 1] → [−π/2, π/2], arccos [−1, 1] → [0, π], arctan
+  ℝ → (−π/2, π/2) (`RANGE`). The answer is the function's value
+  (arcsin(−√3/2) = −π/3, arctan ½ ≈ 0,46), not the point on the circle
+  (5π/3); the note says which point it is. The highlighted arc has filled
+  ends, open ones for arctan. Intervals are written with `iv()`, whose
+  brackets are in IBM Plex Sans: Chakra Petch's "(" looks like "[".
+- Yksikköympyrä writes 1/√2 and 1/√3 (as the memory triangles give them),
+  never √2/2 and √3/3, except on level 7, where half of the tasks with them
+  use the harder forms (`hardForm`, Vadim). The triangle cards show both.
+- Yksikköympyrä's tangent picture (the line x = 1, the extended ray, the blue
+  segment, "tan α" in the legend) shows in the game only after a hint has
+  brought it in (`hintFx.tan`), and goes with the task (Vadim). The intro
+  shows it in its tan steps.
 - `games/artsy_math/fractals/ifs_explorer` is a tool with a side panel, not a
   game: it keeps its own layout and nav bar, and its old colour names
   (`--paper`, `--panel`, `--rule`, `--well`, `--steel` …) are aliases of the
@@ -123,10 +149,10 @@ games/<category>/<course>/<game>/index.html
   the scale never breaks (it leans more the bigger the difference, up to about
   half the game's tilt, and waits). Inspired by Brilliant's lessons (one idea
   per screen, progress bar, answer tiles), not copied.
-- "basics" (7 steps) runs before level 1 and "balloons" (3 steps) before
-  level 3, the first time on a device (localStorage
-  `yhtalovaaka.intro.basics` / `.balloons`). "Ohita esittely" beside
-  "↺ Alusta" skips the whole intro, and that counts as seen. The
+- "basics" (7 steps) runs before level 1 (also after "Aloita alusta") and
+  "balloons" (3 steps) before level 3, every time: nothing is remembered
+  (Vadim dropped the localStorage flags; "Ohita esittely" beside
+  "↺ Alusta" skips it, so it doesn't get in the way). The
   "Esittely" button under the game replays it (basics, plus balloons from
   level 3 on); afterwards the same puzzle starts over with its time and moves
   as they were.
@@ -140,10 +166,45 @@ games/<category>/<course>/<game>/index.html
   a balloon from each (`| +1`) → x − 1 = 2 with the shelf (add a diamond).
 - A wrong number on a tile opens the box with that many diamonds, so the
   scale itself tips and shows why ("vasemmassa kupissa olisi yhteensä …").
-- Vadim chose: first time + button; the final solve is watched (ghost hand),
+- Vadim chose: every time + button; the final solve is watched (ghost hand),
   not done; answers are tiles; the balloon intro comes just before level 3.
 - Without the shelf the intro crops the shelf band off the picture so the
   scale is bigger. On a 375×667 phone two steps scroll a little (≤ 35 px).
+
+## Yksikköympyrä Esittely (built)
+
+- Same frame as Yhtälövaaka's (IntroKit): on the real circle with the game's
+  own aiming and placing, no lives, points or clock. A chapter runs before
+  the level that brings its idea in (`INTRO_AT`), every time (nothing is
+  remembered, see Yhtälövaaka). The Esittely button opens a
+  menu of the chapters up to the current level, all alike (Vadim tried the
+  latest in green: too loud); the latest is last and has the focus
+  (`IntroKit.menu`). The chosen chapter runs, then the same task goes
+  on with its clicks, hints and time.
+- kulmat (before 0): 90°, 210°, ghost sweep π and 2π, tiles "π/2 in degrees",
+  3π/2. sincostan (before 3): sin α = 1, all points with sin α = 0,
+  tiles "how many points with sin α = ½" (the line y = ½ shows why), both
+  points, tiles for sin α = 2 (the band −1 … 1, then "Ei ratkaisuja"),
+  tan α = 1, ghost turns the ray 180° while the tiles ask what happens to
+  the value of tan (Pysyy samana / Muuttuu; the turn holds 3 s at its end and
+  starts over until answered, a wrong answer restarts it, only the right one
+  gives Jatka), both points.
+  arc (before 5, in radians): which angle arcsin ½ gives (π/6, 5π/6 or both;
+  the arc [−π/2, π/2]), arccos(−½) and arctan(−1) with their arcs.
+  sisakulma (before 6): the ray is always α, also here (Vadim); a dashed ray
+  shows the angle inside the function. Shifted angles first:
+  sin(α − 30°) = 0 (the ghost turns the ray once, the dashed ray 30° behind,
+  then the student marks the points), place cos(α + 45°) = 0. Then 2α: tiles
+  "how many turns does 2α make while α makes one", tiles "where is α when
+  sin 2α = 1" (90° / 45° / 45° ja 225°; the turn loops and rests where the
+  dashed ray points up), place cos 2α = −1; then α/2: tiles ½ / 1 / 2, place
+  sin(α/2) = 1. Looping turns go on until answered. A wrong point says where
+  the dashed angle is ("Tässä 2α = 360° …").
+  Levels 1, 2, 4 and 7 have no chapter: Vadim dropped the radians and
+  "no angle readout" chapters and merged sin/cos with tan.
+- A wrong point turns red and the text says its angle (or why, e.g. "240°:n
+  kosini on myös −½, mutta se ei ole korostetulla kaarella"); it goes at the
+  next try. A wrong tile draws what it means.
 ## Equation chain (built)
 
 - Under the scale, where the single equation used to be. A row is written
@@ -191,5 +252,9 @@ games/<category>/<course>/<game>/index.html
   web server, not via `file://`. From the repo root:
   `python3 -m http.server 8000` → http://localhost:8000/
 - Check pages at phone size (390×844) as well as desktop.
+- Skipping levels (Vadim's testing, both games): type `xyz` on the page, or
+  open it with `?testi` (works on phones), and a "⏭ Ohita taso (testi)"
+  button appears under the game. It goes through `nextLevel()`/`enterLevel()`,
+  so a level's intro chapter still comes first. Keep it hidden from students.
 - Deploy = commit and push. When a game starts using `assets/theme.css`, push
   the theme file in the same commit.
