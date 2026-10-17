@@ -230,6 +230,73 @@ games/<category>/<course>/<game>/index.html
   with the step counts. The model comes from how the puzzle was built (take
   off the constant k, then the kb extra boxes), never from a search.
 
+## Yhtälösade (falling equations) — first draft, level 1 only
+
+- A Tetris-like well (9 columns, brick walls and floor). One equation falls
+  at a time from a random column. The player drags an operation brick from
+  the walls (+x, −x left; +1, −1 right) onto it: it's done to both sides and
+  the brick's count goes down (start 4/4/4/4, at most 9). The fall never slows,
+  not even while dragging (Vadim).
+- Drop area (Vadim): a rectangle 80 % of the interior width (between the
+  walls) wide and 1.2 times that tall, centred across the interior and on the
+  equation's middle up and down, clipped to the interior. An equation nearer
+  a wall than 10 % of the interior width moves its rectangle so that the
+  rectangle's edge is the equation's edge. With several equations in the air
+  (not yet possible) a point belongs to the nearest equation (distance to the
+  equation itself) if it is in that one's rectangle. The magenta frame shows it, checked every frame, so it
+  also works while the finger stands still.
+- Dropping an equation (Vadim), for one that can't be solved with what is
+  left: a swipe that starts in its drop area (same rule) pulls it down with
+  the finger, never up; pulled ≥ 1.5 cells, it falls fast (15 rows/s) when let
+  go, less and it just goes on falling. A double click / double tap in the
+  area (only a real tap counts as the first half) or ↓ / space (the lowest
+  equation) drops it at once. No "this can't be solved" hint (Vadim).
+- Each count is shown as a number and a battery bar: green > 2, yellow 2,
+  red 1, grey 0.
+- Equations are built backwards from x = n with kb boxes (−2 … 2, so +x is
+  needed too) and a constant k (−2 … 2) added to both sides, at most 3
+  operations. Negative answers cost the same as positive (Vadim: flip the
+  constants).
+- Economy (Vadim chose, from the white paper `yhtalosade-economy.pdf` in the
+  game's folder: D1 with the adaptive generator G₄): answers −6 … −1 and
+  3 … 8, and 0 with probability 10 % (Vadim). The generator looks at the
+  counts and only gives an equation the player can afford now (`plan`: by
+  hand with ±x, ±1 if possible, else with ±2 too, else a joker) whose bomb
+  leaves at least 4 in total, so a player who wastes nothing never gets
+  stuck, whatever the split. If waste empties every brick nothing special
+  happens. No "this can't be solved" signal (Vadim). Checked with the game's
+  own code: 0 stalls in 20 000 perfect 20-equation games; about 10 % zero,
+  45 % negative.
+- x = 0 → a cyan zero bomb (bounces like the others, clears nothing). It
+  gives one use of a new operation: +2 (40 %), −2 (40 %) or a joker "x = ?"
+  (20 %) that solves any equation at once. A new brick appears in its wall
+  slot the first time (+2 above +1, −2 below −1, joker above +x); after that
+  positive bombs can refill it too, the joker included (Vadim). A full one
+  passes the gift to another new operation.
+- Solved → the equation locks and glows for 0.5 s in its bomb's colour (gold,
+  magenta, cyan; Vadim) with a burst of sparks, still falling, then turns
+  into the bomb.
+- Solved (x = n or n = x) → it locks and becomes a bomb "n" (yellow if
+  positive, magenta if negative) in a flickering ring of flames of its own
+  colour, bigger for a bigger |n| (`fireSize`). A positive bomb gives n back:
+  n splits at random (fair shuffle) into 1 … 4 parts that fly to different
+  bricks; a part that would take a brick past 9 goes on to a random brick
+  with room (Vadim), and only when all are full is the rest lost. A negative
+  bomb clears trash within a radius growing with |n|; the trash above falls
+  into the holes, column by column, in every column (kept so, Vadim). A
+  positive bomb clears nothing.
+- A bomb moves like a ping-pong ball (Vadim): the solving operation knocks it
+  sideways, away from where it was dropped (a parabola under gravity), it
+  bounces off walls, floor and trash, can drop into a 1-cell valley or roll
+  under an overhang (radius 0.4 cell), and explodes at its first touch 1.5 s
+  after it first touched something. Settings at the top (`GRAVITY`, `VMAX`,
+  `BOUNCE`, `KICK`, `FUSE`), tuned by eye. Tunnels under overhangs are
+  entered rarely: the ball has to land beside the entrance and roll in.
+- Unsolved on landing → trash: single grey bricks, the equation's text faded
+  on them while the block is whole. Trash above the red line → Game Over.
+- 20 equations, 100 points each. All numbers are to be balanced later; no
+  Esittely yet.
+
 ## Open questions (ask Vadim before deciding)
 
 - "Weighing": the scale accepts a box removed on one side and x diamonds on the

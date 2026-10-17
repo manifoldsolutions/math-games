@@ -1,0 +1,985 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage[capitalise,noabbrev]{cleveref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\E}{\mathbb{E}}
+\renewcommand{\P}{\mathbb{P}}
+\newcommand{\pX}{\ensuremath{\mathord{+}\mathsf{x}}}
+\newcommand{\mX}{\ensuremath{\mathord{-}\mathsf{x}}}
+\newcommand{\pU}{\ensuremath{\mathord{+}\mathsf{1}}}
+\newcommand{\mU}{\ensuremath{\mathord{-}\mathsf{1}}}
+\newcommand{\dbl}{\ensuremath{\mathord{\times}\mathsf{2}}}
+\newcommand{\hlv}{\ensuremath{\mathord{\div}\mathsf{2}}}
+\newcommand{\sq}{\ensuremath{\surd}}
+\newcommand{\abs}[1]{\lvert #1\rvert}
+\newcommand{\norm}[1]{\lVert #1\rVert}
+\newcommand{\pos}[1]{{#1}^{+}}
+\DeclareMathOperator{\sgn}{sgn}
+
+\title{The economy of \emph{Yhtälösade}:\\[2pt]
+\large when can a resource-limited equation game never be lost?}
+\author{Technical note for the Matikkapelit project}
+\date{17 October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+In \emph{Yhtälösade} linear equations fall down a well and the player solves them by
+dragging operation bricks ($\pX$, $\mX$, $\pU$, $\mU$) onto them; every use costs one unit
+of a finite stock. A solved equation $x=\xi$ becomes a bomb: for $\xi>0$ it returns $\xi$
+units to the stock, split at random between the bricks, and for $\xi<0$ it clears trash.
+We ask which constraints on the solutions $\xi_1,\dots,\xi_N$ and on the operations
+needed make the game impossible to lose for a player who solves optimally.
+We show that for the current level the cheapest solution is unique, so the game reduces
+to an exact ledger of demand and reward vectors.
+A conservation law then yields a balance inequality that any never-losing design must
+satisfy. The current parameters violate it by $457/404\approx1.13$ units per
+equation, and even a clairvoyant reward rule could not save more than $16\%$ of
+20-equation games. The random split makes things worse: we prove that under it no
+sure guarantee exists short of a starting stock covering all future demand.
+We then give two designs with sure guarantees, both with proofs:
+a \emph{deficit-filling} reward rule, whose condition is a Lindley-queue inequality on
+the sequence $(\delta_i-\pos{\xi_i})$, and an \emph{adaptive generator} that works
+with any reward rule.
+Finally we extend the cost theory to doubling, halving and square roots. The cost of
+an equation then becomes a capped signed-binary weight, the order of the operations
+starts to matter, and $\pm$-bombs act as automatic stabilisers of the economy.
+\end{abstract}
+
+\tableofcontents
+
+%======================================================================
+\section{Introduction}\label{sec:intro}
+
+\emph{Yhtälösade} (``equation rain'') is a Tetris-like game for Finnish upper-secondary
+students. One equation at a time falls from the top of a well with brick walls. Four
+special bricks in the walls carry the operations $\pX$, $\mX$, $\pU$ and $\mU$, each with
+a count. Dragging a brick onto the falling equation applies its operation to both sides
+and lowers the count by one. When the equation reads $x=\xi$ it turns into a bomb
+labelled $\xi$:
+\begin{itemize}[nosep]
+\item a positive bomb returns $\xi$ units of operations, split at random between the bricks;
+\item a negative bomb clears trash around the place where it lands.
+\end{itemize}
+An equation that reaches the ground unsolved stays there as trash, and trash above a red
+line ends the game.
+
+In the first test game the designer, who believes they played optimally, ran out of
+$\mX$ at the third equation and out of $\mU$ at the fifth. After that only $\pU$ was
+left, and almost nothing could be solved. This note explains why that outcome is
+typical, not bad luck. It then answers the designer's question: \emph{what constraints
+on the solutions $\xi_1,\dots,\xi_N$ and on the operations they require guarantee that
+an optimally playing student never loses?}
+
+\paragraph{Results in brief.}
+\begin{enumerate}[label=(\roman*),nosep]
+\item On the current level the optimal play for each equation is unique up to order
+  and uses a demand vector $d(E)$ that does not depend on the solution
+  (\cref{prop:cost}). The game therefore reduces to an exact ledger
+  (\cref{sec:ledger}).
+\item \emph{Balance law} (\cref{thm:balance}). A perfect player survives $N$ rounds
+  only if, for every $i$,
+  $\sum_{t\le i}\delta_t-\sum_{t<i}\pos{\xi_t}\le\norm{c_0}$, where $\delta_t$ is the
+  number of operations equation $t$ needs and $\norm{c_0}$ the starting stock. In the
+  long run this means $(1-q)\,\nu_+\ge\bar\delta$, where $q$ is the share of negative
+  solutions and $\nu_+$ the mean positive solution. The current generator has
+  $(1-q)\nu_+=1.75$ against $\bar\delta=2.88$.
+\item \emph{Random rewards cannot be relied on} (\cref{thm:diffuse}). Under the current
+  random split, survival is certain only if the starting stock covers the total future
+  demand, brick by brick. A perfect player solves all 20 equations in only about $0.2\%$
+  of games, and the first stall comes on average at equation $5.5$
+  (\cref{tab:sim}).
+\item \emph{Sure guarantees.} With a deficit-filling reward rule,
+  survival is guaranteed whenever a Lindley queue driven by $(\delta_i-\pos{\xi_i})$
+  stays below the starting buffer (\cref{thm:main}). One concrete instance: every
+  negative solution is followed by a positive one that repays it. With $c_0=(5,5,5,5)$
+  this keeps half of the solutions negative and all of them in $\pm\{1,\dots,6\}$
+  (\cref{cor:alternating}). Separately, a generator that looks at the stock guarantees
+  survival under \emph{any} reward rule (\cref{thm:adaptive}).
+\item \emph{Extensions} (\cref{sec:double,sec:halve,sec:sqrt}). With $\dbl$ or $\hlv$ the
+  cheapest cost is $m+w_m(A)+w_m(B)$, with $w_m$ a capped signed-binary weight. The order
+  of the operations matters, and the cheapest demand vector need not be unique.
+  Square roots create $\pm$-bombs that both refuel and clean: a third of symmetric
+  quadratics is enough to cancel the current deficit.
+\end{enumerate}
+All numerical claims were checked by exact computation, by exhaustive search or by
+Monte Carlo simulation; see \cref{app:methods}.
+
+%======================================================================
+\section{The model}\label{sec:model}
+
+\subsection{Equations and operations}
+Throughout, an \emph{equation} is $U(x)=L(x)$ with affine sides and
+\begin{equation}\label{eq:diff}
+U(x)-L(x)=\Delta\,(x-\xi),\qquad \Delta>0,\ \xi\in\Z\setminus\{0\}.
+\end{equation}
+$U$ is the side with the larger coefficient of $x$ and $\xi$ is the solution. (To avoid a
+clash with the variable $x$, we write $\xi_i$ for the solutions $x_1,\dots,x_N$ of the
+question.) On the current level $\Delta=1$. The \emph{bricks} form a finite set $J$, on
+the current level $J=\{\pX,\mX,\pU,\mU\}$, and brick $j$ applies its operation to both
+sides. A \emph{stock} (inventory) is a vector $c\in\N^J$, and its \emph{total} is
+$\norm{c}:=\sum_j c(j)$, the number of operations it holds. This is the $\ell^1$ norm,
+which on $\N^J$ is the plain sum; we use it for all vectors in $\N^J$ (stocks, demands,
+rewards, counts of operations used), while $\abs{z}$ is always the absolute value of an
+integer.
+Inequalities between vectors are componentwise, and $\pos z=\max(z,0)$,
+$z^-=\max(-z,0)$.
+
+\subsection{A round of the game}
+Equations $E_1,E_2,\dots$ fall one at a time; the next one appears only after the
+previous one has been resolved. In round $i$, with stock $c_{i-1}$:
+\begin{itemize}[nosep]
+\item each operation the player applies costs one unit of its brick, and only a brick with
+  a positive count can be used;
+\item as soon as the equation reads $x=\xi$ or $\xi=x$ it locks and becomes a bomb;
+\item a bomb with $\xi>0$ adds a \emph{reward} $r_i\in\N^J$ with $\norm{r_i}=\xi$ to the
+  stock, chosen by an \emph{allocation rule};
+\item a bomb with $\xi<0$ adds nothing but clears trash (\cref{sec:trash});
+\item an unsolved equation that lands becomes a trash block one row high.
+\end{itemize}
+
+\paragraph{The current level (``D0'').} The parameters are:
+\begin{itemize}[nosep]
+\item starting stock $c_0=(3,3,5,5)$ (order $\pX,\mX,\pU,\mU$) and $N=20$ rounds;
+\item $\xi$ uniform on $\pm\{1,\dots,6\}$;
+\item each equation is built backwards from $x=\xi$ by adding $k_b$ boxes and a
+  constant $k$ to both sides: $(1+k_b)x+k=k_bx+\xi+k$, with the sides swapped at random;
+\item $k_b$ uniform on the multiset $\{-2,-1,-1,0,1,1,2\}$, $k$ uniform on
+  $\{-3,\dots,3\}$; pairs with $\abs{k_b}+\abs{k}\notin[1,4]$ are rejected, and those with
+  $\abs{k_b}+\abs{k}=1$ are kept with probability $2/5$;
+\item the random split rule: $k\sim U\{1,\dots,\min(\xi,4)\}$ parts, each starting at 1,
+  the remaining $\xi-k$ units added to uniformly random parts, and the parts sent to $k$
+  distinct random bricks.
+\end{itemize}
+
+\begin{definition}[Perfect player, stall, survival]\label{def:play}
+The \emph{perfect player} has no time pressure, wastes no operations, and solves the
+current equation whenever some solving sequence is affordable, using a cheapest
+affordable one. Round $i$ \emph{stalls} if no solving sequence is affordable with
+$c_{i-1}$. The game is \emph{strongly survived} over $N$ rounds if no round stalls.
+\end{definition}
+
+``Never lost with optimal bombing'' is taken to mean strong survival of the perfect
+player. \Cref{sec:trash} shows that the game's formal end, Game Over, is out of reach in
+a 20-equation game on a typical phone. The loss players actually experience is the
+stall: once the stock is depleted, every later equation turns into trash.
+
+%======================================================================
+\section{Solving cost on the current level}\label{sec:cost}
+
+\begin{lemma}[Invariants]\label{lem:inv}
+Every operation preserves $U-L$, hence $\Delta$ and $\xi$, and $U$ stays the side with the
+larger coefficient.
+\end{lemma}
+\begin{proof}
+Each of $\pX,\mX,\pU,\mU$ adds the same affine function $g\in\{x,-x,1,-1\}$ to both sides,
+so $(U+g)-(L+g)=U-L$.
+\end{proof}
+
+By \eqref{eq:diff} with $\Delta=1$, every level-one equation with solution $\xi$ can be
+written uniquely as
+\begin{equation}\label{eq:pq}
+U=(1+p)x+q,\qquad L=px+(\xi+q),\qquad (p,q)\in\Z^2 .
+\end{equation}
+The generator produces $(p,q)=(k_b,k)$.
+
+\begin{lemma}[Coordinates]\label{lem:coord}
+The operations act on $(p,q)$ as unit translations:
+$\pX\colon p\mapsto p+1$, $\mX\colon p\mapsto p-1$, $\pU\colon q\mapsto q+1$ and
+$\mU\colon q\mapsto q-1$. The equation reads $x=\xi$ or $\xi=x$ if and only if
+$(p,q)=(0,0)$.
+\end{lemma}
+\begin{proof}
+The first claim is immediate from \eqref{eq:pq}. For the second, a solved equation has
+one side equal to $x$ and the other a constant. By \cref{lem:inv} the coefficient of $U$
+exceeds that of $L$ by one, so $U=x$ and $L=\xi$, i.e.\ $1+p=1$ and $q=0$. Conversely
+$(p,q)=(0,0)$ gives $U=x$, $L=\xi$.
+\end{proof}
+
+\begin{proposition}[Cost and forced demand]\label{prop:cost}
+Let $n_j$ be the number of uses of brick $j$ in a sequence of operations. The sequence
+solves $E=(p,q;\xi)$ if and only if $n_{\mX}-n_{\pX}=p$ and $n_{\mU}-n_{\pU}=q$.
+Consequently
+\[
+n\;\ge\;d(E):=(p^-,\;\pos p,\;q^-,\;\pos q)
+\]
+componentwise for every solving sequence. The cheapest cost is
+$\delta(E):=\norm{d(E)}=\abs p+\abs q$, and it is attained exactly by the sequences
+that use $d(E)$, in any order.
+\end{proposition}
+\begin{proof}
+The translations commute, so the final point is
+$(p-n_{\mX}+n_{\pX},\,q-n_{\mU}+n_{\pU})$, and \cref{lem:coord} gives the first claim.
+From $n_{\mX}=p+n_{\pX}$ we get $n_{\mX}\ge p$ and $n_{\mX}\ge0$, so
+$n_{\mX}\ge\pos p$; likewise $n_{\pX}\ge p^-$, $n_{\mU}\ge\pos q$ and $n_{\pU}\ge q^-$.
+Summing gives $\norm n\ge\abs p+\abs q$, with equality if and only if every inequality is
+tight, i.e.\ $n=d(E)$. A minimal sequence never passes through $(0,0)$ before its end,
+so the lock-on-solve rule does not interfere.
+\end{proof}
+
+\begin{corollary}[Optimal bombing is unique and dominant]\label{cor:dominant}
+On the current level the perfect player solves $E$ with exactly $d(E)$. Among all ways of
+solving $E$ this leaves the largest stock in every brick. Hence the whole economy is
+described by the pairs $(d_i,\xi_i)$, $d_i:=d(E_i)$, $\delta_i:=\norm{d_i}$.
+\end{corollary}
+
+\begin{remark}[Negative solutions cost the same]\label{rem:symmetry}
+The demand $d(E)$ does not depend on $\xi$. The reflection
+$(p,q,\xi)\mapsto(p,-q,-\xi)$, which turns $ax+b=cx+d$ into $ax-b=cx-d$, preserves
+$\delta$ and only swaps the roles of $\pU$ and $\mU$.
+\end{remark}
+
+\begin{table}[t]\centering\small
+\caption{Exact demand statistics of the generators.
+D0 is the current level; D1 is the rebalanced proposal of \cref{sec:recommend}
+($\abs{k_b}\le2$, $\abs k\le 2$, $\delta\le3$, cost-1 pairs kept with probability $1/2$,
+$\xi\in\{-6,\dots,-1\}\cup\{3,\dots,8\}$).}\label{tab:demand}
+\begin{tabular}{lcccccc}
+\toprule
+ & $\P(\delta{=}1,2,3,4)$ & $\E\delta$ & $\E d(\pm\mathsf x)$ & $\E d(\pm\mathsf 1)$ & $\E\pos\xi$ & $\E[\pos\xi-\delta]$\\
+\midrule
+D0 & $\tfrac{6}{101},\tfrac{30}{101},\tfrac{35}{101},\tfrac{30}{101}$ & $\tfrac{291}{101}\approx2.881$ & $\tfrac{57}{101}\approx0.564$ & $\tfrac{177}{202}\approx0.876$ & $\tfrac74$ & $-\tfrac{457}{404}\approx-1.131$\\[2pt]
+D1 & $\tfrac19,\tfrac49,\tfrac49,0$ & $\tfrac73\approx2.333$ & $\tfrac59\approx0.556$ & $\tfrac{11}{18}\approx0.611$ & $\tfrac{11}4$ & $+\tfrac5{12}\approx+0.417$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%======================================================================
+\section{The ledger and the balance law}\label{sec:ledger}
+
+By \cref{cor:dominant}, as long as no round stalls the stock evolves as
+\begin{equation}\label{eq:ledger}
+c_i=c_{i-1}-d_i+r_i,\qquad \norm{r_i}=\pos{\xi_i},
+\end{equation}
+and round $i$ stalls if and only if $c_{i-1}\not\ge d_i$.
+
+\begin{proposition}[Conservation]\label{prop:conservation}
+If rounds $1,\dots,i$ are all solved by the perfect player, then
+$\norm{c_i}=\norm{c_0}+\sum_{t\le i}(\pos{\xi_t}-\delta_t)$. A real player who wastes
+$W_i\ge0$ operations ends with $W_i$ units less.
+\end{proposition}
+\begin{proof}
+Take the norm of \eqref{eq:ledger}, using $\norm{d_t}=\delta_t$ and $\norm{r_t}=\pos{\xi_t}$.
+\end{proof}
+
+\begin{theorem}[Balance law]\label{thm:balance}
+\leavevmode
+\begin{enumerate}[label=(\alph*),nosep]
+\item If the perfect player strongly survives rounds $1,\dots,N$, then for every $i\le N$
+  \begin{equation}\label{eq:balance}
+  \sum_{t\le i}\delta_t-\sum_{t<i}\pos{\xi_t}\;\le\;\norm{c_0}.
+  \end{equation}
+\item If an infinite sequence is strongly survived, then
+  $\liminf_N\frac1N\sum_{t\le N}(\pos{\xi_t}-\delta_t)\ge0$. In terms of the empirical
+  share $q$ of negative solutions, the mean positive solution $\nu_+$ and the mean
+  demand $\bar\delta$, this is the long-run condition
+  \begin{equation}\label{eq:balance-mean}
+  (1-q)\,\nu_+\;\ge\;\bar\delta .
+  \end{equation}
+  If in addition the stock stays bounded, \eqref{eq:balance-mean} holds with equality in
+  the limit.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+(a) Round $i$ is solvable only if $c_{i-1}\ge d_i$, which forces
+$\norm{c_{i-1}}\ge\delta_i$; insert \cref{prop:conservation}.
+(b) Dividing \eqref{eq:balance} by $N$ gives
+$\frac1N\sum_{t<N}(\pos{\xi_t}-\delta_t)\ge(\delta_N-\norm{c_0})/N\ge-\norm{c_0}/N$.
+Moreover $\frac1N\sum\pos{\xi_t}=(1-q)\nu_+$ and $\frac1N\sum\delta_t=\bar\delta$.
+A bounded stock also bounds the sum from above by \cref{prop:conservation}.
+\end{proof}
+
+The balance law is a property of the sequence alone, so no reward rule can repair a
+violation of it. For the current level, \cref{tab:demand} gives
+$\E[\pos\xi-\delta]=-457/404$. By the strong law of large numbers, every long game
+therefore stalls almost surely. For $N=20$ the bound is quantitative:
+
+\begin{theorem}[Allocation-free upper bound]\label{thm:allocfree}
+Let the rounds be i.i.d. Under \emph{any} allocation rule, even one that knows the
+future,
+\[
+\P(\text{strong survival over }N\text{ rounds})\;\le\;
+\bar p_N:=\P\Bigl(\forall i\le N:\ \norm{c_0}+\sum_{t<i}(\pos{\xi_t}-\delta_t)\ge\delta_i\Bigr).
+\]
+For D0 with $\norm{c_0}=16$, exact dynamic programming over the total stock gives
+$\bar p_5=0.987$, $\bar p_{10}=0.634$ and $\bar p_{20}=0.162$.
+\end{theorem}
+\begin{proof}
+By \cref{thm:balance}(a), strong survival implies the event in $\bar p_N$, and that event
+depends only on $(\delta_t,\xi_t)$, not on how rewards are split.
+\end{proof}
+
+So with the current generator at most $16\%$ of 20-equation games could be survived even
+by an ideal reward rule; the random split achieves $0.17\%$ (\cref{tab:sim}). The gap is
+due to misallocation, which is the subject of \cref{sec:random}. Once the stock is low,
+the game cannot recover by itself:
+
+\begin{proposition}[Poverty trap]\label{prop:trap}
+The empty stock is absorbing, since every equation has $\delta\ge1$. Under D0, a stock
+holding only $\pU$ (at least three units) solves the next equation with probability
+$6/101\approx0.059$, and earns a reward with probability $3/101\approx0.030$.
+\end{proposition}
+\begin{proof}
+With only $\pU$ available, $d(E)\le c$ means $p=0$ and $-3\le q<0$. From the
+generator's joint law (\cref{app:methods}) these pairs have total probability
+$\frac1{101}+\frac5{202}+\frac5{202}=\frac6{101}$, and $\xi>0$ independently with
+probability $\frac12$.
+\end{proof}
+
+This is exactly the designer's end state: about $34$ rounds per rewarded solve on
+average.
+
+%======================================================================
+\section{Random allocation}\label{sec:random}
+
+\begin{definition}
+An allocation rule is \emph{$\eta$-diffuse} ($\eta>0$) if, for every positive bomb and
+every brick $j$, $\P(r(j)=0\mid\text{past})\ge\eta$.
+\end{definition}
+
+\begin{lemma}\label{lem:diffuse}
+The current split rule, implemented with an unbiased shuffle, is $\tfrac38$-diffuse and
+gives $\E[r(j)\mid\xi]=\xi/4$ for every $j$.
+\end{lemma}
+\begin{proof}
+With $M=\min(\xi,4)$ and $k$ parts on $k$ random bricks out of four,
+$\P(r(j)=0)=\frac1M\sum_{k=1}^M(1-\frac k4)=1-\frac{M+1}8\ge\frac38$.
+The bricks are exchangeable, so each brick receives $\xi/4$ on average.
+\end{proof}
+
+\begin{theorem}[Random rewards cannot be relied on]\label{thm:diffuse}
+Fix a sequence $E_1,\dots,E_N$ and an $\eta$-diffuse rule. Strong survival has
+probability one if and only if $c_0\ge\sum_{t\le N}d_t$.
+\end{theorem}
+\begin{proof}
+($\Leftarrow$) Rewards are non-negative, so as long as no round has stalled,
+$c_{i-1}\ge c_0-\sum_{t<i}d_t\ge d_i$.
+($\Rightarrow$) Suppose $c_0(j)<\sum_{t\le N}d_t(j)$ and let $i^*$ be the first $i$
+with $\sum_{t\le i}d_t(j)>c_0(j)$. Let $A$ be the event that no bomb before round $i^*$
+sends anything to $j$. By the chain rule and diffuseness, $\P(A)\ge\eta^{i^*-1}>0$. On
+$A$, either an earlier round stalls, or
+$c_{i^*-1}(j)=c_0(j)-\sum_{t<i^*}d_t(j)<d_{i^*}(j)$ and round $i^*$ stalls.
+\end{proof}
+
+Under D0 the expected 20-round demand on $\pU$ alone is $20\cdot\frac{177}{202}\approx17.5$,
+against $c_0(\pU)=5$, so a sure guarantee is out of the question with random rewards.
+The best one can hope for is a probabilistic guarantee, and its sign is decided brick by
+brick by the \emph{drift}
+\[
+\mu_j:=\E r(j)-\E d(j)\qquad(\text{per round, }r(j):=0\text{ when }\xi\le0).
+\]
+
+\begin{theorem}[Negative drift: exponential collapse]\label{thm:negdrift}
+Let the rounds be i.i.d. and let rewards depend only on $\xi$ and fresh randomness. If
+$\mu_j<0$ for some $j$, then for $N>c_0(j)/\abs{\mu_j}$
+\[
+\P(\text{strong survival over }N)\le
+\exp\Bigl(-\frac{2\,(N\abs{\mu_j}-c_0(j))^2}{N\,s_j^2}\Bigr),
+\]
+where $s_j$ is the range of $r(j)-d(j)$.
+\end{theorem}
+\begin{proof}
+Let $X_t=r_t(j)-d_t(j)$ (the reward drawn as if round $t$ were solved). The $X_t$ are
+i.i.d.\ with mean $\mu_j$. On the survival event \eqref{eq:ledger} gives
+$0\le c_N(j)=c_0(j)+\sum_{t\le N}X_t$, so
+$\sum_t(X_t-\mu_j)\ge N\abs{\mu_j}-c_0(j)>0$. Hoeffding's inequality bounds the
+probability of this.
+\end{proof}
+
+For D0 with the unbiased split, $\mu_{\pm\mathsf x}=\frac7{16}-\frac{57}{101}=-\frac{205}{1616}\approx-0.127$
+and $\mu_{\pm\mathsf 1}=\frac7{16}-\frac{177}{202}=-\frac{709}{1616}\approx-0.439$: every brick
+drifts down, and the constant bricks drift fastest. Hoeffding is loose at $N=20$;
+simulation (\cref{tab:sim}) shows that only $0.17\%$ of games are survived and that the
+first stall comes at round $5.5$ on average. When all drifts are positive, the classical
+Cramér--Lundberg argument gives a bound that holds for an unlimited number of rounds:
+
+\begin{theorem}[Positive drift: Lundberg bound]\label{thm:lundberg}
+Under the assumptions of \cref{thm:negdrift}, let $\theta_j>0$ satisfy
+$\E[e^{-\theta_j r(j)}]\,\E[e^{\theta_j d(j)}]\le1$. Then the probability that brick $j$
+ever causes a stall is at most $e^{-\theta_j(c_0(j)-d_j^{\max}+1)}$, and
+$\P(\text{some stall ever})\le\sum_j e^{-\theta_j(c_0(j)-d_j^{\max}+1)}$.
+\end{theorem}
+\begin{proof}
+Let $W_i=c_0(j)+\sum_{t<i}r_t(j)-\sum_{t\le i}d_t(j)$. If the first stall happens in
+round $i$ because of $j$, then all earlier rounds were solved and $W_i=c_{i-1}(j)-d_i(j)<0$.
+Write $W_i=W_1+\sum_{t=2}^iZ_t$ with $Z_t=r_{t-1}(j)-d_t(j)$. Different $Z_t$ involve
+disjoint rounds, and within a round $\xi$ and $(k_b,k)$ are drawn independently, so the
+$Z_t$ are i.i.d.\ with $\E e^{-\theta_jZ}\le1$. Hence $M_i=e^{-\theta_j(W_i-W_1)}$ is a
+non-negative supermartingale. Let $\tau=\inf\{i:W_i<0\}$; since $W$ is integer-valued,
+$M_\tau\ge e^{\theta_j(W_1+1)}$ on $\{\tau<\infty\}$. Optional stopping gives
+$\P(\tau\le n)\,e^{\theta_j(W_1+1)}\le\E M_{\tau\wedge n}\le1$. Let $n\to\infty$ and use
+$W_1\ge c_0(j)-d_j^{\max}$. The last claim is a union bound.
+\end{proof}
+
+\begin{example}
+For the rebalanced generator D1 with the random split, all drifts are positive
+($\frac{19}{144}$ for $\pm\mathsf x$ and $\frac{11}{144}$ for $\pm\mathsf 1$). The adjustment
+coefficients are $\theta_{\pm\mathsf x}=0.127$ and $\theta_{\pm\mathsf1}=0.066$. To push the
+Lundberg bound below $0.35$, a stock of $30$ \emph{per brick} is needed.
+Probabilistic guarantees with random rewards are expensive, because the buffer grows like
+$\theta^{-1}\log(K/\varepsilon)$.
+\end{example}
+
+\begin{remark}[Matching principle]\label{rem:matching}
+If a rule sends a share $\pi_j$ of each reward to brick $j$, then
+$\mu_j=\pi_j\E\pos\xi-\E d(j)$. The uniform shares $\pi_j=\frac14$ ignore that, in D0,
+the constant bricks are needed $1.55$ times as often as the $x$-bricks. Making every
+$\mu_j\ge0$ then needs $\E\pos\xi\ge4\max_j\E d(j)=3.50$, whereas the balance law only
+asks for $2.88$. Demand-proportional shares $\pi_j=\E d(j)/\E\delta$ give
+$\mu_j=\pi_j(\E\pos\xi-\E\delta)$, so every brick inherits the sign of the global
+balance.
+\end{remark}
+
+\begin{remark}[Implementation detail]\label{rem:shuffle}
+The game shuffles the bricks by sorting them with a random comparator,
+\[\texttt{sort(() => Math.random() - .5)},\]
+which is not a uniform shuffle. Measured in V8 (Node 22, the engine of Chrome), a one-part reward goes
+to $\pX$, $\mX$, $\pU$, $\mU$ with probabilities $0.36$, $0.14$, $0.19$, $0.31$. This
+lowers $\mu_{\mX}$ from $-0.127$ to about $-0.160$. In the test game $\mX$ was the first
+brick to run out. A Fisher--Yates shuffle removes the bias.
+\end{remark}
+
+%======================================================================
+\section{Designs with sure guarantees}\label{sec:sure}
+
+\Cref{thm:diffuse} shows that a sure guarantee needs either a reward rule that knows
+what is needed, or a generator that knows what is in stock. We treat both.
+
+\subsection{Deficit filling and the Lindley queue}
+
+\begin{definition}
+\emph{Deficit filling} sends each reward unit, one at a time, to a brick minimising
+$c(j)-c_0(j)$, the count relative to its starting level (ties broken arbitrarily). The
+\emph{total deficit} is $T(c)=\sum_j(c_0(j)-c(j))^+$.
+\end{definition}
+
+\begin{lemma}\label{lem:lindley}
+Under deficit filling, if round $i$ is solved then
+$T(c_i)\le\bigl(T(c_{i-1})+\delta_i-\pos{\xi_i}\bigr)^+$.
+\end{lemma}
+\begin{proof}
+Paying $d_i$ raises each term $(c_0(j)-c(j))^+$ by at most $d_i(j)$, so $T$ grows by at
+most $\delta_i$. Now add the $\pos{\xi_i}$ reward units one by one. While $T>0$, some brick
+is below its starting level, so the chosen brick is too, and the unit lowers $T$ by
+exactly one. When $T=0$ it stays $0$.
+\end{proof}
+
+\begin{theorem}[Main theorem: sure survival under deficit filling]\label{thm:main}
+Define the Lindley sequence $\Lambda_0=0$,
+$\Lambda_i=(\Lambda_{i-1}+\delta_i-\pos{\xi_i})^+$. Under deficit filling the perfect
+player strongly survives rounds $1,\dots,N$ whenever
+\begin{equation}\label{eq:main}
+\Lambda_{i-1}\;\le\;\min_{j}\bigl(c_0(j)-d_i(j)\bigr)\qquad(1\le i\le N).
+\end{equation}
+In particular it suffices that $\min_jc_0(j)\ge L+\max_{i<N}\Lambda_i$, where
+$L=\max_{i,j}d_i(j)$.
+\end{theorem}
+\begin{proof}
+By induction, assume rounds $1,\dots,i-1$ were solved. Since $z\mapsto(z+a)^+$ is
+monotone, \cref{lem:lindley} gives $T(c_{i-1})\le\Lambda_{i-1}$. Then for every $j$,
+$c_{i-1}(j)\ge c_0(j)-(c_0(j)-c_{i-1}(j))^+\ge c_0(j)-T(c_{i-1})\ge c_0(j)-\Lambda_{i-1}\ge d_i(j)$
+by \eqref{eq:main}, so round $i$ is solvable.
+\end{proof}
+
+\Cref{eq:main} is the requested constraint on the solutions: it couples each
+$\xi_i$ to the demands only through the scalar queue $\Lambda$. A negative $\xi_i$ is a
+\emph{debt} $\delta_i$ joining the queue, and a positive $\xi_i$ with
+$\xi_i>\delta_i$ \emph{serves} it. The simplest sequences keep the queue short by placing
+each debt directly before its repayment:
+
+\begin{corollary}[Debt, then repayment]\label{cor:alternating}
+Suppose the rounds form consecutive blocks of two kinds:
+\begin{itemize}[nosep]
+\item a single round with $\xi\ge\delta$;
+\item a pair (negative round, positive round) whose positive solution repays both,
+  $\xi_{\rm pos}\ge\delta_{\rm pos}+\delta_{\rm neg}$.
+\end{itemize}
+Then $\Lambda_i\le P:=\max\delta$ for all $i$, so $c_0(j)\ge L+P$ guarantees strong
+survival under deficit filling. With $P=3$ and $\abs{k_b},\abs k\le2$ (so $L=2$),
+$c_0=(5,5,5,5)$ is enough. All solutions stay in $\pm\{1,\dots,6\}$, because a
+repayment needs at most $\delta_{\rm pos}+\delta_{\rm neg}\le6$, and strict alternation
+makes exactly half of the solutions negative.
+\end{corollary}
+\begin{proof}
+Single blocks keep $\Lambda=0$. In a pair, $\Lambda=\delta_{\rm neg}\le P$ after the
+negative round and $\Lambda=(\delta_{\rm neg}+\delta_{\rm pos}-\xi_{\rm pos})^+=0$ after
+the positive one. Condition \eqref{eq:main} reads $0\le c_0(j)-d_i(j)$ in the first
+round of a block and $\delta_{\rm neg}\le c_0(j)-d_i(j)$ in the second, both implied
+by $c_0(j)\ge L+P$.
+\end{proof}
+
+\begin{remark}[Repay, do not prepay]
+Before any debt exists, deficit filling spreads surplus evenly over the $K$ bricks, so
+raising every brick by $D$ costs $KD$ units. Repaying an existing debt of $D$ costs $D$.
+Debts should therefore come \emph{before} their repayments. This is convenient: the
+generator, which builds equations backwards, already knows the debt when it picks the
+next positive solution.
+\end{remark}
+
+\begin{proposition}[Random sequences under deficit filling]
+If the rounds are i.i.d.\ with $\E\pos\xi>\E\delta$, then $\Lambda$ is a stable queue and
+$\P(\Lambda_i\ge b)\le e^{-\theta b}$ for all $i$, where $\theta>0$ solves
+$\E e^{\theta(\delta-\pos\xi)}=1$. Hence
+$\P(\text{a stall within }N\text{ rounds})\le N\,e^{-\theta(\min_jc_0(j)-L+1)}$.
+\end{proposition}
+\begin{proof}
+By the Lindley representation, $\Lambda_i$ has the law of
+$\max_{0\le k\le i}$ of the partial sums of the reversed increments, which is dominated
+by the supremum of a random walk with negative drift. The Lundberg argument of
+\cref{thm:lundberg} bounds that supremum. A stall in round $i$ needs
+$\Lambda_{i-1}\ge\min_jc_0(j)-L+1$; take a union bound over $i\le N$.
+\end{proof}
+
+For D1, $\theta=0.092$; the bound is loose, but simulation shows a large real effect
+(\cref{tab:sim}). With $c_0=(4,4,4,4)$, deficit filling raises the share of survived
+20-round games from $16\%$ to $66\%$, and with $c_0=(6,6,6,6)$ to $89\%$.
+
+\subsection{Adaptive generation}
+
+\begin{definition}
+Fix $a\ge1$. The \emph{adaptive generator} $G_a$ draws round $i$ from a base generator
+conditioned on the admissible set
+\[
+\mathcal A(c_{i-1})=\bigl\{(p,q,\xi):\ d(p,q)\le c_{i-1},\ \ \pos\xi\ge\delta(p,q)+a-\norm{c_{i-1}}\bigr\}.
+\]
+\end{definition}
+
+\begin{theorem}[Sure survival under any allocation]\label{thm:adaptive}
+Suppose the base generator gives positive probability to every cost-one pair and to
+some positive solution (independently of the pair), and that $\norm{c_0}\ge a$. Then $G_a$ is well defined in every round, and the
+perfect player strongly survives every number of rounds, under \emph{every} allocation
+rule, adversarial ones included.
+\end{theorem}
+\begin{proof}
+By induction, assume $\norm{c_{i-1}}\ge a\ge1$. Some brick $j$ has $c_{i-1}(j)\ge1$, and
+the cost-one pair using only $j$, together with any positive $\xi$ of the base law,
+satisfies $\pos\xi\ge1\ge1+a-\norm{c_{i-1}}$. So $\mathcal A(c_{i-1})$ has positive mass and round
+$i$ is drawn from it. Its equation is affordable because $d_i\le c_{i-1}$. Whatever the
+split, $\norm{r_i}=\pos{\xi_i}$, so
+$\norm{c_i}=\norm{c_{i-1}}-\delta_i+\pos{\xi_i}\ge a$.
+\end{proof}
+
+The guarantee is unconditional, but by \cref{thm:balance} the generator can only buy it
+by skewing the sequence: under a deficit it must offer more positive solutions or
+cheaper equations. Simulation measures this skew (\cref{tab:sim}). On D0, $G_1$ lowers the
+share of negative solutions from $0.50$ to $0.47$ (20 rounds) and $0.44$ (100 rounds),
+and the mean demand from $2.88$ to $2.34$ and $2.09$. On the balanced D1, $G_4$ is
+almost invisible: $q=0.49$--$0.50$, $\bar\delta=2.25$--$2.27$. The adaptive generator is
+best used as a safety net under a generator that already satisfies the balance law.
+
+%======================================================================
+\section{Trash, Game Over and the value of a negative bomb}\label{sec:trash}
+
+Let the well have $R$ rows, with Game Over when a trash block lands in one of the top
+two rows (above the red line). Write $H=R-2$.
+
+\begin{lemma}[Height]\label{lem:height}
+Each trash landing raises the stack height by at most one, while clearing and settling
+never raise it. Game Over therefore needs at least $H+1$ trash blocks.
+\end{lemma}
+\begin{proof}
+A block lands one row above the highest column it covers. So if the stack height is $h$,
+it lands in row $r\ge R-h-1$ and the new height is at most $h+1$. Clearing removes
+bricks and settling moves them down. Game Over means $r<2$, which requires
+$h\ge R-2=H$ before the landing, i.e.\ at least $H$ earlier landings.
+\end{proof}
+
+The game sizes the well to the screen. Measured values of $H$ are 18 (390×844),
+19 (412×915), 16 (360×740), 13 (375×667) and 12 (1366×860). Equation blocks are
+$3,4,5$ cells wide with frequencies $0.38,0.57,0.05$, and on 9 columns they overlap
+heavily: the simulated mean number of trash blocks to Game Over is $23.6$ for $H=18$
+and $16.1$ for $H=12$. Under D0 with $H=18$, no simulated 20-round game reached Game
+Over, even counting no clearing at all. With $H=12$ the rate is $5.5\%$.
+
+\begin{proposition}[Clearing depth]\label{prop:clear}
+A negative bomb $\xi$ clears the trash bricks whose centres lie within
+$\rho(\xi)=0.8+0.7\abs\xi$ cells of the bomb's centre. If it lands on a trash column at
+least $\lfloor\rho(\xi)\rfloor$ deep, that column loses its top $\lfloor\rho(\xi)\rfloor$ bricks, and in deep,
+flat trash it removes $\#\{(i,j)\in\Z\times\Z_{\ge1}:i^2+j^2\le\rho^2\}$ bricks:
+\begin{center}\small
+\begin{tabular}{lcccccc}\toprule
+$\abs\xi$&1&2&3&4&5&6\\\midrule
+column depth&1&2&2&3&4&4\rlap{\,\textsuperscript{$*$}}\\
+bricks in flat trash&3&4&10&15&26&30\\\bottomrule
+\end{tabular}
+\end{center}
+\textsuperscript{$*$}In floating point $0.8+0.7\cdot6=4.999\ldots$, so the depth is 4, not 5.
+\end{proposition}
+\begin{proof}
+The bomb's bottom rests on the column surface $s$ and its centre is $\frac12$ cell
+higher. A brick in the same column at row $s-1+j$ ($j\ge1$) is at distance $j$, and one
+$i$ columns aside at distance $\sqrt{i^2+j^2}$. Count the lattice points.
+\end{proof}
+
+\begin{proposition}[Paradox of the negative bomb]\label{prop:paradox}
+In any design that guarantees strong survival, the perfect player never produces trash,
+so their negative bombs never clear anything. Each negative round is then a pure cost of
+$\delta_i>0$ units.
+\end{proposition}
+
+The proof is immediate. The proposition says that clearing only has value for
+imperfect play: time pressure, wasted operations, slow recognition. That is exactly
+where trash comes from in real games, so negative bombs act as the second chance for
+human mistakes, and their cost must be built into the balance law. Under the current
+rules a player can even \emph{gain} by letting negative equations fall unsolved: each
+one costs a single trash block, and by \cref{lem:height} a phone with $H=18$ tolerates
+18 of them. The square-root bombs of \cref{sec:sqrt} resolve this tension, because they
+refuel and clean at the same time.
+
+%======================================================================
+\section{Adding doubling (\texorpdfstring{$\times2$}{x2})}\label{sec:double}
+
+We now allow equations such as $\frac12x=5$ or $\frac12x+1=6$ and a brick $\dbl$ that
+multiplies both sides by $2$. Write an equation as $U=\alpha x+\beta$ with
+$L=(\alpha-\Delta)x+(\beta+\Delta\xi)$, and let $u:=\alpha-\Delta$ be the coefficient of
+$x$ in $L$. The state is $s=(\alpha,\beta,\Delta)\in\Q^3$ with $\xi$ fixed. The
+operations act as
+\[
+\pX,\mX\colon\alpha\mapsto\alpha\pm1,\qquad
+\pU,\mU\colon\beta\mapsto\beta\pm1,\qquad
+\dbl\colon s\mapsto2s,\qquad(\hlv\colon s\mapsto s/2\text{ in \cref{sec:halve}}),
+\]
+and, by the argument of \cref{lem:coord}, the equation is solved if and only if
+$s=(1,0,1)$.
+
+\begin{lemma}[Levels]\label{lem:levels}
+In a sequence of operations, the \emph{level} $\ell_k$ of a translation $k$ is the number
+of doublings minus the number of halvings applied after it. If the sequence contains
+$\sigma$ more doublings than halvings, its final state is
+\[
+\Bigl(2^\sigma\alpha+\sum_{k\in X}\varepsilon_k2^{\ell_k},\;
+2^\sigma\beta+\sum_{k\in C}\varepsilon_k2^{\ell_k},\;2^\sigma\Delta\Bigr),
+\]
+where $X$ and $C$ are the $x$- and constant translations and $\varepsilon_k=\pm1$ their
+signs.
+\end{lemma}
+\begin{proof}
+All operations are affine maps $v\mapsto\lambda v+w$ on $\Q^3$. A translation applied at
+some moment is afterwards multiplied by $2$ at every doubling and by $\frac12$ at every
+halving; induct over the sequence.
+\end{proof}
+
+\begin{definition}
+For $m\in\N$ and $Z\in\Z$, the \emph{$m$-capped signed-binary weight} $w_m(Z)$ is the least
+number of terms $\pm2^\ell$ with $0\le\ell\le m$ that sum to $Z$.
+\end{definition}
+
+\begin{lemma}[Properties of $w_m$]\label{lem:weight}
+\leavevmode
+\begin{enumerate}[label=(\roman*),nosep]
+\item $w_0(Z)=\abs Z$. For $m\ge1$, $w_m(Z)=w_{m-1}(Z/2)$ if $Z$ is even, and
+  $w_m(Z)=1+\min\{w_{m-1}(\tfrac{Z-1}2),\,w_{m-1}(\tfrac{Z+1}2)\}$ if $Z$ is odd.
+\item $\lceil\abs Z/2^m\rceil\le w_m(Z)\le\lfloor\abs Z/2^m\rfloor+m$.
+\item $w_m(2^mZ)=\abs Z$, and only terms $\pm2^m$ of one sign attain it.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+(i) Take an optimal representation. Two level-0 terms of opposite signs cancel and can
+be deleted. Two of the same sign can be replaced by one level-1 term. So an optimum has
+at most one level-0 term, and the parity of $Z$ decides whether it has one. Removing it
+and halving the rest gives a representation of $(Z\mp1)/2$ or $Z/2$ with levels in
+$[0,m-1]$, and conversely.
+(ii) Each term is at most $2^m$ in absolute value. For the upper bound, use
+$\lfloor\abs Z/2^m\rfloor$ terms $\pm2^m$ and the binary digits of the remainder, which is
+below $2^m$.
+(iii) The lower bound in (ii) is $\abs Z$, and it is attained only if every term has
+absolute value $2^m$ and the same sign.
+\end{proof}
+
+\begin{theorem}[Cost with doubling]\label{thm:double}
+With $J'=\{\pX,\mX,\pU,\mU,\dbl\}$, an equation is solvable if and only if
+$\Delta=2^{-m}$ for some $m\in\N$ and $A:=2^mu$, $B:=2^m\beta$ are integers. Its
+cheapest cost is
+\[
+C(E)=m+w_m(A)+w_m(B).
+\]
+\end{theorem}
+\begin{proof}
+Being solved requires $2^\sigma\Delta=1$ by \cref{lem:levels}, and $\sigma\ge0$ is the
+number of doublings, so $\Delta=2^{-m}$ with exactly $m$ doublings and all levels in
+$[0,m]$. Since $2^m\Delta=1$, the solved condition $\alpha_{\rm final}=1$ reads
+$\sum_X\varepsilon_k2^{\ell_k}=1-2^m\alpha=-A$, and $\beta_{\rm final}=0$ reads
+$\sum_C\varepsilon_k2^{\ell_k}=-B$. Both sums are integers, which gives necessity, and
+every solving sequence costs at least $m+w_m(A)+w_m(B)$ because $w_m$ is even in $Z$.
+Conversely, take optimal representations of $-A$ and $-B$. For $\ell=m,m-1,\dots,0$,
+perform the translations of level $\ell$ and then (if $\ell>0$) one doubling. This
+realises the bound.
+\end{proof}
+
+Both formulas, this one and the halving version of \cref{thm:halve}, agree with
+breadth-first search over all $17\,474$ states within 9 operations of the solved state,
+with no exceptions (\cref{app:methods}).
+
+\begin{proposition}[Consequences of doubling]\label{prop:double-econ}
+\leavevmode
+\begin{enumerate}[label=(\alph*),nosep]
+\item \emph{Order matters.} If $u,\beta\in\Z$ (integer constants), then
+  $C(E)=m+\abs u+\abs\beta$, attained only by doing all translations \emph{before} any
+  doubling. The textbook move of doubling first to clear the fraction costs
+  $m+2^m(\abs u+\abs\beta)$, which is $(2^m-1)(\abs u+\abs\beta)$ extra units. For
+  example $\frac12x+1=6$ takes 2 operations as $\mU,\dbl$ but 3 as $\dbl,\mU,\mU$.
+\item \emph{Larger bombs.} If all displayed constants are integers, then
+  $\xi\in2^m\Z$, since $\Delta\xi$ is a difference of integer constants. A doubling
+  equation therefore pays $\abs\xi\ge2^m$: with solutions in $\pm\{1,\dots,6\}$ and
+  $m=1$, only $\pm2,\pm4,\pm6$ occur, with mean positive reward $4$.
+\item \emph{Separate budget.} The $\dbl$ brick is consumed exactly $m$ times per
+  equation, so it needs its own balance: $\E r(\dbl)\ge\E m$.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) By \cref{lem:weight}(iii) with $A=2^mu$ and $B=2^m\beta$, only level-$m$ terms are
+optimal, i.e.\ translations made before the first doubling. Doubling first puts all
+translations at level $0$, where each is worth $1$.
+(b) The constant of $L$ is $\beta+\Delta\xi$; if it and $\beta$ are integers, so is
+$2^{-m}\xi$.
+(c) Every solving sequence contains exactly $m$ doublings.
+\end{proof}
+
+%======================================================================
+\section{Adding halving (\texorpdfstring{$\div2$}{:2})}\label{sec:halve}
+
+Halving allows integer equations with $\Delta=2^m$, such as $2x+4=10$,
+$3x+1=x+7$ or $4x+3=11$.
+
+\begin{theorem}[Cost with halving]\label{thm:halve}
+With $J''=\{\pX,\mX,\pU,\mU,\hlv\}$, an equation is solvable if and only if $\Delta=2^m$
+for some $m\in\N$ and $u,\beta\in\Z$. Its cheapest cost is $C(E)=m+w_m(u)+w_m(\beta)$.
+\end{theorem}
+\begin{proof}
+Now $\sigma=-m$ and the levels lie in $[-m,0]$. The solved condition reads
+$\sum_X\varepsilon_k2^{\ell_k}=1-2^{-m}\alpha=-2^{-m}u$. Multiplying by $2^m$ gives
+$\sum_X\varepsilon_k2^{\ell_k+m}=-u$ with exponents in $[0,m]$, and likewise for $\beta$.
+The rest is as in \cref{thm:double}. In words, a translation made after $h$ halvings is
+worth $2^h$ in the original equation.
+\end{proof}
+
+\begin{example}\label{ex:halve}
+$2x+4=10$: $1+w_1(4)=3$ ($\hlv,\mU,\mU$; subtracting first takes 5).
+$2x+3=7$: $1+w_1(3)=3$ ($\mU,\hlv,\mU$: make the constant even first).
+$3x+1=x+7$: $1+w_1(1)+w_1(1)=3$ ($\mX,\mU,\hlv$).
+$4x+3=11$: $2+w_2(3)=4$, with \emph{two incomparable} cheapest demands:
+$\mU,\hlv,\mU,\hlv$ uses $(\mU{:}2,\hlv{:}2)$, and $\pU,\hlv,\hlv,\mU$ uses
+$(\pU{:}1,\mU{:}1,\hlv{:}2)$.
+\end{example}
+
+\begin{proposition}[Economics of halving]\label{prop:halve-econ}
+\leavevmode
+\begin{enumerate}[label=(\alph*),nosep]
+\item Halving cuts the constant demand from $\abs\beta$ to $w_m(\beta)\in
+  [\lceil\abs\beta/2^m\rceil,\lfloor\abs\beta/2^m\rfloor+m]$, at the price of $m$
+  units of $\hlv$, and it puts no restriction on $\xi$. Large constants become cheap.
+\item The set $\mathcal D(E)$ of demand vectors of solving sequences can have several
+  incomparable minimal elements (\cref{ex:halve}). The equation is affordable if and
+  only if $c\in\mathcal D(E)+\N^{J''}$, so \cref{cor:dominant} fails: the perfect player
+  has to \emph{choose} which bricks to spend. In \cref{ex:halve} a stock with one $\mU$
+  and one $\pU$ can only use the second solution.
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+(a) is \cref{lem:weight}(ii) together with $\xi$ being free in $L$'s constant
+$\beta+2^m\xi$. (b) is the example.
+\end{proof}
+
+\begin{proposition}[Both scalings: detours]\label{prop:detour}
+With both $\dbl$ and $\hlv$ available, an equation with $\Delta=1$ might be solved more
+cheaply by a detour through other scales. The cheapest cost is still $\abs u+\abs\beta$
+whenever $\abs u+\abs\beta\le5$, and the bound is sharp: $x+6=\xi+6$ takes 5 operations
+($\hlv$, three $\mU$, $\dbl$) instead of 6.
+\end{proposition}
+\begin{proof}
+A sequence with scalings has $h\ge1$ doublings and $h$ halvings, and by
+\cref{lem:levels} its translation terms are at most $2^h$ in absolute value. Its cost is
+therefore at least
+$g(h)=2h+\lceil\abs u/2^h\rceil+\lceil\abs\beta/2^h\rceil$. Write
+$S=\abs u+\abs\beta\le5$. For $h=1$,
+$g\ge2+\lceil S/2\rceil\ge S$ (check $S=5$: $2+3=5$). For $h\ge2$,
+$g\ge4+[S>0]\ge S$. The example is verified directly, and the search in
+\cref{app:methods} finds no shorter detour for $S\le5$.
+\end{proof}
+
+%======================================================================
+\section{Adding square roots: \texorpdfstring{$\pm$}{plus-minus}-bombs}\label{sec:sqrt}
+
+Consider equations $(x-s)^2+k=t^2+k$ with $s,k\in\Z$ and $t\in\Z_{>0}$, for example
+$x^2=4$, $x^2+1=10$ or $(x-1)^2=9$. A brick $\sq$ applies only to an equation of the form
+$(x-s)^2=t^2$ and turns it into $x-s=\pm t$, which the game carries on as one
+$\pm$-equation: both branches receive the same operations.
+
+\begin{lemma}[Cost of a quadratic]\label{lem:sqrtcost}
+With the bricks $\pX,\mX,\pU,\mU,\sq$, the cheapest cost is $\abs k+1+\abs s$. It uses
+$\abs k$ units of $\mU$ if $k>0$ (of $\pU$ if $k<0$) before the root, one $\sq$, and
+$\abs s$ units of $\pU$ if $s>0$ (of $\mU$ if $s<0$) after it. Solved, it gives the two
+solutions $\xi_{1,2}=s\pm t$.
+\end{lemma}
+\begin{proof}
+Before $\sq$ only translations act. To reach the form ``square $=$ constant'', the
+$x$-translations must cancel, since otherwise the right side contains $x$, and the
+constant translations must total $-k$. That takes at least $\abs k$ operations, and
+exactly $\abs k$ without $x$-operations. After $\sq$ both branches are level-one
+equations with $(p,q)=(0,-s)$, so \cref{prop:cost} gives $\abs s$ further operations.
+\end{proof}
+
+A solved $\pm$-equation produces a \emph{$\pm$-bomb}, best shown as two bombs falling
+side by side. It returns $\varrho=\pos{(s+t)}+\pos{(s-t)}$ units and clears with each
+negative root.
+
+\begin{proposition}[Self-financing quadratics]\label{prop:selffin}
+A quadratic pays for itself ($\varrho\ge\abs k+1+\abs s$) if and only if:
+\begin{itemize}[nosep]
+\item for $\abs s<t$ (roots of opposite signs): $t\ge\abs k+1+\abs s-s$, i.e.\
+  $t\ge\abs k+1$ when $s\ge0$ and $t\ge\abs k+1+2\abs s$ when $s<0$;
+\item for $s>t$ (both roots positive): $s\ge\abs k+1$;
+\item for $s<-t$ (both roots negative): never.
+\end{itemize}
+($s=\pm t$ gives the root $0$, which the generator excludes.)
+In particular a symmetric quadratic ($s=0$) with $t\ge\abs k+1$ both refuels and
+produces the negative bomb $-t$.
+\end{proposition}
+\begin{proof}
+For $\abs s<t$, $\varrho=s+t$. For $s>t$, $\varrho=2s$ and $\abs s=s$. For $s<-t$,
+$\varrho=0$.
+\end{proof}
+
+\begin{theorem}[Quadratics as stabilisers]\label{thm:stabilise}
+Mix the linear rounds of a generator with drift $\mu_{\rm lin}=\E[\pos\xi-\delta]<0$ and
+a fraction $\varphi$ of symmetric quadratics with drift
+$\mu_{\rm q}=\E t-1-\E\abs k>0$. The mixture satisfies the balance law in expectation if
+and only if
+\[
+\varphi\;\ge\;\frac{\abs{\mu_{\rm lin}}}{\abs{\mu_{\rm lin}}+\mu_{\rm q}}.
+\]
+For D0 ($\mu_{\rm lin}=-\frac{457}{404}$) with $t$ uniform on $\{2,\dots,6\}$ and $k$
+uniform on $\{-1,0,1\}$ ($\mu_{\rm q}=\frac73$), the threshold is $\varphi\ge0.327$.
+Every quadratic round also yields one negative bomb, so the share of negative bombs
+stays at one half.
+\end{theorem}
+\begin{proof}
+By linearity the mixed drift is $(1-\varphi)\mu_{\rm lin}+\varphi\mu_{\rm q}$; solve
+for $\varphi\ge0$. The numbers follow from \cref{tab:demand}.
+\end{proof}
+
+Square roots therefore resolve the paradox of \cref{prop:paradox}: the negative half of a
+$\pm$-bomb is paid for by its positive half. The $\sq$ brick needs its own budget
+($\E r(\sq)\ge\varphi$). The game must refuse $\sq$ on a non-square, such as
+$x^2+5=9$ before the 5 is removed, and that refusal is itself a lesson.
+
+%======================================================================
+\section{Recommendations}\label{sec:recommend}
+
+\begin{table}[t]\centering\small
+\caption{Monte Carlo results for a perfect player (20{,}000 runs for $N=20$, 4{,}000
+for $N=100$, 5{,}000 for D2). ``Survival'' is the share of games without a stall. DF is
+deficit filling, $G_a$ the adaptive generator and D2 the debt-then-repay design of
+\cref{cor:alternating}. With the biased shuffle of the actual implementation, D0
+survives $0.14\%$ of 20-round games (200{,}000 runs).}\label{tab:sim}
+\begin{tabular}{lccccccc}
+\toprule
+& & \multicolumn{3}{c}{$N=20$} & \multicolumn{2}{c}{$N=100$} & \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-7}
+design & $c_0$ & survival & solved & 1st stall & survival & solved & $q$, $\bar\delta$\\
+\midrule
+D0 random split      & 3,3,5,5 & 0.002 & 9.6  & 5.5  & 0.000 & 18.3 & 0.50, 2.88\\
+D0 + DF              & 3,3,5,5 & 0.035 & 11.3 & 7.5  & 0.000 & 17.2 & 0.50, 2.88\\
+D0 + $G_1$           & 3,3,5,5 & 1     & 20   & --   & 1     & 100  & 0.47, 2.34 \;/\; 0.44, 2.09\\
+D1 random split      & 3,3,5,5 & 0.156 & 15.0 & 7.9  & 0.028 & 67.5 & 0.50, 2.33\\
+D1 random split      & 4,4,4,4 & 0.162 & 15.2 & 8.4  & 0.031 & 68.1 & 0.50, 2.33\\
+D1 + DF              & 4,4,4,4 & 0.656 & 18.4 & 9.2  & 0.518 & 86.7 & 0.50, 2.33\\
+D1 + DF              & 6,6,6,6 & 0.885 & 19.7 & 12.3 & 0.760 & 95.6 & 0.50, 2.33\\
+D1 + $G_4$           & 4,4,4,4 & 1     & 20   & --   & 1     & 100  & 0.49, 2.25 \;/\; 0.50, 2.27\\
+D2 + DF              & 5,5,5,5 & 1     & 20   & --   & 1     & 100  & 0.50, $\le3$\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The constraints asked for in the introduction, collected:
+
+\begin{enumerate}[label=\textbf{C\arabic*.},leftmargin=*]
+\item \textbf{Balance (necessary, any rules).} Every prefix must satisfy
+  \eqref{eq:balance}, and in the long run $(1-q)\nu_+\ge(1+\varepsilon)\bar\delta$,
+  with a margin $\varepsilon$ for human waste and failures. Half the solutions can be
+  negative only if the mean positive solution is about twice the mean number of
+  operations. Example D1: at most 3 operations ($\bar\delta=\frac73$), solutions in
+  $\{-6,\dots,-1\}\cup\{3,\dots,8\}$ ($\nu_+=5.5$), drift $+\frac5{12}$.
+\item \textbf{Matching (with random rewards).} Every brick needs $\mu_j\ge0$. Either
+  split rewards in proportion to demand (\cref{rem:matching}) or use deficit filling.
+  Use an unbiased shuffle in any case (\cref{rem:shuffle}).
+\item \textbf{Sure guarantee, option 1.} Deficit filling with the Lindley condition
+  \eqref{eq:main}. Concretely: every negative solution is followed by a positive one
+  repaying both, $\delta\le3$, $\abs{k_b},\abs k\le2$ and $c_0=(5,5,5,5)$. This keeps
+  the original solutions $\pm\{1,\dots,6\}$ (\cref{cor:alternating}).
+\item \textbf{Sure guarantee, option 2.} Keep the random split for its fun, and let the
+  generator see the stock ($G_a$, \cref{thm:adaptive}) on top of a generator that already
+  satisfies C1. The distortion is then barely measurable.
+\item \textbf{Give negative bombs a purpose.} Under any sure guarantee they clear only
+  the trash caused by human mistakes (\cref{prop:paradox}). Accept this, or give
+  negative solutions mostly through $\pm$-bombs (\cref{thm:stabilise}).
+\item \textbf{Extensions.}
+  \begin{itemize}[nosep]
+  \item $\dbl$ makes order matter and yields bombs that are multiples of $2^m$.
+  \item $\hlv$ makes large constants cheap and the cheapest demand non-unique, so the
+    player has to choose which bricks to spend.
+  \item $\sq$ gives self-financing $\pm$-bombs; about a third of quadratics would already
+    cancel the current deficit.
+  \end{itemize}
+  Each new brick adds its own budget line ($\E r(j)\ge\E d(j)$).
+\end{enumerate}
+
+\appendix
+\section{Methods}\label{app:methods}
+
+\paragraph{Exact computations.}
+\begin{itemize}[nosep]
+\item The joint law of $(k_b,k)$ after rejection, the demand moments of
+  \cref{tab:demand} and the reward laws of the split rule were computed with rational
+  arithmetic. For D0, each pair with $\abs{k_b}=1$ and $\abs k\ge1$ has probability $\frac5{101}$;
+  each pair with $\abs{k_b}=2$ (then $\abs k\le2$), or with $k_b=0$ and $\abs k\in\{2,3\}$,
+  has $\frac5{202}$; the cost-one pairs have $\frac1{101}$ ($k_b=0$) or $\frac2{101}$
+  ($k=0$).
+\item $\bar p_N$ in \cref{thm:allocfree} is an exact forward recursion over the total stock.
+\item The adjustment coefficients solve the stated moment equations by bisection.
+\end{itemize}
+
+\paragraph{Exhaustive search.} Breadth-first search from the solved state $(1,0,1)$ over
+the inverse operations, with exact rationals, found $17\,474$ states within 9 operations,
+separately for $\{\pm\mathsf x,\pm\mathsf 1,\dbl\}$ and for
+$\{\pm\mathsf x,\pm\mathsf 1,\hlv\}$. On every state the distance equals the formula of
+\cref{thm:double} or \cref{thm:halve}. With both scalings, for $\Delta=1$, the distance
+equals $\abs u+\abs\beta$ whenever this is at most 5, and the first detour gain appears
+at $\abs u+\abs\beta=6$ (\cref{prop:detour}).
+
+\paragraph{Simulation.} The simulated player is perfect in the sense of \cref{def:play}.
+An unsolvable equation becomes trash, and play continues with the next one.
+\begin{itemize}[nosep]
+\item Rounds were generated exactly as in the game's code (D0) or as described for D1/D2.
+\item The split rule is the game's, with a Fisher--Yates shuffle except where the biased
+  sort is stated.
+\item Trash stacking used the measured block widths (15{,}000 equations rendered in
+  headless Chrome at five screen sizes) and uniformly random columns.
+\item The screen sizes and the shuffle bias were measured on the actual page and in
+  Node~22 (V8).
+\end{itemize}
+
+\end{document}
