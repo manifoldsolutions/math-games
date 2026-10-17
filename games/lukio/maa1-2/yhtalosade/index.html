@@ -8,16 +8,21 @@
 <!-- ════════════════════════════════════════════════════════════════════
      GAME: Yhtälösade (equations fall, the player solves them in the air)
      Self-contained. Lives at  games/lukio/maa1-2/yhtalosade/index.html
-     A Tetris-like well: brick walls and floor, one equation falling at a
-     time. Dragging an operation brick (+1 −1 +x −x, in the walls) onto it
+     A Tetris-like well: brick walls and floor, equations falling (the next
+     one comes when the previous is halfway down). Dragging an operation
+     brick (+1 −1 +x −x, in the walls) onto one
      does that to both sides and uses one of the brick's count. A solved
      equation x = n turns into a bomb "n" that bounces like a ping-pong ball
      for a moment and then explodes: a positive one gives n back as counts
      (split at random between the bricks), a negative one clears trash around
      where it explodes (more for a bigger |n|), a zero one gives a new
-     operation (+2, −2 or a joker). An unsolved equation that
+     operation (+2, −2, +2x, −2x or a joker). An unsolved equation that
      lands stays as trash; trash up to the red line is Game Over.
-     First draft, level 1 only: numbers are to be balanced (Vadim).
+     The equations get harder from the first to the last: bigger |x|, more
+     operations needed. The next level goes on with the trash and the counts
+     left by the previous one, faster; level 3 starts with an empty well and
+     brings :2 (some equations end with 2x = 2n), and zero bombs may bring ·2.
+     First draft, 3 levels: numbers are to be balanced (Vadim).
      ════════════════════════════════════════════════════════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -55,6 +60,7 @@
   @keyframes hit{ 50%{ transform:scale(1.06); } }
   .piece .eq{ margin:0 .25em; }
   .piece .op{ margin:0 .1em; }
+  .mul{ display:inline-block; transform:scale(1.8); margin-right:.12em; }   /* the · of ·2 is tiny in Chakra Petch */
   /* solved: it glows in the colour of the bomb it becomes, with a burst of sparks */
   .piece.pos, .sparks.pos{ --fc:var(--gold); }
   .piece.neg, .sparks.neg{ --fc:var(--magenta); }
@@ -122,7 +128,7 @@
     box-shadow:0 0 8px rgba(0,229,255,.3); cursor:grab; font-family:var(--math); font-weight:700;
     transition:box-shadow .15s ease, opacity .15s ease;
   }
-  .opb[hidden]{ display:none; }   /* +2, −2, joker: not earned yet */
+  .opb[hidden]{ display:none; }   /* the new operations: not earned yet */
   .opb .cnt{ font-family:var(--ui); font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
   .opb .bat{ width:70%; height:5px; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
   .opb .bat i{ display:block; height:100%; transition:width .25s ease, background-color .25s ease; }
@@ -142,6 +148,7 @@
     color:var(--accent-ink); animation:rise .9s ease-out forwards;
   }
   @keyframes rise{ to{ transform:translateY(-1.2em); opacity:0; } }
+  .note.pts{ color:var(--ink); }   /* points */
   .ring{ pointer-events:none; border-radius:50%; border:3px solid; animation:boom .55s ease-out forwards; }
   .ring.pos{ border-color:var(--gold); }
   .ring.neg{ border-color:var(--magenta); }
@@ -160,11 +167,12 @@
   <header>
     <a class="back" href="../../../../#/lukio/maa1-2">← Takaisin</a>
     <span class="title">Yhtälösade</span>
-    <span class="hud"><span>Yhtälö: <b id="eqNo">0/20</b></span><span>Pisteet: <b id="score">0</b></span></span>
+    <span class="hud"><span>Taso: <b id="level">1/3</b></span><span>Pisteet: <b id="score">0</b></span></span>
   </header>
 
   <main>
     <div class="statusrow">
+      <span>Yhtälö: <b id="eqNo">0/30</b></span>
       <span>Ratkaistu: <b id="solved">0</b></span>
       <span>Roskaa: <b id="trashCount">0</b></span>
     </div>
@@ -172,6 +180,7 @@
     <div class="hint" id="hint" aria-live="polite"></div>
     <div class="subctrl">
       <button id="restart">↺ Alusta</button>
+      <button id="skipLevel" hidden>⏭ Ohita taso (testi)</button>
     </div>
   </main>
 
@@ -194,18 +203,41 @@
 /* ── settings (first draft: to be balanced) ─────────────────────────────── */
 const COLS = 9;                 // field columns between the walls
 const WALL = 1.5;               // wall width in cells (the operation bricks sit in them)
-const EQUATIONS = 20;           // equations per game
-const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "J":0};
+const EQUATIONS = 30;           // equations per level
+// Levels (Vadim): the next one goes on with the trash, the counts and the
+// operations left by the previous one; only these change. fall: rows per
+// second, steady (never slowed, not even while dragging); next: the next
+// equation comes when the newest has fallen this share of the well; posBy:
+// the equation by which the share of positive answers is down to POS[1];
+// fresh: the well is emptied of trash first (the trash left costs as at the
+// end); add: a new operation and its count; div: the share of equations that
+// end with 2x = 2n and need :2.
+const LEVELS = [
+  {fall:.55, next:1/2, posBy:EQUATIONS},
+  {fall:.55*1.2, next:1/3, posBy:10},       // 1.2× as fast, and 1.5× as often counted by the way fallen
+  {fall:.55*1.2, next:1/3, posBy:10, fresh:true, add:{":2":3}, div:1/3},
+];
+const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0};
 const BASE = ["+x", "-x", "+1", "-1"];                 // always there; the others come from zero bombs
-const GIFTS = {"+2":.4, "-2":.4, "J":.2};              // what a zero bomb gives (one use)
+// A zero bomb brings a new operation as long as one of these is missing, then
+// one use of one of them (Vadim). Weights: the joker comes half as often.
+// ·2 only from level 3 on (GIFT_FROM; Vadim: it undoes a :2 that gave fractions).
+const GIFTS = {"+2":2, "-2":2, "+2x":2, "-2x":2, "J":1, "*2":2};
+const GIFT_FROM = {"*2":3};
 const CAP = 9;                  // no brick holds more (a reward part that doesn't fit goes on to another brick)
 const KEEP = 4;                 // the generator keeps the total count at least this (see makeEquation)
 const ANSWERS = [-6,-5,-4,-3,-2,-1,3,4,5,6,7,8];   // x = n: half negative, the positive ones pay for the rest
-const ZERO = .1;                // share of x = 0 (a zero bomb: a new operation)
+// From the first equation to the last (t = 0 … 1) the game gets harder (Vadim).
+// Each target moves linearly from its first value to its second; the draw
+// prefers values near it (a bell curve with the given spread).
+const SIZE = [2, 7], SIZE_SPREAD = 1.5;   // |x|
+const PAR = [1, 3], PAR_SPREAD = .7;      // basic operations needed (+x −x +1 −1)
+const POS = [.8, .5];                     // share of positive answers among x ≠ 0 (until the level's posBy)
+const ZERO = .1;                // share of x = 0 (a zero bomb: a new operation)…
+const ZERO_START = .17, ZERO_FIRST = 5;   // …but more in the first 5: at least one x = 0 there in 60 % of games (Vadim)
 const GLOW = .5;                // s: a solved equation glows before it turns into a bomb
-const KB = [-2,-1,-1,0,1,1,2];  // extra boxes on both sides
-const KMAX = 2, MAXOPS = 3;     // constant k in −KMAX … KMAX, at most MAXOPS operations
-const FALL = .55;               // rows per second, steady: never slowed, not even while dragging (Vadim)
+const KB = [-2,-1,-1,0,1,1,2];  // extra boxes on both sides (±1 twice as often)
+const KMAX = 2, MAXOPS = 3;     // constant k in −KMAX … KMAX, at most MAXOPS basic operations
 const DROP = 15;                // rows/s once the player drops it (pulled down, double-click, ↓)
 const PULL = 1.5;               // cells: pulled down at least this far, it drops when let go
 const AREA = .8;                // an operation is taken in a rectangle this share of the interior wide…
@@ -221,6 +253,10 @@ const FUSE = 1.5;               // s of bouncing after the first touch; it explo
 const clearRadius = n => .8 + .7*Math.abs(n);   // cells, around where a negative bomb explodes
 const fireSize = n => 1.5 + .25*(Math.max(1, Math.abs(n)) - 1);   // flames' diameter / the bomb's: |n| ≤ 1 … 8 → 1.5 … 3.25
 const POINTS = 100;             // per solved equation
+const PERFECT = 50;             // more for the fewest operations, and +1 to the emptiest basic brick
+const NEG_POINTS = 25;          // × |n| for a negative bomb, trash or no trash: minus bombs give points
+const CLEAR_POINTS = 20;        // per trash brick cleared; the same is taken off for each one left at the end
+const SPARE_POINTS = 10;        // per reward unit that doesn't fit anywhere (every brick full)
 
 const OPS = {
   "+x": {a: 1, b: 0, html:`<span class="op">+</span><span class="xterm">x</span>`},
@@ -229,15 +265,27 @@ const OPS = {
   "-1": {a: 0, b:-1, html:`<span class="pterm">−1</span>`},
   "+2": {a: 0, b: 2, html:`<span class="cterm">+2</span>`},
   "-2": {a: 0, b:-2, html:`<span class="pterm">−2</span>`},
+  "+2x":{a: 2, b: 0, html:`<span class="op">+</span><span class="xterm">2x</span>`},
+  "-2x":{a:-2, b: 0, html:`<span class="op">−</span><span class="xterm">2x</span>`},
   "J":  {joker:true, html:`<span class="xterm">x</span>=?`},   // solves any equation at once
+  ":2": {times:1/2, html:`<span class="op">:</span><span class="cterm">2</span>`},   // odd numbers give fractions (Vadim)
+  "*2": {times:2, html:`<span class="op mul">·</span><span class="cterm">2</span>`},
 };
-// where the bricks sit: wall side and row counted from the floor (top of a 2-row brick)
-const OP_AT = {"+x":["L",7], "-x":["L",4], "+1":["R",7], "-1":["R",4], "+2":["R",10], "-2":["R",2], "J":["L",10]};
-const OP_NOTE = {"+x":"+ x", "-x":"− x", "+1":"+ 1", "-1":"− 1", "+2":"+ 2", "-2":"− 2", "J":"jokeri"};
+// where the bricks sit: wall side and row counted from the floor (top of a 2-row
+// brick). The new ones touch their basic brick: +2x above +x, −2x below −x, the
+// same with +2 and −2, the joker above +2x, :2 above +2 and ·2 above :2
+// (13 rows, the least the well has).
+const OP_AT = {"+x":["L",7], "-x":["L",4], "+1":["R",7], "-1":["R",4],
+               "+2":["R",9], "-2":["R",2], "+2x":["L",9], "-2x":["L",2], "J":["L",11], ":2":["R",11], "*2":["R",13]};
+const OP_NOTE = {"+x":"+ x", "-x":"− x", "+1":"+ 1", "-1":"− 1", "+2":"+ 2", "-2":"− 2",
+                 "+2x":"+ 2x", "-2x":"− 2x", "J":"jokeri", ":2":": 2", "*2":"· 2"};
 const GIFT_NOTE = {
   "+2":"Uusi operaatio +2: se lisää 2 yhtälön molemmille puolille.",
   "-2":"Uusi operaatio −2: se vähentää 2 yhtälön molemmilta puolilta.",
+  "+2x":"Uusi operaatio +2x: se lisää 2x yhtälön molemmille puolille.",
+  "-2x":"Uusi operaatio −2x: se vähentää 2x yhtälön molemmilta puolilta.",
   "J":"Jokeri x = ?: vedä se yhtälön päälle, niin yhtälö ratkeaa heti.",
+  "*2":"Uusi operaatio ·2: se kertoo yhtälön molemmat puolet kahdella.",
 };
 
 const $ = id => document.getElementById(id);
@@ -251,8 +299,9 @@ const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
    (1 + kb)x + k = kb·x + n + k (sides swapped half the time). kb may be
    negative too (3 = 5 − x needs +x), so every brick is needed somewhere. The
    fewest operations is |kb| + |k| (each one acts on both sides), and they
-   are always the same ones (need). Negative answers come the same way (flip
-   the signs of the constants), so they cost the same.
+   are always the same ones; ±2 and ±2x can do two at once. Negative
+   answers come the same way (flip the signs of the constants), so they cost
+   the same.
    The economy (yhtalosade-economy.pdf, D1 with G₄): equations cost at most
    MAXOPS and the positive answers are big enough to pay for all of them on
    average. On top of that the generator looks at the counts c: it only gives
@@ -260,52 +309,81 @@ const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
    least KEEP in total. A player who doesn't waste operations then never gets
    stuck, however the rewards are split. If waste has emptied every brick,
    nothing special happens: the equations can't be solved (Vadim). x = 0 (a
-   zero bomb) pays nothing back into the count, only a new operation. */
-const need = (kb, k) => ({"+x":Math.max(-kb, 0), "-x":Math.max(kb, 0), "+1":Math.max(-k, 0), "-1":Math.max(k, 0)});
+   zero bomb) pays nothing back into the count, only a new operation.
+   From level 3 some equations are built from 2x = 2n instead (div): the same
+   boxes and constant, and :2 at the end. */
 // What a player who wastes nothing spends on (kb, k) with the counts c: by hand
 // with ±x and ±1 if there are enough (the most such a player spends), else with
-// ±2 as well (fewest operations), else one joker; null if it can't be solved.
-function plan(kb, k, c){
-  const d = need(kb, k);
-  if(d["+x"] <= c["+x"] && d["-x"] <= c["-x"]){
-    if(d["+1"] <= c["+1"] && d["-1"] <= c["-1"]) return d;
-    let best = null;
-    for(let U = 0; U <= Math.min(2, c["+2"]); U++) for(let M = 0; M <= Math.min(2, c["-2"]); M++){
-      const r = -k - 2*(U - M);   // the rest of the constant, with +1 (r > 0) or −1 (r < 0)
-      if(r > 0 ? r > c["+1"] : -r > c["-1"]) continue;
-      const p = {"+x":d["+x"], "-x":d["-x"], "+1":Math.max(r, 0), "-1":Math.max(-r, 0), "+2":U, "-2":M};
-      if(!best || sum(p) < sum(best)) best = p;
-    }
-    if(best) return best;
-  }
+// ±2x / ±2 as well (fewest operations), then :2 if div; else one joker; null
+// if it can't be solved.
+function plan(kb, k, c, div){
+  const x = part(-kb, c, "+x", "-x", "+2x", "-2x"), b = part(-k, c, "+1", "-1", "+2", "-2");
+  if(x && b && (!div || c[":2"] > 0)) return div ? {...x, ...b, ":2":1} : {...x, ...b};
   return c.J > 0 ? {J:1} : null;
 }
-function drawEquation(){
-  for(;;){
-    const n = Math.random() < ZERO ? 0 : pick(ANSWERS);
-    const kb = pick(KB), k = rnd(-KMAX, KMAX), par = Math.abs(kb) + Math.abs(k);
-    if(par < 1 || par > MAXOPS || (par === 1 && Math.random() < .5)) continue;
-    return {n, kb, k, par};
-  }
+// what is left to do on an equation in the air: kb boxes and the constant k
+// off both sides, then :2 if two x are left (null: it can't be solved so any
+// more, e.g. fractions after a :2)
+function toGo(p){
+  const [U, V] = p.L.a > p.R.a ? [p.L, p.R] : [p.R, p.L], d = U.a - V.a;
+  if(![U.a, U.b, V.a, V.b].every(Number.isInteger)) return null;
+  return d === 1 || d === 2 ? {kb:V.a, k:U.b, div:d === 2} : null;
 }
-function makeEquation(recent, c){
+// v to add to both sides (v < 0: to take off) with the bricks of size 1 (one,
+// minus) and size 2 (two, minusTwo)
+function part(v, c, one, minus, two, minusTwo){
+  if(v >= 0 ? v <= c[one] : -v <= c[minus]) return {[one]:Math.max(v, 0), [minus]:Math.max(-v, 0)};
+  let best = null;
+  for(let U = 0; U <= Math.min(2, c[two]); U++) for(let M = 0; M <= Math.min(2, c[minusTwo]); M++){
+    const r = v - 2*(U - M);   // the rest, by hand
+    if(r > 0 ? r > c[one] : -r > c[minus]) continue;
+    const p = {[one]:Math.max(r, 0), [minus]:Math.max(-r, 0), [two]:U, [minusTwo]:M};
+    if(!best || sum(p) < sum(best)) best = p;
+  }
+  return best;
+}
+// every (kb, k) with 1 … MAXOPS basic operations, kb as often as in KB
+const SHAPES = KB.flatMap(kb => Array.from({length:2*KMAX + 1}, (_, j) => [kb, j - KMAX]))
+                 .filter(([kb, k]) => Math.abs(kb) + Math.abs(k) >= 1 && Math.abs(kb) + Math.abs(k) <= MAXOPS);
+const bell = (v, m, s) => Math.exp(-(((v - m)/s)**2)/2);
+function weighted(list, w){
+  let r = Math.random()*list.reduce((s, v) => s + w(v), 0);
+  return list.find(v => (r -= w(v)) < 0) ?? list[list.length - 1];
+}
+// equation number i (1 … EQUATIONS) of a level: the targets SIZE, PAR, POS for
+// its place in it. PAR counts the basic operations only; par (for a perfect
+// solve) also counts :2.
+function drawEquation(i){
+  const t = Math.min(1, (i - 1)/(EQUATIONS - 1)), at = ([a, b]) => a + (b - a)*t;
+  const tp = Math.min(1, (i - 1)/(lv().posBy - 1)), pos = POS[0] + (POS[1] - POS[0])*tp;
+  const zero = Math.random() < (i <= ZERO_FIRST ? ZERO_START : ZERO), plus = Math.random() < pos;
+  const n = zero ? 0 : weighted(ANSWERS.filter(v => plus ? v > 0 : v < 0), v => bell(Math.abs(v), at(SIZE), SIZE_SPREAD));
+  const [kb, k] = weighted(SHAPES, ([kb, k]) => bell(Math.abs(kb) + Math.abs(k), at(PAR), PAR_SPREAD));
+  const div = Math.random() < (lv().div || 0);
+  return {n, kb, k, div, par:Math.abs(kb) + Math.abs(k) + div};
+}
+// equation number i, for the counts c (what the equations already falling will need is taken off)
+function makeEquation(recent, c, i){
   const total = sum(c);
   let e = null;
   for(let t = 0; t < 200 && !e; t++){
-    const f = drawEquation(), p = plan(f.kb, f.k, c);
+    const f = drawEquation(i), p = plan(f.kb, f.k, c, f.div);
     if(!p || total - sum(p) + Math.max(f.n, 0) < KEEP) continue;
-    if(recent.includes(f.n + "," + f.kb + "," + f.k)) continue;
+    if(recent.includes(f.n + "," + f.kb + "," + f.k + "," + f.div)) continue;
     e = f;
   }
   if(!e){
     // hardly ever: one operation with the fullest brick (a joker: any), x = the biggest answer
-    const j = Object.keys(c).reduce((a, b) => c[b] > c[a] ? b : a), n = Math.max(...ANSWERS);
-    const one = {"+x":[-1, 0], "-x":[1, 0], "+1":[0, -1], "-1":[0, 1], "+2":[0, -2], "-2":[0, 2]}[j];
-    e = c[j] <= 0 ? drawEquation() : one ? {n, kb:one[0], k:one[1], par:Math.abs(one[0]) + Math.abs(one[1])}
-                                         : {...drawEquation(), n};
+    const j = Object.keys(c).filter(k => k !== "*2").reduce((a, b) => c[b] > c[a] ? b : a), n = Math.max(...ANSWERS);
+    const one = {"+x":[-1, 0], "-x":[1, 0], "+1":[0, -1], "-1":[0, 1], "+2":[0, -2], "-2":[0, 2],
+                 "+2x":[-2, 0], "-2x":[2, 0], ":2":[0, 0]}[j];   // :2 alone: 2x = 2n
+    e = c[j] <= 0 ? drawEquation(i)
+      : one ? {n, kb:one[0], k:one[1], div:j === ":2", par:Math.abs(one[0]) + Math.abs(one[1]) + (j === ":2")}
+      : {...drawEquation(i), n};
   }
-  recent.push(e.n + "," + e.kb + "," + e.k); if(recent.length > 6) recent.shift();
-  let L = {a:1 + e.kb, b:e.k}, R = {a:e.kb, b:e.n + e.k};
+  recent.push(e.n + "," + e.kb + "," + e.k + "," + e.div); if(recent.length > 6) recent.shift();
+  const m = e.div ? 2 : 1;
+  let L = {a:m + e.kb, b:e.k}, R = {a:e.kb, b:m*e.n + e.k};
   if(Math.random() < .5) [L, R] = [R, L];
   return {...e, L, R};
 }
@@ -318,8 +396,16 @@ function solvedValue(L, R){
 
 /* ── writing an equation ────────────────────────────────────────────────── */
 const minus = "−";
-function xHTML(a){ const m = Math.abs(a); return `<span class="xterm">${m === 1 ? "" : m}x</span>`; }
-function cHTML(b){ return `<span class="${b < 0 ? "pterm" : "cterm"}">${Math.abs(b)}</span>`; }
+// m ≥ 0, a whole number or (after :2) a fraction with denominator 2, 4, 8 …: 2½, ¾, 3/16
+const EIGHTHS = ["", "⅛", "¼", "⅜", "½", "⅝", "¾", "⅞"];
+function numText(m){
+  const w = Math.floor(m), e = (m - w)*8;
+  if(Number.isInteger(e)) return (w || !e ? w : "") + EIGHTHS[e];
+  let d = 16; while(!Number.isInteger(m*d) && d < 1e6) d *= 2;
+  return `${m*d}/${d}`;
+}
+function xHTML(a){ const m = Math.abs(a); return `<span class="xterm">${m === 1 ? "" : numText(m)}x</span>`; }
+function cHTML(b){ return `<span class="${b < 0 ? "pterm" : "cterm"}">${numText(Math.abs(b))}</span>`; }
 function sideHTML(s){
   // x term first, except "5 − x" rather than "−x + 5"
   const terms = [];
@@ -333,12 +419,17 @@ function sideHTML(s){
     return `<span class="op">${v < 0 ? minus : "+"}</span>${body}`;
   }).join("");
 }
+const num = v => v < 0 ? minus + -v : String(v);   // a score with a real minus sign
 const eqHTML = (L, R) => `${sideHTML(L)}<span class="eq">=</span>${sideHTML(R)}`;
 
 /* ── state ──────────────────────────────────────────────────────────────── */
 let ROWS = 16, cell = 30;
 let gameNo = 0;                 // a reward still flying when a new game starts is dropped
-let counts, owned, piece, bricks, blocks, eqNo, solved, score, over, recent, drag, nextBrickId;
+let counts, owned, pieces, bricks, blocks, eqNo, solved, score, pts, over, recent, drag, nextBrickId;
+let level, start;               // the level (1 …) and the score and pts it started with
+const lv = () => LEVELS[level - 1];
+let newest, quiet, busy;        // the last equation that came, s since it stopped falling, rewards still on their way
+let promised;                   // the new operations given so far (some may still be flying to their brick)
 const opEls = {};
 
 /* ── layout: cell size from the space, rows fixed for a game ────────────── */
@@ -349,7 +440,7 @@ function space(){
 function chooseRows(){
   const {w, h} = space();
   const c = Math.min(w/(COLS + 2*WALL), 44);
-  ROWS = Math.max(11, Math.min(22, Math.floor(h/c) - 1));
+  ROWS = Math.max(13, Math.min(22, Math.floor(h/c) - 1));   // 13: room for every brick
 }
 const X = c => (WALL + c)*cell;         // field column → px
 const Y = r => r*cell;                  // row → px
@@ -390,11 +481,11 @@ function layout(){
   }
   for(const b of bricks) placeBrick(b);
   drawTrashText();
-  if(piece){ if(piece.bomb != null) sizeBomb(piece); drawPiece(); }
+  for(const p of pieces){ if(p.bomb != null) sizeBomb(p); drawPiece(p); }
 }
 
 /* ── operation bricks ───────────────────────────────────────────────────── */
-// +2, −2 and the joker are hidden (their slot is wall) until a zero bomb gives one
+// the new operations are hidden (their slot is wall) until a zero bomb gives one
 function opCenter(key){
   const [side, up] = OP_AT[key];
   return {x:side === "L" ? WALL*cell/2 : (WALL + COLS + WALL/2)*cell, y:Y(ROWS - up) + cell};
@@ -423,31 +514,57 @@ function drawCount(key){
   el.setAttribute("aria-label", `${OP_NOTE[key]}, jäljellä ${n}`);
 }
 
-/* ── the falling piece ──────────────────────────────────────────────────── */
-// y is the piece's bottom edge in rows from the top; an equation is one row high
+/* ── the falling pieces ─────────────────────────────────────────────────── */
+// y is a piece's bottom edge in rows from the top; an equation is one row high.
+// pieces: the equations in the air (falling, or solved and glowing) and the bombs.
 function spawn(){
-  if(over) return;
-  const e = makeEquation(recent, counts);
+  const e = makeEquation(recent, reserved(), eqNo + 1);
   eqNo++; $("eqNo").textContent = `${eqNo}/${EQUATIONS}`;
   const el = document.createElement("div"); el.className = "piece";
   board.appendChild(el);
-  piece = {L:e.L, R:e.R, n:e.n, el, y:1, x0:0, w:3, bomb:null};
-  measure();
-  piece.x0 = rnd(0, COLS - piece.w);
-  drawPiece();
+  const p = {L:e.L, R:e.R, n:e.n, par:e.par, ops:0, el, y:1, x0:0, w:3, bomb:null};
+  measure(p);
+  p.x0 = freeColumn(p.w);
+  pieces.push(p); newest = p; quiet = 0;
+  drawPiece(p);
+}
+// The next equation comes when the newest one has fallen the level's share of
+// the way, or a moment after it was solved or landed (Vadim).
+function wantSpawn(dt){
+  if(over || eqNo >= EQUATIONS) return false;
+  if(newest && newest.bomb == null && newest.glow == null && pieces.includes(newest))
+    return newest.y - 1 >= lv().next*(ROWS - 1);
+  return (quiet += dt) >= .8;
+}
+// counts minus what the equations still falling need: two of them must not
+// count on the same last operations (their bombs aren't counted yet either)
+function reserved(){
+  const c = {...counts};
+  for(const p of inAir()){
+    const g = toGo(p), need = g && plan(g.kb, g.k, c, g.div);
+    if(need) for(const j in need) c[j] -= need[j];
+  }
+  return c;
+}
+// a column where the new equation doesn't overlap another one that is falling
+function freeColumn(w){
+  const ok = [];
+  for(let x = 0; x <= COLS - w; x++)
+    if(inAir().every(q => x + w <= q.x0 || x >= q.x0 + q.w)) ok.push(x);
+  return ok.length ? pick(ok) : rnd(0, COLS - w);
 }
 // width in whole cells from the text (the font scales with the cell, so this stays put)
-function measure(){
-  const el = piece.el;
+function measure(p){
+  const el = p.el;
   el.style.fontSize = cell*.56 + "px";
-  el.innerHTML = `<span class="txt">${eqHTML(piece.L, piece.R)}</span>`;
+  el.innerHTML = `<span class="txt">${eqHTML(p.L, p.R)}</span>`;
   let tw = el.firstChild.offsetWidth/cell + .7;
   if(tw > COLS){ el.style.fontSize = cell*.56*COLS/tw + "px"; tw = COLS; }
-  piece.w = Math.max(3, Math.min(COLS, Math.ceil(tw)));
+  p.w = Math.max(3, Math.min(COLS, Math.ceil(tw)));
 }
 // (only width and left are animated, so the fall itself is set straight every frame)
-function drawPiece(){
-  const p = piece, el = p.el;
+function drawPiece(p){
+  const el = p.el;
   if(p.bomb == null) place(el, X(p.x0), Y(p.y - 1), p.w*cell, cell);
   else{ const d = 2*BOMB_R*cell; place(el, X(p.bx) - d/2, Y(p.by) - d/2, d, d); }
 }
@@ -469,18 +586,23 @@ function applyOp(key, p, x){
   if(!p || p.bomb != null || p.glow != null || over || counts[key] <= 0) return false;
   const o = OPS[key];
   counts[key]--; drawCount(key);
+  p.ops++; if(o.joker) p.joker = true;
   if(o.joker){
     const xs = {a:1, b:0}, ns = {a:0, b:p.n};
     [p.L, p.R] = p.L.a > p.R.a ? [xs, ns] : [ns, xs];
+  }
+  else if(o.times){   // :2 of odd numbers gives fractions, and ±1 can't take them away (Vadim)
+    p.L = {a:p.L.a*o.times, b:p.L.b*o.times};
+    p.R = {a:p.R.a*o.times, b:p.R.b*o.times};
   }
   else{
     p.L = {a:p.L.a + o.a, b:p.L.b + o.b};
     p.R = {a:p.R.a + o.a, b:p.R.b + o.b};
   }
   const mid = p.x0 + p.w/2;
-  measure();
+  measure(p);
   p.x0 = Math.max(0, Math.min(COLS - p.w, Math.round(mid - p.w/2)));
-  drawPiece();
+  drawPiece(p);
   p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit");
   note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - 1));
   const v = solvedValue(p.L, p.R);
@@ -490,13 +612,29 @@ function applyOp(key, p, x){
 const sign = v => v > 0 ? "pos" : v < 0 ? "neg" : "zero";
 // Solved: it locks, glows in its bomb's colour with a burst of sparks for GLOW
 // seconds (still falling, the fall never slows) and then turns into the bomb.
+// With the fewest operations (not with a joker) it is perfect: more points and
+// +1 to the emptiest basic brick (Vadim).
 function solvedNow(p, v, from){
   p.glow = 0; p.answer = v; p.from = from;
   p.el.classList.remove("target");
   p.el.classList.add("solved", sign(v));
-  sparks(X(p.x0 + p.w/2), Y(p.y - .5), sign(v));
-  solved++; score += POINTS;
-  $("solved").textContent = solved; $("score").textContent = score;
+  const x = X(p.x0 + p.w/2), y = Y(p.y - .5);
+  sparks(x, y, sign(v));
+  solved++; $("solved").textContent = solved;
+  const perfect = !p.joker && p.ops <= p.par;
+  points("solve", POINTS, null, 0, 0);
+  if(perfect){
+    pts.perfects++;
+    points("perfect", PERFECT, null, 0, 0);
+    const low = Math.min(...BASE.map(j => counts[j])), key = pick(BASE.filter(j => counts[j] === low));
+    fly(key, "+1", 1, x, y);
+  }
+  note(perfect ? `Täydellinen! +${POINTS + PERFECT}` : `+${POINTS}`, x, Y(p.y) + cell*.9, "pts");
+}
+// score, by kind for the result; a note at (x, y) unless text is null
+function points(kind, v, text, x, y){
+  pts[kind] += v; score += v; $("score").textContent = num(score);
+  if(text) note(text, x, y, "pts");
 }
 function sparks(x, y, cls){
   if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -510,8 +648,8 @@ function sparks(x, y, cls){
   }
   setTimeout(() => box.remove(), 900);
 }
-function note(text, x, y){
-  const el = document.createElement("div"); el.className = "note"; el.textContent = text;
+function note(text, x, y, cls = ""){
+  const el = document.createElement("div"); el.className = "note " + cls; el.textContent = text;
   el.style.fontSize = cell*.45 + "px";
   board.appendChild(el);
   place(el, x - el.offsetWidth/2, y - cell*.6);
@@ -523,12 +661,12 @@ function toBomb(p, v, from){
   p.bomb = v; p.glow = null;
   p.bx = Math.max(BOMB_R, Math.min(COLS - BOMB_R, p.x0 + p.w/2)); p.by = p.y - .5;
   const away = p.bx - from, dir = Math.abs(away) < .5 ? (Math.random() < .5 ? -1 : 1) : Math.sign(away);
-  p.vx = dir*KICK*(.75 + .5*Math.random()); p.vy = FALL; p.touched = null;
+  p.vx = dir*KICK*(.75 + .5*Math.random()); p.vy = lv().fall; p.touched = null;
   p.el.className = "bomb " + sign(v);
   p.el.innerHTML = `<i class="fire"></i><span class="core">${v < 0 ? minus + Math.abs(v) : v}</span>`;
-  sizeBomb(p); drawPiece();
+  sizeBomb(p); drawPiece(p);
   setHint(v > 0 ? `x = ${v}: pommi antaa ${v} operaatiota lisää.`
-        : v < 0 ? `x = ${minus}${-v}: pommi siivoaa roskia.`
+        : v < 0 ? `x = ${minus}${-v}: pommi antaa ${NEG_POINTS*-v} pistettä ja siivoaa roskia.`
                 : "x = 0: pommi antaa uuden operaation.");
 }
 
@@ -571,13 +709,13 @@ function stepBomb(p, dt){
   }
   if(touch && p.touched == null) p.touched = 0;
   if(p.touched != null) p.touched += dt;
-  drawPiece();
-  if(p.touched != null && (p.touched >= FUSE && touch || p.touched >= FUSE + 1.5)){ piece = null; explode(p); }
+  drawPiece(p);
+  if(p.touched != null && (p.touched >= FUSE && touch || p.touched >= FUSE + 1.5)){ pieces.splice(pieces.indexOf(p), 1); explode(p); }
 }
 
 /* ── landing ────────────────────────────────────────────────────────────── */
-function land(){
-  const p = piece; piece = null;
+function land(p){
+  pieces.splice(pieces.indexOf(p), 1);
   const r = surface(p.x0, p.x0 + p.w - 1) - 1;
   const id = ++blocks.n;
   blocks[id] = {html:eqHTML(p.L, p.R), w:p.w, font:p.el.style.fontSize};
@@ -585,8 +723,7 @@ function land(){
   for(let c = p.x0; c < p.x0 + p.w; c++) addBrick(r, c, id);
   drawTrashText(); drawTrashCount();
   setHint("Yhtälö putosi ratkaisematta: siitä tuli roskaa.");
-  if(r < DANGER) return gameOver();
-  next();
+  if(r < DANGER) gameOver();
 }
 function addBrick(r, c, block){
   const el = document.createElement("div"); el.className = "trash";
@@ -627,34 +764,62 @@ function explode(p){
   if(p.bomb > 0){
     ring("pos", x, y, cell*(.8 + .25*p.bomb));
     share(p.bomb, x, y);
-    setTimeout(next, 900);
     return;
   }
   if(p.bomb === 0){
     ring("zero", x, y, cell*1.2);
-    const key = giftFor(counts);
-    if(key) fly(key, OPS[key].html, 1, x, y, () => setHint(GIFT_NOTE[key]));
-    setTimeout(next, 900);
+    const key = giftFor(counts, promised);
+    if(key){ promised.add(key); fly(key, OPS[key].html, 1, x, y, () => setHint(GIFT_NOTE[key])); }
+    else points("spare", SPARE_POINTS, `+${SPARE_POINTS}`, x, y);
     return;
   }
+  // a negative bomb: points for |n| and for every trash brick it clears
   const R = clearRadius(p.bomb);
   ring("neg", x, y, R*cell);
   const hit = bricks.filter(b => Math.hypot(b.c + .5 - p.bx, b.r + .5 - p.by) <= R);
+  pts.cleared += hit.length;
+  points("neg", NEG_POINTS*-p.bomb, null, 0, 0);
+  points("clear", CLEAR_POINTS*hit.length, `+${NEG_POINTS*-p.bomb + CLEAR_POINTS*hit.length}`, x, y);
   for(const b of hit) b.el.classList.add("gone");
   bricks = bricks.filter(b => !hit.includes(b));
   drawTrashText();
+  const game = gameNo; busy++;
   setTimeout(() => {
     for(const b of hit) b.el.remove();
-    settle(); drawTrashText(); drawTrashCount();
-    setTimeout(next, 400);
+    if(game !== gameNo) return;
+    busy--;
+    settle(p.bx, R); drawTrashText(); drawTrashCount();
   }, 300);
 }
-// trash falls down column by column into the holes
-function settle(){
+// After a negative bomb at column bx with radius R (Vadim): the columns whose
+// middle is within R across collapse, the whole column (everything above a
+// hole falls in). Elsewhere the trash stays as it is, even over a hole, as long
+// as it hangs on to the floor through bricks that share a side. A group that
+// no longer does falls as one piece, keeping its shape, until any of its
+// bricks lands.
+function settle(bx, R){
   for(let c = 0; c < COLS; c++){
+    if(Math.abs(c + .5 - bx) > R) continue;
     const col = bricks.filter(b => b.c === c).sort((a, b) => b.r - a.r);
-    col.forEach((b, i) => { b.r = ROWS - 1 - i; placeBrick(b); });
+    col.forEach((b, i) => b.r = ROWS - 1 - i);
   }
+  // a row at a time: the bricks under a loose group are its own or none (a
+  // brick right under it would belong to it), so all loose groups can fall at once
+  for(let loose = looseBricks(); loose.length; loose = looseBricks()) for(const b of loose) b.r++;
+  for(const b of bricks) placeBrick(b);
+}
+// the bricks that don't hang on to the floor through bricks sharing a side
+function looseBricks(){
+  const at = new Map(bricks.map(b => [b.c + "," + b.r, b]));
+  const todo = bricks.filter(b => b.r === ROWS - 1), held = new Set(todo);
+  while(todo.length){
+    const b = todo.pop();
+    for(const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]){
+      const n = at.get((b.c + dc) + "," + (b.r + dr));
+      if(n && !held.has(n)){ held.add(n); todo.push(n); }
+    }
+  }
+  return bricks.filter(b => !held.has(b));
 }
 // a positive bomb n: n split at random into 1 … 4 parts for different bricks
 // (any the player has, the new ones too). A part that would fill a brick past
@@ -676,41 +841,43 @@ function splitReward(n, c, keys){
   });
   return give;
 }
-// a zero bomb: one new operation (GIFTS), another new one if that is full
-function giftFor(c){
-  const keys = Object.keys(GIFTS);
-  let r = Math.random(), key = keys.find(j => (r -= GIFTS[j]) < 0) || keys[keys.length - 1];
-  if(c[key] >= CAP){ const open = Object.keys(GIFTS).filter(j => c[j] < CAP); key = open.length ? pick(open) : null; }
-  return key;
+// a zero bomb: a new operation while one of GIFTS is missing (have: the ones
+// there or on their way), else one more use of one with room (Vadim); null: all full
+function giftFor(c, have){
+  const keys = Object.keys(GIFTS).filter(j => (GIFT_FROM[j] || 1) <= level), missing = keys.filter(j => !have.has(j));
+  const from = missing.length ? missing : keys.filter(j => c[j] < CAP);
+  return from.length ? weighted(from, j => GIFTS[j]) : null;
 }
 function shuffle(list){   // Fisher–Yates: every order equally likely
   for(let i = list.length - 1; i > 0; i--){ const j = rnd(0, i); [list[i], list[j]] = [list[j], list[i]]; }
   return list;
 }
 function share(n, x, y){
-  for(const [key, a] of Object.entries(splitReward(n, counts, [...owned]))) fly(key, "+" + a, a, x, y);
+  const give = splitReward(n, counts, [...owned]), spare = n - sum(give);
+  for(const [key, a] of Object.entries(give)) fly(key, "+" + a, a, x, y);
+  if(spare) points("spare", SPARE_POINTS*spare, `+${SPARE_POINTS*spare}`, x, y);
 }
-// a label flies from (x, y) to its brick and adds a there (a new brick appears)
+// A label flies from (x, y) to its brick and adds a there (a new brick
+// appears). What no longer fits when it arrives (several rewards on their
+// way at once) becomes points.
 function fly(key, html, a, x, y, then){
   const el = document.createElement("div"); el.className = "fly"; el.innerHTML = html;
   el.style.fontSize = cell*.6 + "px";
   board.appendChild(el); place(el, x, y);
   const t = opCenter(key);
   requestAnimationFrame(() => requestAnimationFrame(() => place(el, t.x, t.y)));
-  const game = gameNo;
+  const game = gameNo; busy++;
   setTimeout(() => {
     el.remove();
     if(game !== gameNo) return;
-    counts[key] += a; own(key); drawCount(key);
+    busy--;
+    const fit = Math.min(a, CAP - counts[key]);
+    if(fit < a) points("spare", SPARE_POINTS*(a - fit), null, 0, 0);
+    counts[key] += fit; own(key); drawCount(key);
     const b = opEls[key];
     b.classList.remove("pulse"); b.offsetWidth; b.classList.add("pulse");
     if(then) then();
   }, 720);
-}
-function next(){
-  if(over) return;
-  if(eqNo >= EQUATIONS) return finish();
-  setTimeout(spawn, 500);
 }
 
 /* ── dragging an operation onto the piece ───────────────────────────────── */
@@ -726,7 +893,7 @@ function boardXY(e){
    nearest to it (distance to the equation), if it is in that equation's
    rectangle (Vadim). Cells, x from the left wall, y rows from the top; the
    rectangle stays inside the interior. */
-const inAir = () => piece && piece.bomb == null && piece.glow == null ? [piece] : [];   // equations that take operations
+const inAir = () => pieces.filter(p => p.bomb == null && p.glow == null);   // equations that take operations
 function dropArea(p){
   const s = AREA*COLS, e = AREA_EDGE*COLS, x1 = p.x0 + p.w;
   let l = (COLS - s)/2, r = l + s;
@@ -814,9 +981,9 @@ board.addEventListener("pointermove", e => {
   if(!pull || e.pointerId !== pull.id) return;
   const pt = boardXY(e), p = pull.p, d = (pt.y - pull.y0)/cell;
   pull.moved = Math.max(pull.moved, Math.hypot(pt.x - pull.x0, pt.y - pull.y0)/cell);
-  if(d <= pull.done || p !== piece || p.bomb != null) return;
+  if(d <= pull.done || !pieces.includes(p) || p.bomb != null) return;
   p.y = Math.min(p.y + d - pull.done, surface(p.x0, p.x0 + p.w - 1));   // lands in the next frame
-  pull.done = d; drawPiece();
+  pull.done = d; drawPiece(p);
 });
 function endPull(e){
   if(!pull || e.pointerId !== pull.id) return;
@@ -840,18 +1007,21 @@ document.addEventListener("keydown", e => {
 let last = 0;
 function frame(t){
   const dt = Math.min(.1, (t - last)/1000); last = t;
-  if(piece && !over){
-    if(piece.bomb != null) stepBomb(piece, dt);
-    else{
-      piece.y += (piece.fast ? DROP : FALL)*dt;
-      const s = surface(piece.x0, piece.x0 + piece.w - 1);
-      if(piece.glow != null){   // solved and glowing: it rests on the trash if it gets there
-        piece.y = Math.min(piece.y, s); drawPiece();
-        if((piece.glow += dt) >= GLOW) toBomb(piece, piece.answer, piece.from);
+  if(!over){
+    for(const p of [...pieces]){
+      if(over) break;
+      if(p.bomb != null){ stepBomb(p, dt); continue; }
+      p.y += (p.fast ? DROP : lv().fall)*dt;
+      const s = surface(p.x0, p.x0 + p.w - 1);
+      if(p.glow != null){   // solved and glowing: it rests on the trash if it gets there
+        p.y = Math.min(p.y, s); drawPiece(p);
+        if((p.glow += dt) >= GLOW) toBomb(p, p.answer, p.from);
       }
-      else if(piece.y >= s){ piece.y = s; drawPiece(); land(); }
-      else drawPiece();
+      else if(p.y >= s){ p.y = s; drawPiece(p); land(p); }
+      else drawPiece(p);
     }
+    if(wantSpawn(dt)) spawn();
+    if(!over && eqNo >= EQUATIONS && !pieces.length && !busy) finish();
   }
   if(drag) showTarget();
   requestAnimationFrame(frame);
@@ -862,15 +1032,38 @@ function setHint(t){ $("hint").textContent = t; }
 function newGame(){
   $("overlay").classList.remove("show");
   for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .sparks")) el.remove();
-  counts = {...START}; piece = null; bricks = []; blocks = {n:0}; nextBrickId = 0; gameNo++;
-  eqNo = 0; solved = 0; score = 0; over = false; recent = []; drag = null; pull = null; lastTap = null;
-  owned = new Set(BASE);
+  counts = {...START}; pieces = []; bricks = []; blocks = {n:0}; nextBrickId = 0; gameNo++;
+  score = 0; recent = []; drag = null; pull = null; lastTap = null; busy = 0;
+  pts = {solve:0, perfect:0, perfects:0, neg:0, clear:0, cleared:0, spare:0, left:0};
+  owned = new Set(BASE); promised = new Set(BASE);
   for(const key of Object.keys(OPS)){ opEls[key].hidden = !owned.has(key); drawCount(key); }
-  $("solved").textContent = 0; $("score").textContent = 0; $("trashCount").textContent = 0;
-  $("eqNo").textContent = `0/${EQUATIONS}`;
+  $("score").textContent = 0; $("trashCount").textContent = 0;
+  level = 0; startLevel();
   chooseRows(); layout();
   setHint("Vedä operaatio putoavan yhtälön päälle: se tehdään yhtälön molemmille puolille.");
-  setTimeout(spawn, 600);
+}
+// the next level: the counts and the operations stay as they are, and the trash
+// too unless the level is fresh (it was paid for in the dialog, showLevel)
+function startLevel(){
+  $("overlay").classList.remove("show");
+  level++; eqNo = 0; solved = 0; over = false; newest = null; quiet = 0;
+  if(lv().fresh){
+    for(const b of bricks) b.el.remove();
+    bricks = []; blocks = {n:0}; drawTrashText(); drawTrashCount();
+  }
+  for(const [key, n] of Object.entries(lv().add || {})){ counts[key] = n; promised.add(key); own(key); drawCount(key); }
+  start = {score, pts:{...pts}};
+  $("level").textContent = `${level}/${LEVELS.length}`;
+  $("eqNo").textContent = `0/${EQUATIONS}`; $("solved").textContent = 0;
+  if(level > 1) setHint(`Taso ${level}: ${levelNews(level)}`);
+}
+// what is new on level l, for the hint and the dialog before it ("…: " before it)
+const levelNews = l => levelNewsList(l).join(" ").replace(/^./, ch => ch.toLowerCase());
+function levelNewsList(l){
+  const L = LEVELS[l - 1], P = LEVELS[l - 2], news = [];
+  if(L.fall > P.fall || L.next < P.next) news.push("Yhtälöt putoavat nopeammin ja tulevat tiheämmin.");
+  if(L.add && L.add[":2"]) news.push("Uusi operaatio :2 jakaa yhtälön molemmat puolet kahdella.");
+  return news.length ? news : ["Samaa vauhtia."];
 }
 function gameOver(){
   over = true;
@@ -878,24 +1071,71 @@ function gameOver(){
 }
 function finish(){
   over = true;
-  showResult("Valmis!", "Kaikki yhtälöt ovat pudonneet.");
+  if(level < LEVELS.length) showLevel();
+  else showResult("Valmis!", `Kaikki ${LEVELS.length} tasoa on pelattu.`);
   celebrate();
 }
-function showResult(title, msg){
-  $("ovTitle").textContent = title;
-  $("ovResult").textContent = `${solved}/${eqNo} ratkaistu`;
-  $("ovMsg").textContent = msg;
-  $("ovScore").innerHTML =
-    `<span>Ratkaistut yhtälöt</span><span class="v">${solved} × ${POINTS}</span>` +
-    `<span>Roskaa jäi</span><span class="v">${bricks.length}</span>` +
-    `<span class="tot">Pisteet</span><span class="v tot">${score}</span>`;
+const row = (label, v, cls = "") => `<span class="${cls}">${label}</span><span class="v ${cls}">${v}</span>`;
+// points by kind, since the counts in `from` (none: the whole game)
+function scoreRows(from){
+  const d = k => pts[k] - (from ? from[k] : 0);
+  return row("Ratkaistut yhtälöt", `${d("solve")/POINTS} × ${POINTS}`) +
+    row("Täydelliset ratkaisut", `${d("perfects")} × ${PERFECT}`) +
+    row("Miinuspommit", d("neg")) +
+    row("Siivottu roska", `${d("cleared")} × ${CLEAR_POINTS}`) +
+    (d("spare") ? row("Täysi varasto", d("spare")) : "");
+}
+function showDialog(button, then){
+  $("again").textContent = button; onAgain = then;
   $("overlay").classList.add("show");
   $("again").focus({preventScroll:true});
 }
+let onAgain = newGame;
+// a level done: its own points. The trash left goes on to the next level and
+// is no loss yet, unless the next level starts with an empty well: then it
+// costs now, as at the end of the game.
+function showLevel(){
+  const fresh = LEVELS[level].fresh, left = fresh ? bricks.length : 0;
+  if(left){ pts.left += left; score -= CLEAR_POINTS*left; $("score").textContent = num(score); }
+  $("ovTitle").textContent = `Taso ${level} läpi!`;
+  $("ovResult").textContent = `${solved}/${EQUATIONS} ratkaistu`;
+  $("ovMsg").textContent = (fresh ? "Kaivo tyhjennetään roskista, operaatiot jäävät. " : "Roskat ja operaatiot jäävät paikoilleen. ") +
+    `Tasolla ${level + 1}: ${levelNews(level + 1)}`;
+  $("ovScore").innerHTML = scoreRows(start.pts) +
+    (fresh ? row("Roskaa jäi", `${left ? minus : ""}${left} × ${CLEAR_POINTS}`) : "") +
+    row(`Taso ${level}`, num(score - start.score), "tot") +
+    (level > 1 ? row("Pisteet yhteensä", num(score)) : "");
+  showDialog("Seuraava taso", startLevel);
+}
+// the end of the game: trash left costs as much as clearing it would have given (Vadim)
+function showResult(title, msg){
+  const left = bricks.length, total = score - CLEAR_POINTS*left;
+  $("score").textContent = num(total);
+  $("ovTitle").textContent = title;
+  $("ovResult").textContent = `${pts.solve/POINTS}/${(level - 1)*EQUATIONS + eqNo} ratkaistu`;
+  $("ovMsg").textContent = msg;
+  const all = pts.left + left;   // with what earlier levels left behind (already taken off)
+  $("ovScore").innerHTML = scoreRows(null) +
+    row("Roskaa jäi", `${all ? minus : ""}${all} × ${CLEAR_POINTS}`) +
+    row("Pisteet", num(total), "tot");
+  showDialog("Pelaa uudestaan", newGame);
+}
 
 $("restart").addEventListener("click", newGame);
-$("again").addEventListener("click", newGame);
+$("again").addEventListener("click", () => onAgain());
 window.addEventListener("resize", () => { if(counts) layout(); });
+/* testing (Vadim): typing "xyz", or the page opened with ?testi, shows a
+   button that ends the level now (what is in the air goes away; the trash
+   and the counts go on). Students never see it. */
+const TEST_CODE = "xyz"; let typed = "";
+const showTestTools = () => { $("skipLevel").hidden = false; };
+if(new URLSearchParams(location.search).has("testi")) showTestTools();
+document.addEventListener("keydown", e => { typed = (typed + e.key.toLowerCase()).slice(-TEST_CODE.length); if(typed === TEST_CODE) showTestTools(); });
+$("skipLevel").addEventListener("click", () => {
+  if(over) return;
+  for(const p of pieces) p.el.remove();
+  pieces = []; eqNo = EQUATIONS;   // the loop ends the level once the rewards on their way have arrived
+});
 
 makeOpBricks();
 document.fonts.ready.then(() => { newGame(); requestAnimationFrame(t => { last = t; frame(t); }); });
