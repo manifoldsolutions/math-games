@@ -252,6 +252,7 @@ const DROP = 15;                // rows/s once the player drops it (pulled down,
 const PULL = 1.5;               // cells: pulled down at least this far, it drops when let go
 const LIFT = 1;                 // cells: a floor brick does nothing until lifted this far (half its height)
 const MISS = .3;                // cells: a brick's middle may miss an equation's end by this much
+const FLY_SPEED = 45, FLY_MIN = .1, FLY_MAX = .3;   // a thrown brick: cells/s, at least/most s
 const AREA = .8;                // a pull starts in a rectangle this share of the interior wide…
 const AREA_TALL = 1.2;          // …this many times as tall as wide…
 const AREA_EDGE = .1;           // …moved to the equation's edge when that is nearer a wall than this share
@@ -940,32 +941,68 @@ function targetAt(pt){
   const a = dropArea(best);
   return x >= a.l && x <= a.r && y >= a.t && y <= a.b ? best : null;
 }
-/* Where an operation lands (Vadim), the same for every brick: on the equation
-   over the brick's middle across (it may miss an end by MISS), the nearest
-   one if there are several (distance from the middle to the equation, above
-   or below). A floor brick does nothing until it has been lifted LIFT cells
-   above where it was picked up; a wall brick needs no lift, its middle just
-   has to be out of the wall, where no equation is. The held brick is centred
-   on the finger, so its middle is the finger. */
+/* Throwing (Vadim), the same for every brick. A brick let go is thrown if a
+   floor brick has been lifted LIFT cells above where it was picked up, or a
+   wall brick's middle has left the wall; anything less (put back, a tap)
+   flies back to its slot. The held brick is centred on the finger, so its
+   middle is the finger. A thrown brick goes to the only equation in the air,
+   or with several, to the one over the point it was let go across (it may
+   miss an end by MISS), the nearest of those (distance to the equation,
+   above or below); over none, to the nearest one across. */
+function thrown(pt){
+  if(drag.floor) return drag.y0 - pt.y >= LIFT*cell;
+  const x = pt.x/cell - WALL;
+  return x >= 0 && x <= COLS;
+}
 function opTarget(pt){
-  if(drag.floor && drag.y0 - pt.y < LIFT*cell) return null;
+  const list = inAir();
+  if(!thrown(pt)) return null;
+  if(list.length < 2) return list[0] || null;
   const x = pt.x/cell - WALL, y = pt.y/cell;
-  let best = null, bd = Infinity;
-  for(const p of inAir()){
+  let best = null, bd = Infinity, side = null, sd = Infinity;
+  for(const p of list){
     const dx = Math.max(p.x0 - x, 0, x - p.x0 - p.w);
-    if(dx > MISS) continue;
+    if(dx > MISS){ if(dx < sd){ side = p; sd = dx; } continue; }
     const d = Math.hypot(dx, Math.max(p.y - 1 - y, 0, y - p.y));
     if(d < bd){ best = p; bd = d; }
   }
-  return best;
+  return best || side;
 }
-// the magenta frame, also while the finger stands still and the equation moves
+// the magenta frame on the equation a release would hit and on those bricks
+// are flying to, also while the finger stands still and the equation moves
 function showTarget(){
-  const t = drag && drag.pt ? opTarget(drag.pt) : null;
-  for(const p of inAir()) p.el.classList.toggle("target", p === t);
+  const t = new Set(flights.map(f => f.p));
+  if(drag && drag.pt) t.add(opTarget(drag.pt));
+  for(const p of inAir()) p.el.classList.toggle("target", t.has(p));
+}
+/* A thrown brick flies to its equation's middle in a moment (FLY_SPEED, at
+   least FLY_MIN and at most FLY_MAX seconds), following it as it falls, and
+   the operation is done when it arrives (the count goes down then). One not
+   thrown, or whose equation was solved or landed meanwhile, flies back to its
+   slot unused. */
+let flights = [];
+const flyingTo = key => flights.filter(f => f.key === key && f.p).length;
+const pieceMiddle = p => ({x:X(p.x0 + p.w/2), y:Y(p.y - .5)});
+function launch(f, from){
+  const to = f.p ? pieceMiddle(f.p) : opCenter(f.key);
+  f.from = from; f.t = 0;
+  f.dur = Math.min(FLY_MAX, Math.max(FLY_MIN, Math.hypot(to.x - from.x, to.y - from.y)/cell/FLY_SPEED));
+  if(!flights.includes(f)) flights.push(f);
+}
+function stepFlights(dt){
+  for(const f of [...flights]){
+    f.t += dt;
+    const to = f.p ? pieceMiddle(f.p) : opCenter(f.key), e = Math.min(1, f.t/f.dur), k = 1 - (1 - e)**2;
+    place(f.g, f.from.x + (to.x - f.from.x)*k, f.from.y + (to.y - f.from.y)*k);
+    if(e < 1) continue;
+    const p = f.p;
+    if(p && pieces.includes(p) && applyOp(f.key, p, f.x)) p.el.classList.remove("target");
+    else if(p){ f.p = null; launch(f, to); continue; }
+    f.g.remove(); flights.splice(flights.indexOf(f), 1);
+  }
 }
 function startDrag(e, key){
-  if(over || paused || counts[key] <= 0 || drag) return;
+  if(over || paused || counts[key] - flyingTo(key) <= 0 || drag) return;
   e.preventDefault();
   const src = opEls[key];
   const g = document.createElement("div");
@@ -994,10 +1031,10 @@ function endDrag(e){
   src.removeEventListener("pointerup", endDrag);
   src.removeEventListener("pointercancel", endDrag);
   const pt = boardXY(e), t = e.type === "pointerup" ? opTarget(pt) : null;
-  drag.g.remove();
-  const key = drag.key; drag = null;
+  drag.g.classList.remove("touch");   // no finger over it any more
+  launch({g:drag.g, key:drag.key, p:t, x:pt.x/cell - WALL}, pt);
+  drag = null;
   showTarget();
-  if(t) applyOp(key, t, pt.x/cell - WALL);
 }
 
 /* ── pulling an equation down ───────────────────────────────────────────────
@@ -1067,7 +1104,8 @@ function frame(t){
     if(wantSpawn(dt)) spawn();
     if(!over && eqNo >= EQUATIONS && !pieces.length && !busy) finish();
   }
-  if(drag) showTarget();
+  if(!paused) stepFlights(dt);
+  showTarget();
   requestAnimationFrame(frame);
 }
 
@@ -1077,14 +1115,14 @@ function newGame(){
   $("overlay").classList.remove("show"); $("pauseOv").classList.remove("show"); paused = false;
   for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .sparks")) el.remove();
   counts = {...START}; pieces = []; bricks = []; blocks = {n:0}; nextBrickId = 0; gameNo++;
-  score = 0; recent = []; drag = null; pull = null; lastTap = null; busy = 0;
+  score = 0; recent = []; drag = null; pull = null; lastTap = null; busy = 0; flights = [];
   pts = {solve:0, perfect:0, perfects:0, neg:0, clear:0, cleared:0, spare:0, left:0};
   owned = new Set(BASE); promised = new Set(BASE);
   for(const key of Object.keys(OPS)){ opEls[key].hidden = !owned.has(key); drawCount(key); }
   $("score").textContent = 0; $("trashCount").textContent = 0;
   level = 0; startLevel();
   chooseRows(); layout();
-  setHint("Vedä operaatio putoavan yhtälön päälle: se tehdään yhtälön molemmille puolille.");
+  setHint("Pyyhkäise operaatio kohti putoavaa yhtälöä: se tehdään yhtälön molemmille puolille.");
 }
 // the next level: the counts and the operations stay as they are, and the trash
 // too unless the level is fresh (it was paid for in the dialog, showLevel)
@@ -1142,7 +1180,7 @@ function showStart(){
   over = true;
   $("ovTitle").textContent = "Taso 1";
   $("ovResult").textContent = `${EQUATIONS} yhtälöä`;
-  $("ovMsg").textContent = "Ratkaise yhtälöt ennen kuin ne putoavat pohjaan. Vedä operaatio yhtälön päälle: se tehdään yhtälön molemmille puolille.";
+  $("ovMsg").textContent = "Ratkaise yhtälöt ennen kuin ne putoavat pohjaan. Pyyhkäise operaatio kohti yhtälöä: se tehdään yhtälön molemmille puolille.";
   $("ovScore").innerHTML = "";
   showDialog("Aloita", () => { over = false; $("overlay").classList.remove("show"); });
 }

@@ -235,8 +235,8 @@ games/<category>/<course>/<game>/index.html
 - A Tetris-like well (9 columns, brick walls and floor). 30 equations per
   level; the next one comes when the newest has fallen halfway (level 1), or
   0.8 s after it was solved or landed, in columns that don't overlap one
-  still falling. So usually two fall at once. The player drags an operation brick from
-  the floor (+x, −x, +1, −1 at the start) onto it: it's done to both sides and
+  still falling. So usually two fall at once. The player throws an operation brick from
+  the floor (+x, −x, +1, −1 at the start) at it: it's done to both sides and
   the brick's count goes down (start 4/4/4/4, at most 9). The fall never slows,
   not even while dragging (Vadim).
 - Levels (Vadim, `LEVELS`): the next level goes on with the trash, the counts
@@ -279,16 +279,20 @@ games/<category>/<course>/<game>/index.html
   than 8 operations, will need the walls more). Bricks are dragged up from
   the floor so that Android's back gesture (sideways from the edge) doesn't
   catch them; the wall bricks still can be caught.
-- Where an operation lands (Vadim), the same for every brick: on the equation
-  over the brick's middle across (it may miss an end by 0.3 cells, `MISS`),
-  the nearest one (distance from the middle, above or below) if there are
-  several. A floor brick does nothing until it has been lifted 1 cell (half
-  its height, `LIFT`) above where it was picked up, so putting it back
-  cancels. A wall brick needs no lift (lifting from the wall would be
-  counterintuitive, Vadim); its middle just has to leave the wall, where no
-  equation is. The held brick is centred on the finger. The magenta frame
-  shows the target, checked every frame, so it also works while the finger
-  stands still.
+- Throwing (Vadim), the same for every brick. A brick let go is thrown if a
+  floor brick has been lifted 1 cell (half its height, `LIFT`) above where it
+  was picked up, or a wall brick's middle has left the wall (lifting from the
+  wall would be counterintuitive, Vadim). Anything less flies back to its
+  slot, so putting it back or a tap does nothing. The held brick is centred
+  on the finger. The target is decided where it is let go: the only equation
+  in the air; with several, the one over that point across (it may miss an
+  end by 0.3 cells, `MISS`), the nearest of those (above or below); over
+  none, the nearest one across. So a throw always hits something. The brick
+  flies to the equation's middle in 0.1–0.3 s, following it as it falls, and
+  the operation is done when it arrives (the count goes down then). If the
+  equation was solved or landed meanwhile, the brick flies back unused. The
+  magenta frame shows what a release would hit and what bricks are flying
+  to, checked every frame.
 - Pull area: a rectangle 80 % of the interior width (between the walls) wide
   and 1.2 times that tall, centred across the interior and on the equation's
   middle up and down, clipped to the interior. An equation nearer a wall than
