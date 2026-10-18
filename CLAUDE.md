@@ -237,7 +237,7 @@ games/<category>/<course>/<game>/index.html
   with the step counts. The model comes from how the puzzle was built (take
   off the constant k, then the kb extra boxes), never from a search.
 
-## Yhtälösade (falling equations) — first draft, 2 levels
+## Yhtälösade (falling equations) — first draft, 3 levels
 
 - A Tetris-like well (9 columns, brick walls and floor). 30 equations per
   level; they come on a timetable (see Levels), in columns that don't
@@ -379,17 +379,43 @@ games/<category>/<course>/<game>/index.html
   ("no solution", key `"N"`, a drawn red lightning bolt, as in maths for a
   contradiction) sits in the left wall above the joker; it starts with 2 on
   level 2 and bombs never refill it (`NO_REFILL`). The ⚡ on a contradiction:
-  it glows red 0.5 s (100 points, counts as solved), then blows up at once:
-  every equation still falling unsolved goes without becoming a bomb, 100
-  points each ("Ristiriidat" in the result). Glowing ones, bombs and the
+  it glows red 0.5 s, then blows up at once: every equation still falling
+  unsolved goes without becoming a bomb, 100 points each ("Räjäytetyt
+  yhtälöt n × 100" in the result). The contradiction itself counts as a
+  solved equation everywhere (100 in "Ratkaistut yhtälöt"; Vadim: "no
+  solution" is its solution). Glowing ones, bombs and the
   trash stay; bricks flying to the ones that went come back. A red flash
   over the well, a big red ring, a shake; red because a contradiction is an
   error (Vadim). The ⚡ on an equation with a solution, or the joker on a
   contradiction, is wasted (Vadim: bouncing back would let students test
   every equation). Normal operations work on a contradiction but never
   solve it (3 = 5 does nothing by itself, Vadim: declaring "no solution" is
-  the student's job); unsolved it lands as trash. The zero bomb's shot
-  skips contradictions.
+  the student's job); unsolved it lands as trash. A zero bomb's shot
+  that hits a contradiction (it is the lowest equation) blows it up the same
+  way, with the same points, and the player keeps the ⚡ (Vadim: cascades are
+  cool, and it is rare). The joker stays wasted on one.
+- Level 3: x² (Vadim). A mix: the share of equations with x² grows 30 % →
+  80 % over the level (measured 35 / 48 / 63 / 74 % by quarter). They are
+  built from x² = n² (n ≥ 0), with kb·x and k on both sides (x² + 2 = 11,
+  x² + x = x + 9, 16 − x = x² − x); a growing share (10 % → 50 %, `scaled`)
+  from 2x² = 2n² or ½x² = ½n², which need :2 or ·2 before √. x² is only on
+  one side (there is no ±x² brick). √ works only on exactly "x² = a number
+  ≥ 0" and gives x = ±n (x² = 0: x = 0); anywhere else it is wasted, like
+  the ⚡. x = ±n glows gold and magenta and becomes two bombs, n and −n,
+  knocked apart (one equation: 100 points; the bombs do what bombs do). The
+  joker and the zero bomb's shot also give ±n. par counts √ and :2 / ·2.
+  The level's contradictions are x² = a negative number (x² + 5 = 1).
+  Bricks (Vadim): only ±1, ±x, √, :2, ·2, the joker and ⚡. When it starts
+  (`drop`), ±2, ±2x, :2 and ·2 go away and their uses become points (10 each,
+  "Poistuneet operaatiot" in the dialog before it); √ starts with 4 (bombs
+  refill it), ⚡ with 2, and the well is emptied. :2 and ·2 come from zero
+  bombs (the gifts there: the joker, :2, ·2, `gifts`; a missing one first),
+  so the generator gives no :2, ·2 or √ equation before the player has that
+  brick (Vadim: no bad luck); measured: :2 and ·2 arrive around the 11th
+  equation, and in 14 % of levels never. Slots there (`slots`, `slotOf`):
+  ±x and ±1 where they were, the joker and √ in the floor corners, :2 and ·2
+  in the middle of the floor, ⚡ low in the left wall. Checked: 0 stalls in
+  3 000 perfect level-3 games, a joker needed for 1.8 % of the equations.
 - Solved → the equation locks and glows for 0.5 s in its bomb's colour (gold,
   magenta, cyan; Vadim) with a burst of sparks, still falling, then turns
   into the bomb.
@@ -450,8 +476,7 @@ games/<category>/<course>/<game>/index.html
   row in the chain simply has no annotation.
 - Division (e.g. 3x = 12 with ÷2/÷3/÷4 tokens that split a cup into equal
   piles): as extra levels in this game, or a separate game "Yhtälövaaka 2"?
-- Yhtälösade: a level after the :2 level brings the square root (Vadim); not
-  designed yet.
+- Yhtälösade: what comes after level 3 (x²) is not designed yet.
 - Unlockable visual skins (e.g. a "Metalli" skin for finishing the game):
   liked as an idea, not decided.
 
