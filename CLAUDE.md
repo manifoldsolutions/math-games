@@ -371,6 +371,25 @@ games/<category>/<course>/<game>/index.html
   cyan ball flies to it in 0.4 s (`SHOT_T`; one not already aimed at by
   another shot) and solves it as a joker would: 100 points, no perfect
   bonus, and it turns into its own bomb (which then does what bombs do).
+- Contradictions (Vadim, level 2): equations with no solution, the same x on
+  both sides and different constants (x + 3 = x + 5, 2x − 1 = 2x + 4,
+  4 − x = 1 − x). They come only from the 20th equation on, at most 2 a
+  level, 1.5 on average (chance 0.18 each, `contra`; measured 1.51, mostly
+  around the 24th), and only while the player has a ⚡ left. The ⚡ brick
+  ("no solution", key `"N"`, a drawn red lightning bolt, as in maths for a
+  contradiction) sits in the left wall above the joker; it starts with 2 on
+  level 2 and bombs never refill it (`NO_REFILL`). The ⚡ on a contradiction:
+  it glows red 0.5 s (100 points, counts as solved), then blows up at once:
+  every equation still falling unsolved goes without becoming a bomb, 100
+  points each ("Ristiriidat" in the result). Glowing ones, bombs and the
+  trash stay; bricks flying to the ones that went come back. A red flash
+  over the well, a big red ring, a shake; red because a contradiction is an
+  error (Vadim). The ⚡ on an equation with a solution, or the joker on a
+  contradiction, is wasted (Vadim: bouncing back would let students test
+  every equation). Normal operations work on a contradiction but never
+  solve it (3 = 5 does nothing by itself, Vadim: declaring "no solution" is
+  the student's job); unsolved it lands as trash. The zero bomb's shot
+  skips contradictions.
 - Solved → the equation locks and glows for 0.5 s in its bomb's colour (gold,
   magenta, cyan; Vadim) with a burst of sparks, still falling, then turns
   into the bomb.
