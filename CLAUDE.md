@@ -357,6 +357,12 @@ games/<category>/<course>/<game>/index.html
   half as often as each of the others (`GIFTS`). A new brick appears in its
   slot (see Slots); after that positive bombs can refill it too, the joker
   included (Vadim). From level 2 ·2 is a sixth gift (below).
+- Zero bomb's shot (Vadim, level 1 for now, being tested): besides its gift,
+  a zero bomb shoots down the lowest equation in the air with a chance that
+  grows over the level's equations from 0 to 0.5 (`shoot` in `LEVELS`). A
+  cyan ball flies to it in 0.4 s (`SHOT_T`; one not already aimed at by
+  another shot) and solves it as a joker would: 100 points, no perfect
+  bonus, and it turns into its own bomb (which then does what bombs do).
 - Solved → the equation locks and glows for 0.5 s in its bomb's colour (gold,
   magenta, cyan; Vadim) with a burst of sparks, still falling, then turns
   into the bomb.

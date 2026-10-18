@@ -143,6 +143,9 @@
 
   .ghost{ pointer-events:none; z-index:5; opacity:.92; transform:translate(-50%,-50%); }
   .ghost.touch{ transform:translate(-50%,-50%) scale(1.6); }
+  /* a zero bomb's shot at the lowest equation */
+  .shot{ pointer-events:none; z-index:5; transform:translate(-50%,-50%); border-radius:50%;
+    background:var(--accent); box-shadow:0 0 12px 3px rgba(0,229,255,.7); }
   .note{
     pointer-events:none; z-index:4; font-family:var(--math); font-weight:600; white-space:nowrap;
     color:var(--accent-ink); animation:rise .9s ease-out forwards;
@@ -221,11 +224,12 @@ const EQUATIONS = 30;           // equations per level
 // answers among x ≠ 0, [first, last], reached at the equation posBy;
 // fresh: the well is emptied of trash first (the trash left costs as at the
 // end); add: a new operation and its count; div: the share of equations that
-// end with 2x = 2n and need :2.
+// end with 2x = 2n and need :2; shoot: the chance that a zero bomb also
+// shoots down the lowest equation, [first, last] (Vadim, `shootLowest`).
 const LEVELS = [
   // the old levels 1 and 2 in one (Vadim): more negative answers, so more
   // bombs that clear trash, towards the end
-  {fall:[.55, .8], perScreen:[2, 4], pos:[.8, .3], posBy:EQUATIONS},
+  {fall:[.55, .8], perScreen:[2, 4], pos:[.8, .3], posBy:EQUATIONS, shoot:[0, .5]},
   {fall:[.6, .7], perScreen:[2.5, 3], pos:[.8, .5], posBy:10, fresh:true, add:{":2":3}, div:1/3},
 ];
 const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0};
@@ -254,6 +258,7 @@ const FLICK = 10, FLICK_MIN = .4, FLICK_T = .1;   // a throw: cells/s and cells,
 const AIM_MAX = 45;             // degrees: a throw may miss an equation by this angle
 const MISS = .3;                // cells: equations are this much bigger for a throw or a drop
 const FLY_SPEED = 45, FLY_MIN = .1, FLY_MAX = .3;   // a thrown brick: cells/s, at least/most s
+const SHOT_T = .4;              // s: a zero bomb's shot flies (slower, so that it is seen)
 const AREA = .8;                // a pull starts in a rectangle this share of the interior wide…
 const AREA_TALL = 1.2;          // …this many times as tall as wide…
 const AREA_EDGE = .1;           // …moved to the equation's edge when that is nearer a wall than this share
@@ -607,10 +612,7 @@ function applyOp(key, p, x){
   const o = OPS[key];
   counts[key]--; drawCount(key);
   p.ops++; if(o.joker) p.joker = true;
-  if(o.joker){
-    const xs = {a:1, b:0}, ns = {a:0, b:p.n};
-    [p.L, p.R] = p.L.a > p.R.a ? [xs, ns] : [ns, xs];
-  }
+  if(o.joker) writeAnswer(p);
   else if(o.times){   // :2 of odd numbers gives fractions, and ±1 can't take them away (Vadim)
     p.L = {a:p.L.a*o.times, b:p.L.b*o.times};
     p.R = {a:p.R.a*o.times, b:p.R.b*o.times};
@@ -619,15 +621,46 @@ function applyOp(key, p, x){
     p.L = {a:p.L.a + o.a, b:p.L.b + o.b};
     p.R = {a:p.R.a + o.a, b:p.R.b + o.b};
   }
+  const mid = redraw(p);
+  note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - 1));
+  const v = solvedValue(p.L, p.R);
+  if(v != null) solvedNow(p, v, x);
+  return true;
+}
+// the joker's way (and a zero bomb's shot): x on the side that had more x,
+// the answer on the other
+function writeAnswer(p){
+  const xs = {a:1, b:0}, ns = {a:0, b:p.n};
+  [p.L, p.R] = p.L.a > p.R.a ? [xs, ns] : [ns, xs];
+}
+// after a change: new width, the same middle (in whole columns); the middle
+function redraw(p){
   const mid = p.x0 + p.w/2;
   measure(p);
   p.x0 = Math.max(0, Math.min(COLS - p.w, Math.round(mid - p.w/2)));
   drawPiece(p);
   p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit");
-  note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - 1));
-  const v = solvedValue(p.L, p.R);
-  if(v != null) solvedNow(p, v, x);
-  return true;
+  return mid;
+}
+/* A zero bomb may also shoot down the lowest equation in the air (Vadim): with
+   the level's chance `shoot`, growing from its first equation to its last. A
+   cyan shot flies to it (one not already aimed at by a shot) and solves it as
+   a joker would: 100 points, no perfect bonus, and its own bomb. */
+function shootLowest(x, y, from){
+  const aimed = new Set(flights.filter(f => f.shot).map(f => f.p));
+  const list = inAir().filter(q => !aimed.has(q));
+  if(!list.length) return;
+  const p = list.reduce((a, b) => b.y > a.y ? b : a);
+  const g = document.createElement("div"); g.className = "shot";
+  g.style.width = g.style.height = cell*.45 + "px";
+  board.appendChild(g); place(g, x, y);
+  launch({g, p, x:from, shot:true}, {x, y});
+}
+function shotDown(p, from){
+  if(!pieces.includes(p) || p.bomb != null || p.glow != null || over) return;
+  p.joker = true;
+  writeAnswer(p); redraw(p);
+  solvedNow(p, p.n, from);
 }
 const sign = v => v > 0 ? "pos" : v < 0 ? "neg" : "zero";
 // Solved: it locks, glows in its bomb's colour with a burst of sparks for GLOW
@@ -787,6 +820,7 @@ function explode(p){
     const key = giftFor(counts, promised);
     if(key){ promised.add(key); fly(key, OPS[key].html, 1, x, y); }
     else points("spare", SPARE_POINTS, `+${SPARE_POINTS}`, x, y);
+    if(Math.random() < ramp(lv().shoot || [0, 0])) shootLowest(x, y, p.bx);
     return;
   }
   // a negative bomb: points for |n| and for every trash brick it clears
@@ -988,14 +1022,15 @@ function showTarget(){
    least FLY_MIN and at most FLY_MAX seconds), following it as it falls, and
    the operation is done when it arrives (the count goes down then). One not
    thrown, or whose equation was solved or landed meanwhile, flies back to its
-   slot unused. */
+   slot unused. A zero bomb's shot (shot) flies the same way, in SHOT_T, and
+   just goes out if its equation is gone. */
 let flights = [];
 const flyingTo = key => flights.filter(f => f.key === key && f.p).length;
 const pieceMiddle = p => ({x:X(p.x0 + p.w/2), y:Y(p.y - .5)});
 function launch(f, from){
   const to = f.p ? pieceMiddle(f.p) : opCenter(f.key);
   f.from = from; f.t = 0;
-  f.dur = Math.min(FLY_MAX, Math.max(FLY_MIN, Math.hypot(to.x - from.x, to.y - from.y)/cell/FLY_SPEED));
+  f.dur = f.shot ? SHOT_T : Math.min(FLY_MAX, Math.max(FLY_MIN, Math.hypot(to.x - from.x, to.y - from.y)/cell/FLY_SPEED));
   if(!flights.includes(f)) flights.push(f);
 }
 function stepFlights(dt){
@@ -1005,7 +1040,8 @@ function stepFlights(dt){
     place(f.g, f.from.x + (to.x - f.from.x)*k, f.from.y + (to.y - f.from.y)*k);
     if(e < 1) continue;
     const p = f.p;
-    if(p && pieces.includes(p) && applyOp(f.key, p, f.x)) p.el.classList.remove("target");
+    if(f.shot) shotDown(p, f.x);
+    else if(p && pieces.includes(p) && applyOp(f.key, p, f.x)) p.el.classList.remove("target");
     else if(p){ f.p = null; launch(f, to); continue; }
     f.g.remove(); flights.splice(flights.indexOf(f), 1);
   }
@@ -1125,7 +1161,7 @@ function frame(t){
 /* ── start and end ──────────────────────────────────────────────────────── */
 function newGame(){
   $("overlay").classList.remove("show"); $("pauseOv").classList.remove("show"); paused = false;
-  for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .sparks")) el.remove();
+  for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .shot, .sparks")) el.remove();
   counts = {...START}; pieces = []; bricks = []; blocks = {n:0}; nextBrickId = 0; gameNo++;
   score = 0; recent = []; drag = null; pull = null; lastTap = null; busy = 0; flights = [];
   pts = {solve:0, perfect:0, perfects:0, neg:0, clear:0, cleared:0, spare:0, left:0};
