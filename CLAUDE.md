@@ -240,24 +240,28 @@ games/<category>/<course>/<game>/index.html
 ## Yhtälösade (falling equations) — first draft, 2 levels
 
 - A Tetris-like well (9 columns, brick walls and floor). 30 equations per
-  level; the next one comes when the newest has fallen a share of the well (see Levels), or
-  0.8 s after it was solved or landed, in columns that don't overlap one
-  still falling. So usually two fall at once. The player throws an operation brick from
+  level; they come on a timetable (see Levels), in columns that don't
+  overlap one still falling, so usually two to four fall at once. The player throws an operation brick from
   the floor (+x, −x, +1, −1 at the start) at it: it's done to both sides and
   the brick's count goes down (start 4/4/4/4, at most 9). The fall never slows,
   not even while dragging (Vadim).
 - Levels (Vadim, `LEVELS`): the next level goes on with the counts and the
   operations left by the previous one (the well keeps its rows). Each level
   speeds up from its first equation to its last (Vadim, `ramp`): the fall in
-  rows/s and the equations per screen (the next one comes when the newest
-  has fallen 1/that of the well). Level 1 is the old levels 1 and 2 merged
-  (Vadim): 0.55 → 0.8 rows/s, 2 → 4 per screen, positive answers 80 % → 30 %
-  over the level (more negative bombs, which clear trash, towards the end).
-  Level 2 (the old level 3; Vadim found it a tad too hard): 0.6 → 0.7 and
-  2.5 → 3, positive answers 80 % → 50 % by the 10th equation; it starts with
-  the well emptied of trash (counts kept) and brings `:2` with count 3 (see
-  below). Everything else starts over per level: the difficulty ramp, the
-  early zeros, the equation count.
+  rows/s grows linearly, and the gap in seconds from one equation to the
+  next shrinks linearly (`wantSpawn`), the same on every screen and however
+  fast the player is. Only an empty well (no unsolved equation falling)
+  brings the next one at once (Vadim), and the timetable goes on from there:
+  the gap from n to n + 1 is min(the timetable's gap, the time until the
+  well is empty). For now every level has the same settings (Vadim, `LEVEL`;
+  a level only lists what is its own): 0.55 → 0.8 rows/s, gaps 16 → 5.6 s
+  (on a 19-row phone well about 2 → 4 equations on the screen, fewer in a
+  shorter desktop well), positive answers 80 % → 30 % over the level (more
+  negative bombs, which clear trash, towards the end), the zero bomb's shot
+  0 → 0.5. Level 1 is the old levels 1 and 2 merged (Vadim). Level 2 (the
+  old level 3) starts with the well emptied of trash (counts kept) and brings
+  `:2` with count 3 (see below). Everything else starts over per level: the
+  difficulty ramp, the early zeros, the equation count.
   Between levels a dialog shows the level's points ("Taso 1 läpi!", "Seuraava
   taso"). Trash
   left costs 20 a brick only when it goes away: at the end of the game (or
@@ -324,18 +328,20 @@ games/<category>/<course>/<game>/index.html
 - Each count is shown as a number and a battery bar: green > 2, yellow 2,
   red 1, grey 0.
 - Equations are built backwards from x = n with kb boxes (−2 … 2, so +x is
-  needed too) and a constant k (−2 … 2) added to both sides, at most 3
-  operations. Negative answers cost the same as positive (Vadim: flip the
+  needed too) and a constant k (−3 … 3) added to both sides, at most 5
+  basic operations (Vadim; it was 3). Negative answers cost the same as positive (Vadim: flip the
   constants).
 - The game gets harder from the first equation to the last (Vadim): |x| and
   the number of basic operations needed (+x −x +1 −1, `par`) grow, and the
   answers are more often positive at first. Each has a target that moves
-  linearly over the level's equations (`SIZE` |x| 2 → 7, `PAR` 1 → 3, the
-  level's `pos`, the positive share), and values near the target are preferred (a
-  bell curve). Measured: mean |x| 3.6 / 4.2 / 5.0 / 5.8 and mean par
-  1.6 / 2.0 / 2.3 / 2.6 in the four quarters of a level. The positive share
-  falls over the whole of level 1 (to 30 %, measured 74 / 62 / 50 / 37 % by
-  quarter), on level 2 it is down to 50 % by the 10th equation (`posBy`).
+  linearly over the level's equations (`SIZE` |x| 2 → 7, `PAR` 1 → 4 (Vadim;
+  it was 1 → 3), the level's `pos`, the positive share), and values near the
+  target are preferred (a bell curve). Measured: mean |x| 3.6 / 4.2 / 5.0 /
+  5.8 in the four quarters of a level; basic operations, in a perfect
+  player's game (the counts limit what is offered), 1.7 / 2.3 / 2.9 / 3.5,
+  5 in 4 % of the last quarter (`:2` adds one on level 2). The positive share
+  falls over the whole level (to 30 %, measured 74 / 62 / 50 / 37 % by
+  quarter).
 - Economy (Vadim chose, from the white paper `yhtalosade-economy.pdf` in the
   game's folder: D1 with the adaptive generator G₄): answers −6 … −1 and
   3 … 8, and 0 with probability 10 % (Vadim). The generator looks at the
@@ -347,7 +353,9 @@ games/<category>/<course>/<game>/index.html
   the air the generator takes off what the falling ones still need, so they
   never count on the same operations. Checked with the game's own code: 0
   stalls in 20 000 perfect 20-equation games; about 10 % zero, 45 %
-  negative. In the first 5 equations x = 0 has probability 0.17, so 60 % of
+  negative. Again with up to 5 operations and 30 % positive at the end:
+  0 stalls in 3 000 perfect two-level games, a joker needed for 2.4 % of
+  the equations. In the first 5 equations x = 0 has probability 0.17, so 60 % of
   games have a zero there (Vadim: it makes the start exciting).
 - x = 0 → a cyan zero bomb (bounces like the others, clears nothing). It
   gives one use of a new operation: +2, −2, +2x, −2x or a joker "x = ?" that
@@ -357,7 +365,7 @@ games/<category>/<course>/<game>/index.html
   half as often as each of the others (`GIFTS`). A new brick appears in its
   slot (see Slots); after that positive bombs can refill it too, the joker
   included (Vadim). From level 2 ·2 is a sixth gift (below).
-- Zero bomb's shot (Vadim, level 1 for now, being tested): besides its gift,
+- Zero bomb's shot (Vadim, every level): besides its gift,
   a zero bomb shoots down the lowest equation in the air with a chance that
   grows over the level's equations from 0 to 0.5 (`shoot` in `LEVELS`). A
   cyan ball flies to it in 0.4 s (`SHOT_T`; one not already aimed at by
