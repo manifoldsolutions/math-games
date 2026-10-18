@@ -4,6 +4,13 @@ Static site on GitHub Pages (custom domain in `CNAME`). No build step, no
 framework, no npm: plain HTML/CSS/JS. Every game is one self-contained
 `index.html`.
 
+## Working rule (Vadim)
+
+- Never implement anything unless the prompt explicitly asks for it.
+  Otherwise always stay in brainstorm mode: answer, propose, discuss, but
+  don't change files. If unsure whether something is a request to
+  implement, ask.
+
 ## Layout
 
 ```
@@ -230,31 +237,35 @@ games/<category>/<course>/<game>/index.html
   with the step counts. The model comes from how the puzzle was built (take
   off the constant k, then the kb extra boxes), never from a search.
 
-## Yhtälösade (falling equations) — first draft, 3 levels
+## Yhtälösade (falling equations) — first draft, 2 levels
 
 - A Tetris-like well (9 columns, brick walls and floor). 30 equations per
-  level; the next one comes when the newest has fallen halfway (level 1), or
+  level; the next one comes when the newest has fallen a share of the well (see Levels), or
   0.8 s after it was solved or landed, in columns that don't overlap one
   still falling. So usually two fall at once. The player throws an operation brick from
   the floor (+x, −x, +1, −1 at the start) at it: it's done to both sides and
   the brick's count goes down (start 4/4/4/4, at most 9). The fall never slows,
   not even while dragging (Vadim).
-- Levels (Vadim, `LEVELS`): the next level goes on with the trash, the counts
-  and the new operations left by the previous one (the well keeps its rows).
-  Level 2 falls 1.2 times as fast (0.66 rows/s) and the next equation comes
-  when the newest is a third of the way down (so in time about 1.8 times as
-  often as on level 1; up to three fall at once). Level 3 (Vadim): the same
-  speed as level 2, but it starts with the well emptied of trash (counts
-  kept) and brings `:2` with count 3 (see below). Everything else starts over
-  per level: the difficulty ramp, the early zeros, the equation count.
+- Levels (Vadim, `LEVELS`): the next level goes on with the counts and the
+  operations left by the previous one (the well keeps its rows). Each level
+  speeds up from its first equation to its last (Vadim, `ramp`): the fall in
+  rows/s and the equations per screen (the next one comes when the newest
+  has fallen 1/that of the well). Level 1 is the old levels 1 and 2 merged
+  (Vadim): 0.55 → 0.8 rows/s, 2 → 4 per screen, positive answers 80 % → 30 %
+  over the level (more negative bombs, which clear trash, towards the end).
+  Level 2 (the old level 3; Vadim found it a tad too hard): 0.6 → 0.7 and
+  2.5 → 3, positive answers 80 % → 50 % by the 10th equation; it starts with
+  the well emptied of trash (counts kept) and brings `:2` with count 3 (see
+  below). Everything else starts over per level: the difficulty ramp, the
+  early zeros, the equation count.
   Between levels a dialog shows the level's points ("Taso 1 läpi!", "Seuraava
-  taso") and what the next level brings (also the hint when it starts). Trash
+  taso"). Trash
   left costs 20 a brick only when it goes away: at the end of the game (or
   Game Over), or in the dialog before a level that empties the well. Game
   Over and "Pelaa uudestaan" start again from level 1. The header shows Taso
   and Pisteet; Yhtälö n/30 is in the status row.
-- `:2` (level 3; Finnish notation for division) divides both sides by 2. About a third of
-  level 3's equations (`div`) are built from 2x = 2n instead of x = n, with
+- `:2` (level 2; Finnish notation for division) divides both sides by 2. About a third of
+  level 2's equations (`div`) are built from 2x = 2n instead of x = n, with
   the same boxes and constant (x + 1 = 9 − x, 3x − 1 = x − 5), so they end
   with :2; the generator offers them only while the player has :2 (or a
   joker), so in practice about 30 %. :2 always works (Vadim: refusing it
@@ -265,8 +276,8 @@ games/<category>/<course>/<game>/index.html
   everything is even (4x + 2 = 2x + 8). par counts :2 too; the difficulty
   ramp's PAR counts only +x −x +1 −1 (Vadim's measure). Positive bombs refill
   :2 like any brick; zero bombs don't give it.
-- `·2` multiplies both sides by 2 (the key is `"*2"`). From level 3 on it is a
-  sixth zero-bomb gift (`GIFT_FROM`, Vadim), so a zero bomb on level 3
+- `·2` multiplies both sides by 2 (the key is `"*2"`). From level 2 on it is a
+  sixth zero-bomb gift (`GIFT_FROM`, Vadim), so a zero bomb on level 2
   brings it if the player has all five others. Nothing needs it yet (it
   undoes a :2 that gave fractions; Vadim: later levels may need it). Its
   dot is drawn bigger (`.mul`), the font's · is tiny.
@@ -279,20 +290,24 @@ games/<category>/<course>/<game>/index.html
   than 8 operations, will need the walls more). Bricks are dragged up from
   the floor so that Android's back gesture (sideways from the edge) doesn't
   catch them; the wall bricks still can be caught.
-- Throwing (Vadim), the same for every brick. A brick let go is thrown if a
-  floor brick has been lifted 1 cell (half its height, `LIFT`) above where it
-  was picked up, or a wall brick's middle has left the wall (lifting from the
-  wall would be counterintuitive, Vadim). Anything less flies back to its
-  slot, so putting it back or a tap does nothing. The held brick is centred
-  on the finger. The target is decided where it is let go: the only equation
-  in the air; with several, the one over that point across (it may miss an
-  end by 0.3 cells, `MISS`), the nearest of those (above or below); over
-  none, the nearest one across. So a throw always hits something. The brick
-  flies to the equation's middle in 0.1–0.3 s, following it as it falls, and
-  the operation is done when it arrives (the count goes down then). If the
-  equation was solved or landed meanwhile, the brick flies back unused. The
-  magenta frame shows what a release would hit and what bricks are flying
-  to, checked every frame.
+- Throwing (Vadim), the same for every brick, by the direction of the swipe
+  (the target used to be decided by where the brick was let go, but then a
+  new equation could take over mid-swipe). A flick is the finger's move over
+  the last 0.1 s, at least 0.4 cells and 10 cells/s (`FLICK`). Let go with a
+  flick, the brick goes along it: to the equation the line from that point
+  passes through (equations 0.3 cells bigger all round, `MISS`; the first
+  along the line), else to the one with the smallest angle off the line, up
+  to 45° (`AIM_MAX`). Let go without one (dragged slowly, or stopped first),
+  it lands on the equation it is on. Anything else (a tap, put back, a flick
+  away from every equation) flies back to its slot. So the player may first
+  drag a brick anywhere and then flick it. The held brick is centred on the
+  finger. A thrown brick flies to the equation's middle in 0.1–0.3 s,
+  following it as it falls, and the operation is done when it arrives (the
+  count goes down then); if the equation was solved or landed meanwhile, the
+  brick flies back unused. The magenta frame shows where a release would go
+  now (the equation under the brick while dragging slowly, the one the flick
+  points at while swiping) and what bricks are flying to, checked every
+  frame.
 - Pull area: a rectangle 80 % of the interior width (between the walls) wide
   and 1.2 times that tall, centred across the interior and on the equation's
   middle up and down, clipped to the interior. An equation nearer a wall than
@@ -315,12 +330,12 @@ games/<category>/<course>/<game>/index.html
 - The game gets harder from the first equation to the last (Vadim): |x| and
   the number of basic operations needed (+x −x +1 −1, `par`) grow, and the
   answers are more often positive at first. Each has a target that moves
-  linearly over the level's equations (`SIZE` |x| 2 → 7, `PAR` 1 → 3, `POS`
-  positive share 80 % → 50 %), and values near the target are preferred (a
+  linearly over the level's equations (`SIZE` |x| 2 → 7, `PAR` 1 → 3, the
+  level's `pos`, the positive share), and values near the target are preferred (a
   bell curve). Measured: mean |x| 3.6 / 4.2 / 5.0 / 5.8 and mean par
   1.6 / 2.0 / 2.3 / 2.6 in the four quarters of a level. The positive share
-  falls over the whole of level 1, but on later levels it is down to 50 % by
-  the 10th equation (`posBy`; Vadim: it may even out faster there).
+  falls over the whole of level 1 (to 30 %, measured 74 / 62 / 50 / 37 % by
+  quarter), on level 2 it is down to 50 % by the 10th equation (`posBy`).
 - Economy (Vadim chose, from the white paper `yhtalosade-economy.pdf` in the
   game's folder: D1 with the adaptive generator G₄): answers −6 … −1 and
   3 … 8, and 0 with probability 10 % (Vadim). The generator looks at the
@@ -341,7 +356,7 @@ games/<category>/<course>/<game>/index.html
   it add one use to one of them (one with room). Picked at random, the joker
   half as often as each of the others (`GIFTS`). A new brick appears in its
   slot (see Slots); after that positive bombs can refill it too, the joker
-  included (Vadim). From level 3 ·2 is a sixth gift (below).
+  included (Vadim). From level 2 ·2 is a sixth gift (below).
 - Solved → the equation locks and glows for 0.5 s in its bomb's colour (gold,
   magenta, cyan; Vadim) with a burst of sparks, still falling, then turns
   into the bomb.
@@ -366,6 +381,11 @@ games/<category>/<course>/<game>/index.html
   after it first touched something. Settings at the top (`GRAVITY`, `VMAX`,
   `BOUNCE`, `KICK`, `FUSE`), tuned by eye. Tunnels under overhangs are
   entered rarely: the ball has to land beside the entrance and roll in.
+- No explanations in the game for now (Vadim): no hint line under the well,
+  no messages in the dialogs (what the next level brings, why the game
+  ended, the start dialog's how-to), no notes on new operations. They come
+  later with the tutorial (Esittely). The notes on the equations themselves
+  (`| + 1`) and the flying rewards stay.
 - Unsolved on landing → trash: single grey bricks, the equation's text faded
   on them while the block is whole. Trash above the red line → Game Over.
 - Points (Vadim): 100 per solved equation; a perfect solve (no more
@@ -384,7 +404,7 @@ games/<category>/<course>/<game>/index.html
   page). Everything stops meanwhile. A second back in the pause, or a back in
   the other dialogs, leaves the page as usual.
 - Start dialog (Vadim): when the page opens, the game waits behind "Taso 1",
-  "30 yhtälöä", a short how-to and Aloita. The tap on Aloita is the touch
+  "30 yhtälöä" and Aloita. The tap on Aloita is the touch
   that lets the pause catch back from the first swipe on (without it, a
   first drag caught by the gesture left the page). "Pelaa uudestaan" and
   "↺ Alusta" start at once.
@@ -397,7 +417,8 @@ games/<category>/<course>/<game>/index.html
   row in the chain simply has no annotation.
 - Division (e.g. 3x = 12 with ÷2/÷3/÷4 tokens that split a cup into equal
   piles): as extra levels in this game, or a separate game "Yhtälövaaka 2"?
-- Yhtälösade level 4 brings the square root (Vadim); not designed yet.
+- Yhtälösade: a level after the :2 level brings the square root (Vadim); not
+  designed yet.
 - Unlockable visual skins (e.g. a "Metalli" skin for finishing the game):
   liked as an idea, not decided.
 
