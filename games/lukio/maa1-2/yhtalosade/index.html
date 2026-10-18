@@ -160,6 +160,7 @@
     transition:left .7s cubic-bezier(.4,.1,.3,1), top .7s cubic-bezier(.4,.1,.3,1);
   }
   .hint{ margin-inline:auto; }
+  #pauseOv h2{ margin-bottom:24px; }
 </style>
 </head>
 <body class="game">
@@ -193,6 +194,15 @@
       <div class="btns">
         <button class="primary" id="again">Pelaa uudestaan</button>
         <a href="../../../../#/lukio/maa1-2">Palaa kurssiin</a>
+      </div>
+    </div>
+  </div>
+  <div class="overlay" id="pauseOv">
+    <div class="win" role="dialog" aria-modal="true" aria-labelledby="pauseTitle">
+      <h2 id="pauseTitle">Peli on tauolla</h2>
+      <div class="btns">
+        <button class="primary" id="resume">Jatka peliä</button>
+        <a href="../../../../#/lukio/maa1-2">Valikkoon</a>
       </div>
     </div>
   </div>
@@ -426,6 +436,7 @@ const eqHTML = (L, R) => `${sideHTML(L)}<span class="eq">=</span>${sideHTML(R)}`
 let ROWS = 16, cell = 30;
 let gameNo = 0;                 // a reward still flying when a new game starts is dropped
 let counts, owned, pieces, bricks, blocks, eqNo, solved, score, pts, over, recent, drag, nextBrickId;
+let paused = false;
 let level, start;               // the level (1 …) and the score and pts it started with
 const lv = () => LEVELS[level - 1];
 let newest, quiet, busy;        // the last equation that came, s since it stopped falling, rewards still on their way
@@ -583,7 +594,7 @@ function surface(c0, c1){
 // operation key on equation p, dropped at x (cells from the left wall); the
 // joker writes the answer straight away (x on the side that had more x)
 function applyOp(key, p, x){
-  if(!p || p.bomb != null || p.glow != null || over || counts[key] <= 0) return false;
+  if(!p || p.bomb != null || p.glow != null || over || paused || counts[key] <= 0) return false;
   const o = OPS[key];
   counts[key]--; drawCount(key);
   p.ops++; if(o.joker) p.joker = true;
@@ -921,7 +932,7 @@ function showTarget(){
   for(const p of inAir()) p.el.classList.toggle("target", p === t);
 }
 function startDrag(e, key){
-  if(over || counts[key] <= 0 || drag) return;
+  if(over || paused || counts[key] <= 0 || drag) return;
   e.preventDefault();
   const src = opEls[key];
   const g = document.createElement("div");
@@ -965,9 +976,9 @@ function endDrag(e){
    drops it at once; only a real tap (short, hardly moved) counts as the
    first half of a double tap. */
 let pull = null, lastTap = null;
-function dropFast(p){ if(p && p.bomb == null) p.fast = true; }
+function dropFast(p){ if(p && p.bomb == null && !paused) p.fast = true; }
 board.addEventListener("pointerdown", e => {
-  if(over || drag || pull || e.target.closest(".opb")) return;
+  if(over || paused || drag || pull || e.target.closest(".opb")) return;
   const pt = boardXY(e), p = targetAt(pt);
   if(!p) return;
   e.preventDefault();
@@ -978,7 +989,7 @@ board.addEventListener("pointerdown", e => {
   board.setPointerCapture(e.pointerId);
 });
 board.addEventListener("pointermove", e => {
-  if(!pull || e.pointerId !== pull.id) return;
+  if(!pull || paused || e.pointerId !== pull.id) return;
   const pt = boardXY(e), p = pull.p, d = (pt.y - pull.y0)/cell;
   pull.moved = Math.max(pull.moved, Math.hypot(pt.x - pull.x0, pt.y - pull.y0)/cell);
   if(d <= pull.done || !pieces.includes(p) || p.bomb != null) return;
@@ -996,7 +1007,7 @@ board.addEventListener("pointerup", endPull);
 board.addEventListener("pointercancel", endPull);
 document.addEventListener("keydown", e => {
   if(e.key !== "ArrowDown" && e.key !== " ") return;
-  if(over || e.target.closest("button, a")) return;   // space on a button presses the button
+  if(over || paused || e.target.closest("button, a")) return;   // space on a button presses the button
   const list = inAir();
   if(!list.length) return;
   e.preventDefault();
@@ -1007,7 +1018,7 @@ document.addEventListener("keydown", e => {
 let last = 0;
 function frame(t){
   const dt = Math.min(.1, (t - last)/1000); last = t;
-  if(!over){
+  if(!over && !paused){
     for(const p of [...pieces]){
       if(over) break;
       if(p.bomb != null){ stepBomb(p, dt); continue; }
@@ -1030,7 +1041,7 @@ function frame(t){
 /* ── start and end ──────────────────────────────────────────────────────── */
 function setHint(t){ $("hint").textContent = t; }
 function newGame(){
-  $("overlay").classList.remove("show");
+  $("overlay").classList.remove("show"); $("pauseOv").classList.remove("show"); paused = false;
   for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .sparks")) el.remove();
   counts = {...START}; pieces = []; bricks = []; blocks = {n:0}; nextBrickId = 0; gameNo++;
   score = 0; recent = []; drag = null; pull = null; lastTap = null; busy = 0;
@@ -1124,6 +1135,28 @@ function showResult(title, msg){
 $("restart").addEventListener("click", newGame);
 $("again").addEventListener("click", () => onAgain());
 window.addEventListener("resize", () => { if(counts) layout(); });
+/* Pause (Vadim). Android's back gesture (a swipe in from the screen's left or
+   right edge) can't be switched off by a page, and it comes by accident when a
+   brick is dragged from a wall. So while the page is open it keeps one extra
+   step in the browser's history: a back takes only that step away, and if the
+   game is running it pauses ("Peli on tauolla"). "Jatka peliä" puts the step
+   back; a second back in the pause leaves the page, as a back does in the
+   other dialogs. The step is added in a touch or key handler: Chrome skips
+   history steps a page adds without one. */
+const arm = () => { if(!(history.state && history.state.play)) history.pushState({play:true}, ""); };
+document.addEventListener("pointerup", arm);
+document.addEventListener("keydown", arm);
+window.addEventListener("popstate", () => {
+  if(history.state && history.state.play) return;
+  if(over || paused){ history.back(); return; }
+  paused = true;
+  $("pauseOv").classList.add("show");
+  $("resume").focus({preventScroll:true});
+});
+$("resume").addEventListener("click", () => {
+  paused = false; $("pauseOv").classList.remove("show"); arm();
+});
+
 /* testing (Vadim): typing "xyz", or the page opened with ?testi, shows a
    button that ends the level now (what is in the air goes away; the trash
    and the counts go on). Students never see it. */

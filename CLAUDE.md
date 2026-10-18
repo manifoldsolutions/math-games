@@ -357,6 +357,14 @@ games/<category>/<course>/<game>/index.html
   brick it clears; 10 per reward unit that fits nowhere. Each trash brick
   left at the end costs 20. No height bonus (Vadim). The result dialog lists
   each kind. All numbers are to be balanced later; no Esittely yet.
+- Pause (Vadim): Android's back gesture (a swipe in from the screen's edge)
+  can't be switched off by a page, and it comes by accident when a brick is
+  dragged from a wall. So the page keeps one extra step in the browser's
+  history (added at the first touch or key: Chrome skips steps a page adds
+  without one); a back during play only takes that step away and opens
+  "Peli on tauolla" with "Jatka peliä" (primary) and "Valikkoon" (the course
+  page). Everything stops meanwhile. A second back in the pause, or a back in
+  the other dialogs, leaves the page as usual.
 
 ## Open questions (ask Vadim before deciding)
 
