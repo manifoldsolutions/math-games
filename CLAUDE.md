@@ -395,27 +395,38 @@ games/<category>/<course>/<game>/index.html
   way, with the same points, and the player keeps the ⚡ (Vadim: cascades are
   cool, and it is rare). The joker stays wasted on one.
 - Level 3: x² (Vadim). A mix: the share of equations with x² grows 30 % →
-  80 % over the level (measured 35 / 48 / 63 / 74 % by quarter). They are
-  built from x² = n² (n ≥ 0), with kb·x and k on both sides (x² + 2 = 11,
-  x² + x = x + 9, 16 − x = x² − x); a growing share (10 % → 50 %, `scaled`)
-  from 2x² = 2n² or ½x² = ½n², which need :2 or ·2 before √. x² is only on
-  one side (there is no ±x² brick). √ works only on exactly "x² = a number
-  ≥ 0" and gives x = ±n (x² = 0: x = 0); anywhere else it is wasted, like
-  the ⚡. x = ±n glows gold and magenta and becomes two bombs, n and −n,
-  knocked apart (one equation: 100 points; the bombs do what bombs do). The
-  joker and the zero bomb's shot also give ±n. par counts √ and :2 / ·2.
-  The level's contradictions are x² = a negative number (x² + 5 = 1).
-  Bricks (Vadim): only ±1, ±x, √, :2, ·2, the joker and ⚡. When it starts
-  (`drop`), ±2, ±2x, :2 and ·2 go away and their uses become points (10 each,
-  "Poistuneet operaatiot" in the dialog before it); √ starts with 4 (bombs
-  refill it), ⚡ with 2, and the well is emptied. :2 and ·2 come from zero
-  bombs (the gifts there: the joker, :2, ·2, `gifts`; a missing one first),
-  so the generator gives no :2, ·2 or √ equation before the player has that
-  brick (Vadim: no bad luck); measured: :2 and ·2 arrive around the 11th
-  equation, and in 14 % of levels never. Slots there (`slots`, `slotOf`):
-  ±x and ±1 where they were, the joker and √ in the floor corners, :2 and ·2
-  in the middle of the floor, ⚡ low in the left wall. Checked: 0 stalls in
-  3 000 perfect level-3 games, a joker needed for 1.8 % of the equations.
+  80 % over the level (measured 36 / 46 / 55 / 60 % by quarter, fewer at the
+  end where contradictions take their turn). They are built from x² = n²,
+  n = 0 … 9 with its own size ramp (`SQ_SIZE` 2 → 7: x² = 1, 4, 9 early,
+  up to 81 late; measured 0: 11 %, 1: 4 %, 2: 8 % … 9: 2 %), with kq·x², kb·x
+  and k on both sides (2x² + 3 = x² + 12, 3 = 12 − x², x² + x = x + 9; `KQ`,
+  `SHAPES2`); ±x² count in the PAR ramp. From the 15th equation 12 % of them
+  are x⁴ = n⁴ instead (n ≤ 3: 0, 1, 16, 81; `fourth`): √ gives x² = n² (not
+  ±: x² can't be negative), a second √ x = ±n. x⁴ is only on one side.
+- √ (level 3) always works on both sides, like :2 (Vadim): exactly x² = n²
+  gives x = ±n (x² = 0: x = 0), √(x⁴) = x², a square number its root, and
+  anything else gets √ around it: x² + 1 = 2 → √(x² + 1) = √2 (drawn with a
+  bar over what is under the root, `rootHTML`; Chakra Petch's "(" looks like
+  "["). Nothing squares, so such an equation can't be solved any more and
+  ends as trash, though bricks still work on it (−1: √(x² + 1) − 1 = √2 − 1;
+  a second √ nests) and the joker or the zero bomb's shot still solve it.
+  Only √ of a negative number is refused: the brick is wasted, the negative
+  side flashes red and the root bursts in red sparks (`fizzle`). x = ±n glows
+  gold and magenta and becomes two bombs, n and −n, knocked apart (one
+  equation: 100 points). par counts each √. Sides are {p4, q, a, b, root}.
+- Level 3's contradictions: x² = a negative number in any dress (x² + 5 = 1,
+  x² = −2, 2x² + 5 = x² + 1).
+- Level 3's bricks (Vadim): ±1, ±x, ±x², √, the joker and ⚡. When it starts
+  (`drop`), ±2, ±2x, :2 and ·2 go away and their uses become points (10
+  each, "Poistuneet operaatiot" in the dialog before it); √ starts with 4
+  (bombs refill it), ⚡ with 2, and the well is emptied. ±x² come from zero
+  bombs (the gifts there: the joker, −x², +x², `gifts`; a missing one
+  first), and the generator gives no equation that needs ±x² (or √) before
+  the player has that brick (Vadim: no bad luck): they arrive around the
+  11th equation, in 15 % of levels never. Slots there (`slots`, `slotOf`):
+  ±x and ±1 where they were, the joker and √ in the floor corners, −x² and
+  +x² in the middle of the floor, ⚡ low in the left wall. Checked: 0 stalls
+  in 3 000 perfect level-3 games, a joker needed for 1.6 % of the equations.
 - Solved → the equation locks and glows for 0.5 s in its bomb's colour (gold,
   magenta, cyan; Vadim) with a burst of sparks, still falling, then turns
   into the bomb.
