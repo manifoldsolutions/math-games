@@ -250,7 +250,9 @@ const KB = [-2,-1,-1,0,1,1,2];  // extra boxes on both sides (±1 twice as often
 const KMAX = 2, MAXOPS = 3;     // constant k in −KMAX … KMAX, at most MAXOPS basic operations
 const DROP = 15;                // rows/s once the player drops it (pulled down, double-click, ↓)
 const PULL = 1.5;               // cells: pulled down at least this far, it drops when let go
-const AREA = .8;                // an operation is taken in a rectangle this share of the interior wide…
+const LIFT = 1;                 // cells: a floor brick does nothing until lifted this far (half its height)
+const MISS = .3;                // cells: a brick's middle may miss an equation's end by this much
+const AREA = .8;                // a pull starts in a rectangle this share of the interior wide…
 const AREA_TALL = 1.2;          // …this many times as tall as wide…
 const AREA_EDGE = .1;           // …moved to the equation's edge when that is nearer a wall than this share
 const DANGER = 2;               // trash in the top DANGER rows is Game Over (the red line)
@@ -281,12 +283,14 @@ const OPS = {
   ":2": {times:1/2, html:`<span class="op">:</span><span class="cterm">2</span>`},   // odd numbers give fractions (Vadim)
   "*2": {times:2, html:`<span class="op mul">·</span><span class="cterm">2</span>`},
 };
-// where the bricks sit: wall side and row counted from the floor (top of a 2-row
-// brick). The new ones touch their basic brick: +2x above +x, −2x below −x, the
-// same with +2 and −2, the joker above +2x, :2 above +2 and ·2 above :2
-// (13 rows, the least the well has).
-const OP_AT = {"+x":["L",7], "-x":["L",4], "+1":["R",7], "-1":["R",4],
-               "+2":["R",9], "-2":["R",2], "+2x":["L",9], "-2x":["L",2], "J":["L",11], ":2":["R",11], "*2":["R",13]};
+// where the bricks sit (Vadim): the ± operations in the floor, 8 slots of
+// 1.5 × 2 cells from the left (x on the left, numbers on the right, in
+// number-line order), the rest in a wall, row counted from the floor (top of
+// a 2-row brick): the joker on the left, :2 and ·2 above it on the right
+const OP_AT = {"-2x":["F",0], "-x":["F",1], "+x":["F",2], "+2x":["F",3],
+               "-2":["F",4], "-1":["F",5], "+1":["F",6], "+2":["F",7],
+               "J":["L",2], ":2":["R",2], "*2":["R",4]};
+const FLOOR = 2;                // floor height in cells (as tall as an operation brick)
 const OP_NOTE = {"+x":"+ x", "-x":"− x", "+1":"+ 1", "-1":"− 1", "+2":"+ 2", "-2":"− 2",
                  "+2x":"+ 2x", "-2x":"− 2x", "J":"jokeri", ":2":": 2", "*2":"· 2"};
 const GIFT_NOTE = {
@@ -451,7 +455,7 @@ function space(){
 function chooseRows(){
   const {w, h} = space();
   const c = Math.min(w/(COLS + 2*WALL), 44);
-  ROWS = Math.max(13, Math.min(22, Math.floor(h/c) - 1));   // 13: room for every brick
+  ROWS = Math.max(11, Math.min(22, Math.floor(h/c) - FLOOR));
 }
 const X = c => (WALL + c)*cell;         // field column → px
 const Y = r => r*cell;                  // row → px
@@ -461,32 +465,36 @@ function place(el, x, y, w, h){
 }
 function layout(){
   const {w, h} = space();
-  cell = Math.max(18, Math.min(w/(COLS + 2*WALL), h/(ROWS + 1), 44));
+  cell = Math.max(18, Math.min(w/(COLS + 2*WALL), h/(ROWS + FLOOR), 44));
   board.style.width = (COLS + 2*WALL)*cell + "px";
-  board.style.height = (ROWS + 1)*cell + "px";
+  board.style.height = (ROWS + FLOOR)*cell + "px";
   for(const el of board.querySelectorAll(".wall, .floor, .dangerline")) el.remove();
   const g = Math.max(1, cell*.06);
-  const opRows = new Set();
-  for(const key of owned){ const [side, up] = OP_AT[key]; opRows.add(side + (ROWS - up)); opRows.add(side + (ROWS - up + 1)); }
+  const opRows = new Set();   // wall rows and floor slots taken by a brick
+  for(const key of owned){
+    const [side, n] = OP_AT[key];
+    if(side === "F") opRows.add("F" + n);
+    else{ opRows.add(side + (ROWS - n)); opRows.add(side + (ROWS - n + 1)); }
+  }
   for(let r = 0; r < ROWS; r++) for(const side of ["L", "R"]){
     if(opRows.has(side + r)) continue;
     const el = document.createElement("div"); el.className = "wall";
     place(el, side === "L" ? g : (WALL + COLS)*cell + g, Y(r) + g, WALL*cell - 2*g, cell - 2*g);
     board.prepend(el);
   }
-  const tot = COLS + 2*WALL;
-  for(let c = 0; c < tot; c += 1.5){
+  for(let n = 0; n < (COLS + 2*WALL)/1.5; n++){
+    if(opRows.has("F" + n)) continue;
     const el = document.createElement("div"); el.className = "floor";
-    const wdt = Math.min(1.5, tot - c);
-    place(el, c*cell + g, Y(ROWS) + g, wdt*cell - 2*g, cell - 2*g);
+    const r = slotRect(["F", n]);
+    place(el, r.x + g, r.y + g, r.w - 2*g, r.h - 2*g);
     board.prepend(el);
   }
   const dl = document.createElement("div"); dl.className = "dangerline";
   place(dl, X(0), Y(DANGER), COLS*cell, 0); dl.style.height = "0";
   board.prepend(dl);
-  for(const [key, [side, up]] of Object.entries(OP_AT)){
-    const el = opEls[key];
-    place(el, side === "L" ? g : (WALL + COLS)*cell + g, Y(ROWS - up) + g, WALL*cell - 2*g, 2*cell - 2*g);
+  for(const [key, at] of Object.entries(OP_AT)){
+    const el = opEls[key], r = slotRect(at);
+    place(el, r.x + g, r.y + g, r.w - 2*g, r.h - 2*g);
     el.style.fontSize = cell*.6 + "px";
     el.querySelector(".cnt").style.fontSize = cell*.38 + "px";
   }
@@ -497,9 +505,14 @@ function layout(){
 
 /* ── operation bricks ───────────────────────────────────────────────────── */
 // the new operations are hidden (their slot is wall) until a zero bomb gives one
+// a brick's slot in px: floor slot n, or wall side and row from the floor
+function slotRect([side, n]){
+  if(side === "F") return {x:1.5*n*cell, y:Y(ROWS), w:1.5*cell, h:FLOOR*cell};
+  return {x:side === "L" ? 0 : (WALL + COLS)*cell, y:Y(ROWS - n), w:WALL*cell, h:2*cell};
+}
 function opCenter(key){
-  const [side, up] = OP_AT[key];
-  return {x:side === "L" ? WALL*cell/2 : (WALL + COLS + WALL/2)*cell, y:Y(ROWS - up) + cell};
+  const r = slotRect(OP_AT[key]);
+  return {x:r.x + r.w/2, y:r.y + r.h/2};
 }
 function own(key){
   if(owned.has(key)) return;
@@ -896,14 +909,15 @@ function boardXY(e){
   const r = board.getBoundingClientRect();
   return {x:e.clientX - r.left, y:e.clientY - r.top};
 }
-/* Where an operation lands: every falling equation has a rectangle, AREA of
-   the interior width (between the walls) wide and AREA_TALL times that tall,
-   centred on the interior across and on the equation up and down. When the
-   equation is nearer a wall than AREA_EDGE of the width, the rectangle moves
-   so that its edge is the equation's edge. A point goes to the equation
-   nearest to it (distance to the equation), if it is in that equation's
-   rectangle (Vadim). Cells, x from the left wall, y rows from the top; the
-   rectangle stays inside the interior. */
+/* Where a swipe that pulls an equation down starts (and a double tap): every
+   falling equation has a rectangle, AREA of the interior width (between the
+   walls) wide and AREA_TALL times that tall, centred on the interior across
+   and on the equation up and down. When the equation is nearer a wall than
+   AREA_EDGE of the width, the rectangle moves so that its edge is the
+   equation's edge. A point goes to the equation nearest to it (distance to
+   the equation), if it is in that equation's rectangle (Vadim). Cells, x from
+   the left wall, y rows from the top; the rectangle stays inside the
+   interior. (Operations used to land by the same rule.) */
 const inAir = () => pieces.filter(p => p.bomb == null && p.glow == null);   // equations that take operations
 function dropArea(p){
   const s = AREA*COLS, e = AREA_EDGE*COLS, x1 = p.x0 + p.w;
@@ -926,9 +940,28 @@ function targetAt(pt){
   const a = dropArea(best);
   return x >= a.l && x <= a.r && y >= a.t && y <= a.b ? best : null;
 }
+/* Where an operation lands (Vadim), the same for every brick: on the equation
+   over the brick's middle across (it may miss an end by MISS), the nearest
+   one if there are several (distance from the middle to the equation, above
+   or below). A floor brick does nothing until it has been lifted LIFT cells
+   above where it was picked up; a wall brick needs no lift, its middle just
+   has to be out of the wall, where no equation is. The held brick is centred
+   on the finger, so its middle is the finger. */
+function opTarget(pt){
+  if(drag.floor && drag.y0 - pt.y < LIFT*cell) return null;
+  const x = pt.x/cell - WALL, y = pt.y/cell;
+  let best = null, bd = Infinity;
+  for(const p of inAir()){
+    const dx = Math.max(p.x0 - x, 0, x - p.x0 - p.w);
+    if(dx > MISS) continue;
+    const d = Math.hypot(dx, Math.max(p.y - 1 - y, 0, y - p.y));
+    if(d < bd){ best = p; bd = d; }
+  }
+  return best;
+}
 // the magenta frame, also while the finger stands still and the equation moves
 function showTarget(){
-  const t = drag && drag.pt ? targetAt(drag.pt) : null;
+  const t = drag && drag.pt ? opTarget(drag.pt) : null;
   for(const p of inAir()) p.el.classList.toggle("target", p === t);
 }
 function startDrag(e, key){
@@ -941,7 +974,7 @@ function startDrag(e, key){
   g.style.fontSize = src.style.fontSize;
   board.appendChild(g);
   g.style.width = src.offsetWidth + "px"; g.style.height = src.offsetWidth + "px";
-  drag = {key, g, id:e.pointerId};
+  drag = {key, g, id:e.pointerId, y0:boardXY(e).y, floor:OP_AT[key][0] === "F"};
   src.setPointerCapture(e.pointerId);
   moveDrag(e);
   src.addEventListener("pointermove", moveDrag);
@@ -960,7 +993,7 @@ function endDrag(e){
   src.removeEventListener("pointermove", moveDrag);
   src.removeEventListener("pointerup", endDrag);
   src.removeEventListener("pointercancel", endDrag);
-  const pt = boardXY(e), t = e.type === "pointerup" ? targetAt(pt) : null;
+  const pt = boardXY(e), t = e.type === "pointerup" ? opTarget(pt) : null;
   drag.g.remove();
   const key = drag.key; drag = null;
   showTarget();
@@ -969,9 +1002,9 @@ function endDrag(e){
 
 /* ── pulling an equation down ───────────────────────────────────────────────
    For an equation that can't be solved with what is left. A swipe that starts
-   in an equation's area (the same rule as for operations, targetAt) pulls it:
-   it moves down with the finger, never up, and if it was pulled PULL cells or
-   more it drops fast (DROP) when let go; less, and it just goes on falling.
+   in an equation's area (targetAt) pulls it: it moves down with the finger,
+   never up, and if it was pulled PULL cells or more it drops fast (DROP) when
+   let go; less, and it just goes on falling.
    A double click or tap in its area, or ↓ / space (the lowest equation),
    drops it at once; only a real tap (short, hardly moved) counts as the
    first half of a double tap. */
@@ -1102,6 +1135,17 @@ function showDialog(button, then){
   $("again").focus({preventScroll:true});
 }
 let onAgain = newGame;
+// When the page opens (Vadim): the game waits for a tap on Aloita. Chrome lets
+// the page catch Android's back gesture only after a touch (see Pause), and
+// the first move is often a drag from the wall, which the gesture takes.
+function showStart(){
+  over = true;
+  $("ovTitle").textContent = "Taso 1";
+  $("ovResult").textContent = `${EQUATIONS} yhtälöä`;
+  $("ovMsg").textContent = "Ratkaise yhtälöt ennen kuin ne putoavat pohjaan. Vedä operaatio yhtälön päälle: se tehdään yhtälön molemmille puolille.";
+  $("ovScore").innerHTML = "";
+  showDialog("Aloita", () => { over = false; $("overlay").classList.remove("show"); });
+}
 // a level done: its own points. The trash left goes on to the next level and
 // is no loss yet, unless the next level starts with an empty well: then it
 // costs now, as at the end of the game.
@@ -1171,7 +1215,7 @@ $("skipLevel").addEventListener("click", () => {
 });
 
 makeOpBricks();
-document.fonts.ready.then(() => { newGame(); requestAnimationFrame(t => { last = t; frame(t); }); });
+document.fonts.ready.then(() => { newGame(); showStart(); requestAnimationFrame(t => { last = t; frame(t); }); });
 </script>
 </body>
 </html>

@@ -236,7 +236,7 @@ games/<category>/<course>/<game>/index.html
   level; the next one comes when the newest has fallen halfway (level 1), or
   0.8 s after it was solved or landed, in columns that don't overlap one
   still falling. So usually two fall at once. The player drags an operation brick from
-  the walls (+x, −x left; +1, −1 right) onto it: it's done to both sides and
+  the floor (+x, −x, +1, −1 at the start) onto it: it's done to both sides and
   the brick's count goes down (start 4/4/4/4, at most 9). The fall never slows,
   not even while dragging (Vadim).
 - Levels (Vadim, `LEVELS`): the next level goes on with the trash, the counts
@@ -270,19 +270,34 @@ games/<category>/<course>/<game>/index.html
   brings it if the player has all five others. Nothing needs it yet (it
   undoes a :2 that gave fractions; Vadim: later levels may need it). Its
   dot is drawn bigger (`.mul`), the font's · is tiny.
-- Slots: :2 above +2 and ·2 above :2 on the right, the joker above +2x on the
-  left. For ·2 the well has at least 13 rows (it was 11; a short screen gets
-  smaller cells).
-- Drop area (Vadim): a rectangle 80 % of the interior width (between the
-  walls) wide and 1.2 times that tall, centred across the interior and on the
-  equation's middle up and down, clipped to the interior. An equation nearer
-  a wall than 10 % of the interior width moves its rectangle so that the
-  rectangle's edge is the equation's edge. With several equations in the air
-  (not yet possible) a point belongs to the nearest equation (distance to the
-  equation itself) if it is in that one's rectangle. The magenta frame shows it, checked every frame, so it
-  also works while the finger stands still.
+- Slots (Vadim, `OP_AT`): the floor is 8 bricks of 1.5 × 2 cells, as big as
+  an operation brick (the corners under the walls too), and holds the ±
+  operations: −2x −x +x +2x | −2 −1 +1 +2 (x on the left, numbers on the
+  right, number-line order). A slot whose operation the player doesn't have
+  yet is a plain floor brick. The rest go in the walls near the floor: the
+  joker on the left, :2 and above it ·2 on the right (later levels, with more
+  than 8 operations, will need the walls more). Bricks are dragged up from
+  the floor so that Android's back gesture (sideways from the edge) doesn't
+  catch them; the wall bricks still can be caught.
+- Where an operation lands (Vadim), the same for every brick: on the equation
+  over the brick's middle across (it may miss an end by 0.3 cells, `MISS`),
+  the nearest one (distance from the middle, above or below) if there are
+  several. A floor brick does nothing until it has been lifted 1 cell (half
+  its height, `LIFT`) above where it was picked up, so putting it back
+  cancels. A wall brick needs no lift (lifting from the wall would be
+  counterintuitive, Vadim); its middle just has to leave the wall, where no
+  equation is. The held brick is centred on the finger. The magenta frame
+  shows the target, checked every frame, so it also works while the finger
+  stands still.
+- Pull area: a rectangle 80 % of the interior width (between the walls) wide
+  and 1.2 times that tall, centred across the interior and on the equation's
+  middle up and down, clipped to the interior. An equation nearer a wall than
+  10 % of the interior width moves its rectangle so that the rectangle's edge
+  is the equation's edge. A point belongs to the nearest equation (distance
+  to the equation itself) if it is in that one's rectangle. Operations used
+  to land by this rule too.
 - Dropping an equation (Vadim), for one that can't be solved with what is
-  left: a swipe that starts in its drop area (same rule) pulls it down with
+  left: a swipe that starts in its pull area pulls it down with
   the finger, never up; pulled ≥ 1.5 cells, it falls fast (15 rows/s) when let
   go, less and it just goes on falling. A double click / double tap in the
   area (only a real tap counts as the first half) or ↓ / space (the lowest
@@ -321,8 +336,7 @@ games/<category>/<course>/<game>/index.html
   bomb always brings a missing one (Vadim); only when all five are there does
   it add one use to one of them (one with room). Picked at random, the joker
   half as often as each of the others (`GIFTS`). A new brick appears in its
-  wall slot (+2x above +x, −2x below −x, +2 above +1, −2 below −1, the
-  joker above +2x); after that positive bombs can refill it too, the joker
+  slot (see Slots); after that positive bombs can refill it too, the joker
   included (Vadim). From level 3 ·2 is a sixth gift (below).
 - Solved → the equation locks and glows for 0.5 s in its bomb's colour (gold,
   magenta, cyan; Vadim) with a burst of sparks, still falling, then turns
@@ -365,6 +379,11 @@ games/<category>/<course>/<game>/index.html
   "Peli on tauolla" with "Jatka peliä" (primary) and "Valikkoon" (the course
   page). Everything stops meanwhile. A second back in the pause, or a back in
   the other dialogs, leaves the page as usual.
+- Start dialog (Vadim): when the page opens, the game waits behind "Taso 1",
+  "30 yhtälöä", a short how-to and Aloita. The tap on Aloita is the touch
+  that lets the pause catch back from the first swipe on (without it, a
+  first drag caught by the gesture left the page). "Pelaa uudestaan" and
+  "↺ Alusta" start at once.
 
 ## Open questions (ask Vadim before deciding)
 
