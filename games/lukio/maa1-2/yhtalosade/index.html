@@ -23,7 +23,7 @@
      with an empty well and brings :2 (some equations end with 2x = 2n), and
      zero bombs may bring ·2; near its end come contradictions (x + 3 = x + 5)
      for the ⚡. Level 3 brings x² (x² + 2 = 11 → x² = 9 → √ → x = ±3, two
-     bombs) with fewer bricks: ±1, ±x, √, :2, ·2, the joker and ⚡. First
+     bombs) with fewer bricks: ±1, ±x, ±x², √, :2, ·2, the joker and ⚡. First
      draft, 3 levels: numbers are to be balanced (Vadim).
      ════════════════════════════════════════════════════════════════════ -->
 
@@ -75,6 +75,16 @@
   .zap *{ animation:zapc .5s ease; }
   @keyframes zap{ 35%{ transform:scale(1.5); } }
   @keyframes zapc{ 35%{ color:var(--red); text-shadow:0 0 10px var(--red); } }
+  /* √ on x⁴ = 16 (Vadim): x² = ±4, then the minus of ± gets small red
+     brackets and bursts away (x² ≥ 0), leaving x² = 4; timing in PM_T */
+  .pmgo{ position:relative; display:inline-block; margin:0 .1em; }
+  .pmgo .pm{ display:inline-block; animation:pmOut 1.4s forwards; }
+  .pmgo .pm2{ position:absolute; left:50%; top:-.04em; transform:translateX(-50%);
+              display:flex; flex-direction:column; align-items:center; line-height:.72; opacity:0; animation:pmIn 1.4s forwards; }
+  .pmgo .pm2 i{ font-style:normal; font-size:.6em; color:var(--red); animation:pmBurst 1.4s forwards; }
+  @keyframes pmOut{ 0%, 30%{ opacity:1; } 40%, 100%{ opacity:0; } }
+  @keyframes pmIn{ 0%, 30%{ opacity:0; } 40%, 100%{ opacity:1; } }
+  @keyframes pmBurst{ 0%, 68%{ opacity:1; transform:scale(1); } 82%, 100%{ opacity:0; transform:scale(2); } }
   .piece.solved{ border-color:var(--fc); box-shadow:0 0 18px var(--fc); }
   .piece.solved .txt{ text-shadow:0 0 8px var(--fc); }
   .sparks{ pointer-events:none; z-index:4; width:0; height:0; filter:drop-shadow(0 0 3px var(--fc)); }
@@ -252,20 +262,26 @@ const EQUATIONS = 30;           // equations per level
 // contra: contradictions from the equation `from` on, each with chance p, at
 // most max (Vadim: 1.5 on average, near the end where the well is crowded),
 // with x² if square; squares: the share of equations with x², [first,
-// last]; fourth: from the equation `from` on, that share of those has x⁴
-// instead (√ twice); drop: bricks taken away when the level starts
-// (their uses become points); gifts: the zero bomb's gifts there (else
-// GIFTS); slots: bricks that sit elsewhere there (else OP_AT).
+// last] (div: that share of the x² ones too, from 2x² = 2n²); fourth: from
+// the equation `from` on, that share of those has x⁴ instead (√ twice);
+// zero: the share of x = 0 while one of `until` is missing (else ZERO);
+// short: the chance that an equation may need more ±x² than the player has
+// (if they have that brick; Vadim: running out sometimes is fine); drop:
+// bricks taken away when the level starts (their uses become points); gifts:
+// the zero bomb's gifts there (else GIFTS), the missing ones of first before
+// the other missing ones; slots: bricks that sit elsewhere there (else OP_AT).
 // More negative answers towards the end: more bombs that clear trash.
 const LEVEL = {fall:[.55, .8], gap:[16, 5.6], pos:[.8, .3], posBy:EQUATIONS, shoot:[0, .5]};
 const LEVELS = [
   {},   // the old levels 1 and 2 in one (Vadim)
   {fresh:true, add:{":2":3, "N":2}, div:1/3, contra:{from:20, max:2, p:.18}},
   // x² (Vadim): a mix, more of them towards the end; only ±1, ±x, ±x², √,
-  // the joker and ⚡; ±x² come from zero bombs
-  {fresh:true, drop:["+2", "-2", "+2x", "-2x", ":2", "*2"], add:{"sq":4, "N":2},
-   squares:[.3, .8], fourth:{from:15, p:.12}, contra:{from:20, max:2, p:.18, square:true},
-   gifts:{"J":1, "-x2":2, "+x2":2},
+  // :2, ·2 (kept from level 2: x² = −x² + 8), the joker and ⚡; ±x² come
+  // from zero bombs, which come often until both are there
+  {fresh:true, drop:["+2", "-2", "+2x", "-2x"], add:{"sq":4, "N":2},
+   squares:[.3, .8], div:.25, fourth:{from:10, p:.5}, contra:{from:20, max:2, p:.18, square:true},
+   zero:{p:.3, until:["-x2", "+x2"]}, short:.2,
+   gifts:{"J":1, "-x2":2, "+x2":2, ":2":2, "*2":2}, first:["-x2", "+x2"],
    slots:{"J":["F",0], "-x2":["F",3], "+x2":["F",4], "sq":["F",7], "N":["L",2]}},
 ].map(l => ({...LEVEL, ...l}));
 const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0, "N":0, "sq":0, "+x2":0, "-x2":0};
@@ -283,11 +299,13 @@ const ANSWERS = [-6,-5,-4,-3,-2,-1,3,4,5,6,7,8];   // x = n: half negative, the 
 // prefers values near it (a bell curve with the given spread).
 const SIZE = [2, 7], SIZE_SPREAD = 1.5;   // |x|
 const SQ_SIZE = [2, 7];                    // n of a square x² = n² (0 … 9; Vadim: small ones early)
-const KQ = [-2, -1, -1, 0, 0, 0, 1, 1, 2]; // x² added to both sides of a square
+const KQ = [-2, -1, -1, 0, 0, 0, 1, 1, 2]; // x² added to both sides of a square…
+const X2_MORE = 3;                          // …this many times as often when it needs a ±x² the player has (Vadim)
 const PAR = [1, 4], PAR_SPREAD = .7;      // basic operations needed (+x −x +1 −1)
 const ZERO = .1;                // share of x = 0 (a zero bomb: a new operation)…
 const ZERO_START = .17, ZERO_FIRST = 5;   // …but more in the first 5: at least one x = 0 there in 60 % of games (Vadim)
 const GLOW = .5;                // s: a solved equation glows before it turns into a bomb
+const PM_T = [.95, 1.4];        // s: after √ on x⁴ = 16 the bracketed minus of x² = ±4 bursts, then x² = 4 (CSS .pmgo)
 const KB = [-2,-1,-1,0,1,1,2];  // extra boxes on both sides (±1 twice as often)
 const KMAX = 3, MAXOPS = 5;     // constant k in −KMAX … KMAX, at most MAXOPS basic operations
 const DROP = 15;                // rows/s once the player drops it (pulled down, double-click, ↓)
@@ -374,8 +392,9 @@ const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
    boxes and constant, and :2 at the end.
    Level 3 (Vadim) also has squares, built from x² = n² (n ≥ 0, deg 2) with
    kq·x², kb·x and k on both sides: 2x² + x + 2 = x² + x + 11 (−x², −x, −1,
-   −1, then √: x = ±n, two bombs, n and −n); and now and then x⁴ = n⁴ (deg
-   4, n ≤ 3), where √ makes x² = n² first. Sides are {p4, q, a, b, root}:
+   −1, then √: x = ±n, two bombs, n and −n), some from 2x² = 2n² with :2
+   before the √ (x² = −x² + 8); and now and then x⁴ = n⁴ (deg 4, n ≤ 3),
+   where √ makes x² = n² first. Sides are {p4, q, a, b, root}:
    p4·x⁴ + q·x² + a·x + √(root) + b (missing: 0; root, a side itself, after
    a √ that didn't solve it). */
 // What a player who wastes nothing spends on e = {kb, kq, k, div, deg} with the
@@ -395,18 +414,18 @@ function plan(e, c){
   return c.J > 0 ? {J:1} : null;
 }
 // what is left to do on an equation in the air (as for plan): kb boxes, kq x²
-// and the constant k off both sides, then :2 if two x are left, √ for x² and
-// x⁴ (null: it can't be solved so any more, e.g. fractions after a :2 or a
-// root after a √)
+// and the constant k off both sides, then :2 if two x (or x²) are left, √ for
+// x² and x⁴ (null: it can't be solved so any more, e.g. fractions after a :2
+// or a root after a √)
 function toGo(p){
   const L = p.L, R = p.R;
   if(L.root || R.root) return null;
   if(L.p4 || R.p4 || L.q || R.q){
     const deg = L.p4 || R.p4 ? 4 : 2, top = deg === 4 ? "p4" : "q";
     const [U, V] = (L[top] || 0) > (R[top] || 0) ? [L, R] : [R, L], uq = U.q || 0, vq = V.q || 0;
-    if(deg === 4 ? U.p4 !== 1 || V.p4 || uq !== vq : U.p4 || V.p4 || uq - vq !== 1) return null;
-    if(U.a !== V.a || ![U.a, U.b, uq].every(Number.isInteger)) return null;
-    return {kb:U.a, kq:deg === 4 ? uq : vq, k:U.b, div:false, deg};
+    if(deg === 4 ? U.p4 !== 1 || V.p4 || uq !== vq : U.p4 || V.p4 || uq - vq !== 1 && uq - vq !== 2) return null;
+    if(U.a !== V.a || ![U.a, U.b, uq, vq].every(Number.isInteger)) return null;
+    return {kb:U.a, kq:deg === 4 ? uq : vq, k:U.b, div:deg === 2 && uq - vq === 2, deg};
   }
   const [U, V] = L.a > R.a ? [L, R] : [R, L], d = U.a - V.a;
   if(![U.a, U.b, V.a, V.b].every(Number.isInteger)) return null;
@@ -438,16 +457,20 @@ function weighted(list, w){
 }
 // equation number i (1 … EQUATIONS) of a level: the targets SIZE, PAR, pos for
 // its place in it. PAR counts the basic operations only; par (for a perfect
-// solve) also counts :2 and √. A square's answer n ≥ 0 (x = ±n).
+// solve) also counts :2 and √. A square's answer n ≥ 0 (x = ±n). A square
+// never needs a ±x² the player hasn't got (Vadim), and needs one they have
+// X2_MORE times as often.
 function drawEquation(i){
   const t = Math.min(1, (i - 1)/(EQUATIONS - 1)), at = ([a, b]) => a + (b - a)*t;
   const ops = (...v) => v.reduce((s, x) => s + Math.abs(x), 0);
-  const zero = Math.random() < (i <= ZERO_FIRST ? ZERO_START : ZERO);
+  const Z = lv().zero, zero = Math.random() < (Z && Z.until.some(j => !promised.has(j)) ? Z.p : i <= ZERO_FIRST ? ZERO_START : ZERO);
   if(lv().squares && Math.random() < at(lv().squares)){   // x² = n² (or x⁴ = n⁴), n ≥ 0
     const F = lv().fourth, deg = F && i >= F.from && Math.random() < F.p ? 4 : 2;
     const n = zero ? 0 : deg === 4 ? pick([1, 2, 2, 3, 3]) : weighted([1, 2, 3, 4, 5, 6, 7, 8, 9], v => bell(v, at(SQ_SIZE), SIZE_SPREAD));
-    const [kq, kb, k] = weighted(SHAPES2, s => bell(ops(...s), at(PAR), PAR_SPREAD));
-    return {n, kq, kb, k, div:false, deg, par:ops(kq, kb, k) + deg/2};
+    const x2 = kq => !kq ? 1 : promised.has(kq > 0 ? "-x2" : "+x2") ? X2_MORE : 0;
+    const [kq, kb, k] = weighted(SHAPES2, s => bell(ops(...s), at(PAR), PAR_SPREAD)*x2(s[0]));
+    const div = deg === 2 && Math.random() < (lv().div || 0);   // 2x² = 2n²
+    return {n, kq, kb, k, div, deg, par:ops(kq, kb, k) + div + deg/2};
   }
   const tp = Math.min(1, (i - 1)/(lv().posBy - 1)), pos = lv().pos[0] + (lv().pos[1] - lv().pos[0])*tp;
   const plus = Math.random() < pos;
@@ -481,13 +504,17 @@ function makeEquation(recent, c, i){
   const C = lv().contra;
   if(C && i >= C.from && contras < C.max && c.N > 0 && Math.random() < C.p){ contras++; return contradiction(C.square); }
   const total = sum(c) - c.N;
+  // now and then (short) this one may need more ±x² than are left, as long
+  // as the player has that brick (Vadim: running out sometimes is fine)
+  const cc = {...c};
+  if(Math.random() < (lv().short || 0)) for(const j of ["+x2", "-x2"]) if(promised.has(j)) cc[j] = Math.max(c[j], 2);
   let e = null;
   for(let t = 0; t < 200 && !e; t++){
-    const f = drawEquation(i), p = plan(f, c);
+    const f = drawEquation(i), p = plan(f, cc);
     if(!p || total - sum(p) + (f.deg ? f.n : Math.max(f.n, 0)) < KEEP) continue;
     // no :2, ±x² or √ equation before the player has that brick (Vadim: no bad luck)
     const need = [f.deg && "sq", f.kq > 0 && "-x2", f.kq < 0 && "+x2", f.div && ":2"].filter(Boolean);
-    if(need.some(j => !(c[j] > 0))) continue;
+    if(need.some(j => !(cc[j] > 0))) continue;
     const key = [f.n, f.kq, f.kb, f.k, f.div, f.deg].join();
     if(recent.includes(key)) continue;
     e = f;
@@ -504,7 +531,7 @@ function makeEquation(recent, c, i){
   recent.push([e.n, e.kq, e.kb, e.k, e.div, e.deg].join()); if(recent.length > 6) recent.shift();
   const m = e.div ? 2 : 1;
   let L = {a:m + e.kb, b:e.k}, R = {a:e.kb, b:m*e.n + e.k};
-  if(e.deg === 2){ L = {q:1 + e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:e.n**2 + e.k}; }
+  if(e.deg === 2){ L = {q:m + e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:m*e.n**2 + e.k}; }
   if(e.deg === 4){ L = {p4:1, q:e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:e.n**4 + e.k}; }
   if(Math.random() < .5) [L, R] = [R, L];
   return {...e, L, R};
@@ -536,6 +563,8 @@ function sideHTML(s){
   // a ± answer: "±3"
   const back = plain({...s, a:0}) && s.a < 0 && s.b > 0, terms = [];
   if(s.pm) return `<span class="op">±</span>${cHTML(s.b)}`;
+  // after √ on x⁴ = 16: ±4, whose minus bursts away (x² ≥ 0; pmGone)
+  if(s.pmGone) return `<span class="pmgo"><span class="pm">±</span><span class="pm2"><b>+</b><i>(${minus})</i></span></span>${cHTML(s.b)}`;
   if(s.p4) terms.push(["p4", s.p4]);
   if(s.q) terms.push(["q", s.q]);
   if(s.a && !back) terms.push(["x", s.a]);
@@ -752,8 +781,9 @@ function applyOp(key, p, x){
     else{ p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit"); }
     return true;
   }
+  for(const s of [p.L, p.R]) delete s.pmGone;
   if(o.joker) writeAnswer(p);
-  else if(o.sqrt){ if(r != null) writeAnswer(p, r); else [p.L, p.R] = rooted; }
+  else if(o.sqrt){ if(r != null) writeAnswer(p, r); else{ [p.L, p.R] = rooted; dropMinus(p); } }
   else if(o.times){   // :2 of odd numbers gives fractions, and ±1 can't take them away (Vadim)
     const t = o.times, by = s => ({...s, p4:(s.p4 || 0)*t, q:(s.q || 0)*t, a:s.a*t, b:s.b*t});
     p.L = by(p.L); p.R = by(p.R);
@@ -793,6 +823,22 @@ function sqrtSide(s){
   if(bare(s, "p4")) return {q:1, a:0, b:0};
   return {a:0, b:0, root:s};
 }
+// After √ on x⁴ = 16 (Vadim): x² = ±4 at first, then the minus of ± gets
+// small red brackets and bursts away, because x² ≥ 0: x² = 4 (PM_T). The
+// equation keeps working meanwhile; any operation on it ends the show.
+function dropMinus(p){
+  const [U, V] = bare(p.L, "q") ? [p.L, p.R] : [p.R, p.L];
+  if(!bare(U, "q") || !plain(V) || V.b <= 0) return;
+  V.pmGone = true;
+  const on = () => V.pmGone && pieces.includes(p) && p.bomb == null && (p.L === V || p.R === V);
+  setTimeout(() => {
+    const m = on() && p.el.querySelector(".pmgo i");
+    if(!m) return;
+    const r = m.getBoundingClientRect(), b = board.getBoundingClientRect();
+    sparks(r.left - b.left + r.width/2, r.top - b.top + r.height/2, "contra");
+  }, PM_T[0]*1000);
+  setTimeout(() => { if(on()){ delete V.pmGone; redraw(p, false); } }, PM_T[1]*1000);
+}
 // √ on a negative number (Vadim): the root bumps into it, it flashes red, and
 // the root bursts in red sparks there; the brick is wasted
 function fizzle(p){
@@ -801,13 +847,14 @@ function fizzle(p){
   side.classList.remove("zap"); side.offsetWidth; side.classList.add("zap");
   sparks(r.left - b.left + r.width/2, r.top - b.top + r.height/2, "contra");
 }
-// after a change: new width, the same middle (in whole columns); the middle
-function redraw(p){
+// after a change: new width, the same middle (in whole columns), a bump
+// unless quiet; the middle
+function redraw(p, bump = true){
   const mid = p.x0 + p.w/2;
   measure(p);
   p.x0 = Math.max(0, Math.min(COLS - p.w, Math.round(mid - p.w/2)));
   drawPiece(p);
-  p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit");
+  if(bump){ p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit"); }
   return mid;
 }
 /* A zero bomb may also shoot down the lowest equation in the air (Vadim): with
@@ -978,6 +1025,7 @@ function land(p){
   pieces.splice(pieces.indexOf(p), 1);
   const r = surface(p.x0, p.x0 + p.w - 1) - 1;
   const id = ++blocks.n;
+  for(const s of [p.L, p.R]) delete s.pmGone;
   blocks[id] = {html:eqHTML(p.L, p.R), w:p.w, font:p.el.style.fontSize};
   p.el.remove();
   for(let c = p.x0; c < p.x0 + p.w; c++) addBrick(r, c, id);
@@ -1102,11 +1150,13 @@ function splitReward(n, c, keys){
   return give;
 }
 // a zero bomb: a new operation while one of GIFTS is missing (have: the ones
-// there or on their way), else one more use of one with room (Vadim); null: all full
+// there or on their way; the level's first ones before the others), else one
+// more use of one with room (Vadim); null: all full
 function giftFor(c, have){
   const G = lv().gifts || GIFTS;
   const keys = Object.keys(G).filter(j => (GIFT_FROM[j] || 1) <= level), missing = keys.filter(j => !have.has(j));
-  const from = missing.length ? missing : keys.filter(j => c[j] < CAP);
+  const first = missing.filter(j => (lv().first || []).includes(j));
+  const from = first.length ? first : missing.length ? missing : keys.filter(j => c[j] < CAP);
   return from.length ? weighted(from, j => G[j]) : null;
 }
 function shuffle(list){   // Fisher–Yates: every order equally likely

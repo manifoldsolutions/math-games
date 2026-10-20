@@ -400,9 +400,17 @@ games/<category>/<course>/<game>/index.html
   n = 0 … 9 with its own size ramp (`SQ_SIZE` 2 → 7: x² = 1, 4, 9 early,
   up to 81 late; measured 0: 11 %, 1: 4 %, 2: 8 % … 9: 2 %), with kq·x², kb·x
   and k on both sides (2x² + 3 = x² + 12, 3 = 12 − x², x² + x = x + 9; `KQ`,
-  `SHAPES2`); ±x² count in the PAR ramp. From the 15th equation 12 % of them
-  are x⁴ = n⁴ instead (n ≤ 3: 0, 1, 16, 81; `fourth`): √ gives x² = n² (not
-  ±: x² can't be negative), a second √ x = ±n. x⁴ is only on one side.
+  `SHAPES2`); ±x² count in the PAR ramp. Vadim prefers ones that still need
+  √ after ±x² (x² = 2x² − 4) to ones where x² cancels into a linear
+  equation (x² + x = x² + 2x + 1); the generator makes only the first kind.
+  A quarter of the x² ones (`div`, as many as the linear ones) are built
+  from 2x² = 2n² and need :2 before the √ (x² = −x² + 8; only while the
+  player has :2). From the 10th equation half of them are x⁴ = n⁴ instead
+  (n ≤ 3: 0, 1, 16, 81; `fourth`; measured 3.7 a level, it was 1): √ gives
+  x² = ±n² at first, then the minus of ± gets small red brackets and bursts
+  away (x² can't be negative), leaving x² = n² (`dropMinus`, `.pmgo`,
+  `PM_T`, about 1.4 s; the equation works normally meanwhile). A second √
+  gives x = ±n. x⁴ is only on one side.
 - √ (level 3) always works on both sides, like :2 (Vadim): exactly x² = n²
   gives x = ±n (x² = 0: x = 0), √(x⁴) = x², a square number its root, and
   anything else gets √ around it: x² + 1 = 2 → √(x² + 1) = √2 (drawn with a
@@ -416,17 +424,28 @@ games/<category>/<course>/<game>/index.html
   equation: 100 points). par counts each √. Sides are {p4, q, a, b, root}.
 - Level 3's contradictions: x² = a negative number in any dress (x² + 5 = 1,
   x² = −2, 2x² + 5 = x² + 1).
-- Level 3's bricks (Vadim): ±1, ±x, ±x², √, the joker and ⚡. When it starts
-  (`drop`), ±2, ±2x, :2 and ·2 go away and their uses become points (10
-  each, "Poistuneet operaatiot" in the dialog before it); √ starts with 4
-  (bombs refill it), ⚡ with 2, and the well is emptied. ±x² come from zero
-  bombs (the gifts there: the joker, −x², +x², `gifts`; a missing one
-  first), and the generator gives no equation that needs ±x² (or √) before
-  the player has that brick (Vadim: no bad luck): they arrive around the
-  11th equation, in 15 % of levels never. Slots there (`slots`, `slotOf`):
-  ±x and ±1 where they were, the joker and √ in the floor corners, −x² and
-  +x² in the middle of the floor, ⚡ low in the left wall. Checked: 0 stalls
-  in 3 000 perfect level-3 games, a joker needed for 1.6 % of the equations.
+- Level 3's bricks (Vadim): ±1, ±x, ±x², √, :2, ·2, the joker and ⚡. When
+  it starts (`drop`), ±2 and ±2x go away and their uses become points (10
+  each, "Poistuneet operaatiot" in the dialog before it); :2 and ·2 stay
+  with their counts (Vadim); √ starts with 4 (bombs refill it), ⚡ with 2,
+  and the well is emptied. ±x² come from zero bombs (the gifts there: the
+  joker, −x², +x², :2, ·2, `gifts`; a missing ±x² first (`first`), then the
+  other missing ones). x = 0 has a 30 % chance while −x² or +x² is still
+  missing (`zero`; else 10 %), so they come early (Vadim): both by the 6th
+  equation in half the levels, by the 12th in 90 % (it was the 13th in half,
+  never in 15 %). The generator never gives an equation that needs a ±x²
+  (or √, :2) the player hasn't got (Vadim: no bad luck), and once they have
+  one, squares that need it come 3 times as often (`X2_MORE`; measured: 73 %
+  of the squares need ±x² then, it was 51 %). Running out sometimes is fine
+  (Vadim): with chance 0.2 (`short`) an equation may need more ±x² than are
+  left, if the player has that brick (measured 0.4 a level). Slots there
+  (`slots`, `slotOf`): ±x and ±1 where they were, the joker and √ in the
+  floor corners, −x² and +x² in the middle of the floor, ⚡ low in the left
+  wall, :2 and ·2 in the right wall as on level 2. Checked with a perfect
+  player over levels 1–3 (3 000 games): stuck 0.01 times a level, a joker
+  needed 3.3 times a level (11 %, it was 0.9): mostly ±1 runs short (more
+  zero bombs, which pay nothing back; more x⁴, which need two √; rewards
+  spread over more bricks).
 - Solved → the equation locks and glows for 0.5 s in its bomb's colour (gold,
   magenta, cyan; Vadim) with a burst of sparks, still falling, then turns
   into the bomb.
