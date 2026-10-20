@@ -213,6 +213,7 @@
     </div>
     <div class="stage" id="stage"><div id="board" aria-label="Kaivo, johon yhtälöt putoavat"></div></div>
     <div class="subctrl">
+      <button id="pause" title="Tauko (P tai Esc)">⏸&#xFE0E; Tauko</button>
       <button id="restart">↺ Alusta</button>
       <button id="skipLevel" hidden>⏭ Ohita taso (testi)</button>
     </div>
@@ -328,7 +329,12 @@ const FUSE = 1.5;               // s of bouncing after the first touch; it explo
 const clearRadius = n => .8 + .7*Math.abs(n);   // cells, around where a negative bomb explodes
 const fireSize = n => 1.5 + .25*(Math.max(1, Math.abs(n)) - 1);   // flames' diameter / the bomb's: |n| ≤ 1 … 8 → 1.5 … 3.25
 const POINTS = 100;             // per solved equation
-const PERFECT = 50;             // more for the fewest operations, and +1 to the emptiest basic brick
+// A solve without a joker (Vadim): in the fewest throws the bricks the player
+// had allow (a ±2 or ±2x is one throw), or else with no wasted step (a ±2 or
+// ±2x is two steps): more points, no bricks
+const PERFECT = 100;            // the fewest throws ("Täydellinen!")
+const NEAT = 50;                // no wasted step ("Siisti!")
+const STEPS = {"+2":2, "-2":2, "+2x":2, "-2x":2};   // steps of a throw (else 1)
 const NEG_POINTS = 25;          // × |n| for a negative bomb, trash or no trash: minus bombs give points
 const CLEAR_POINTS = 20;        // per trash brick cleared; the same is taken off for each one left at the end
 const SPARE_POINTS = 10;        // per reward unit that doesn't fit anywhere (every brick full)
@@ -699,7 +705,8 @@ function spawn(){
   eqNo++; $("eqNo").textContent = `${eqNo}/${EQUATIONS}`;
   const el = document.createElement("div"); el.className = "piece";
   board.appendChild(el);
-  const p = {L:e.L, R:e.R, n:e.n, par:e.par, contra:e.contra, deg:e.deg, ops:0, el, y:1, x0:0, w:3, bomb:null};
+  const p = {L:e.L, R:e.R, n:e.n, par:e.par, contra:e.contra, deg:e.deg, ops:0, steps:0, used:{}, avail:null,
+             make:{kb:e.kb, kq:e.kq, k:e.k, div:e.div, deg:e.deg}, el, y:1, x0:0, w:3, bomb:null};
   measure(p);
   p.x0 = freeColumn(p.w);
   pieces.push(p); since = 0;
@@ -767,8 +774,10 @@ function surface(c0, c1){
 function applyOp(key, p, x){
   if(!p || p.bomb != null || p.glow != null || over || paused || counts[key] <= 0) return false;
   const o = OPS[key];
+  if(!p.avail) p.avail = {...counts};   // what the player had when they started on it
   counts[key]--; drawCount(key);
-  p.ops++; if(o.joker) p.joker = true;
+  p.ops++; p.steps += STEPS[key] || 1; p.used[key] = (p.used[key] || 0) + 1;
+  if(o.joker) p.joker = true;
   // the ⚡ works only on a contradiction and the joker only on an equation
   // that has a solution; otherwise the brick is wasted (Vadim). √ always works
   // (Vadim), except on a negative number: x² = n² gives x = ±n, x⁴ = n⁴ gives
@@ -882,8 +891,8 @@ function shotDown(p, from){
 const sign = v => v > 0 ? "pos" : v < 0 ? "neg" : "zero";
 // Solved: it locks, glows in its bomb's colour with a burst of sparks for GLOW
 // seconds (still falling, the fall never slows) and then turns into the bomb.
-// With the fewest operations (not with a joker) it is perfect: more points and
-// +1 to the emptiest basic brick (Vadim).
+// Without a joker (Vadim): in the fewest throws there could be it is perfect
+// (PERFECT points), else with no more steps than needed it is neat (NEAT).
 function solvedNow(p, v, from){
   p.glow = 0; p.answer = v; p.from = from; p.pm = !!(p.L.pm || p.R.pm);
   p.el.classList.remove("target");
@@ -892,15 +901,32 @@ function solvedNow(p, v, from){
   if(p.pm){ sparks(x, y, "pos"); sparks(x, y, "neg"); }
   else sparks(x, y, sign(v));
   solved++; $("solved").textContent = solved;
-  const perfect = !p.joker && p.ops <= p.par;
+  const perfect = !p.joker && p.ops <= fewestThrows(p), neat = !p.joker && !perfect && p.steps <= p.par;
   points("solve", POINTS, null, 0, 0);
-  if(perfect){
-    pts.perfects++;
-    points("perfect", PERFECT, null, 0, 0);
-    const low = Math.min(...BASE.map(j => counts[j])), key = pick(BASE.filter(j => counts[j] === low));
-    fly(key, "+1", 1, x, y);
+  if(perfect){ pts.perfects++; points("perfect", PERFECT, null, 0, 0); }
+  if(neat){ pts.neats++; points("neat", NEAT, null, 0, 0); }
+  note(perfect ? `Täydellinen! +${POINTS + PERFECT}` : neat ? `Siisti! +${POINTS + NEAT}` : `+${POINTS}`, x, Y(p.y) + cell*.9, "pts");
+}
+// The fewest throws that solve p's equation as it came (Vadim): ±2 and ±2x
+// do two steps in one, if the player had them when they started on it (or
+// used them on it: a brick may come meanwhile). Built from how it was made,
+// not by a search. Dividing first (2x + 2 = 8 → :2 → −1) isn't counted, so
+// it can only make this more than the true fewest, never less.
+function fewestThrows(p){
+  const a = {...p.avail}, e = p.make;
+  for(const [key, n] of Object.entries(p.used)) a[key] = Math.max(a[key] || 0, n);
+  return throws(-e.kb, a, "+x", "-x", "+2x", "-2x") + throws(-e.k, a, "+1", "-1", "+2", "-2")
+       + throws(-(e.kq || 0), a, "+x2", "-x2") + e.div + e.deg/2;
+}
+// the fewest bricks of size 1 (one, minus) and 2 (two, minusTwo) that add up to v, at most a[key] of each
+function throws(v, a, one, minus, two, minusTwo){
+  let best = Infinity;
+  for(let U = 0; U <= (a[two] || 0); U++) for(let M = 0; M <= (a[minusTwo] || 0); M++){
+    const r = v - 2*(U - M);
+    if(r > 0 ? r > (a[one] || 0) : -r > (a[minus] || 0)) continue;
+    best = Math.min(best, U + M + Math.abs(r));
   }
-  note(perfect ? `Täydellinen! +${POINTS + PERFECT}` : `+${POINTS}`, x, Y(p.y) + cell*.9, "pts");
+  return best;
 }
 /* A contradiction blown up with the ⚡ (Vadim): it glows red for GLOW seconds
    (it counts as solved, 100 points: "no solution" is its solution), then
@@ -1426,7 +1452,7 @@ function newGame(){
   for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .shot, .sparks, .flash")) el.remove();
   counts = {...START}; pieces = []; bricks = []; blocks = {n:0}; nextBrickId = 0; gameNo++;
   score = 0; recent = []; drag = null; pull = null; lastTap = null; busy = 0; flights = [];
-  pts = {solve:0, perfect:0, perfects:0, neg:0, clear:0, cleared:0, spare:0, left:0, blast:0, destroyed:0, dropped:0};
+  pts = {solve:0, perfect:0, perfects:0, neat:0, neats:0, neg:0, clear:0, cleared:0, spare:0, left:0, blast:0, destroyed:0, dropped:0};
   owned = new Set(BASE); promised = new Set(BASE);
   for(const key of Object.keys(OPS)){ opEls[key].hidden = !owned.has(key); drawCount(key); }
   $("score").textContent = 0; $("trashCount").textContent = 0;
@@ -1467,6 +1493,7 @@ function scoreRows(from){
   const d = k => pts[k] - (from ? from[k] : 0);
   return row("Ratkaistut yhtälöt", `${d("solve")/POINTS} × ${POINTS}`) +
     row("Täydelliset ratkaisut", `${d("perfects")} × ${PERFECT}`) +
+    row("Siistit ratkaisut", `${d("neats")} × ${NEAT}`) +
     row("Miinuspommit", d("neg")) +
     row("Siivottu roska", `${d("cleared")} × ${CLEAR_POINTS}`) +
     (d("destroyed") ? row("Räjäytetyt yhtälöt", `${d("destroyed")} × ${POINTS}`) : "") +
@@ -1528,19 +1555,31 @@ window.addEventListener("resize", () => { if(counts) layout(); });
    game is running it pauses ("Peli on tauolla"). "Jatka peliä" puts the step
    back; a second back in the pause leaves the page, as a back does in the
    other dialogs. The step is added in a touch or key handler: Chrome skips
-   history steps a page adds without one. */
+   history steps a page adds without one. The same pause also comes from the
+   "Tauko" button under the well and from P or Esc (Vadim: for PCs), and P or
+   Esc goes on again. */
 const arm = () => { if(!(history.state && history.state.play)) history.pushState({play:true}, ""); };
 document.addEventListener("pointerup", arm);
 document.addEventListener("keydown", arm);
-window.addEventListener("popstate", () => {
-  if(history.state && history.state.play) return;
-  if(over || paused){ history.back(); return; }
+function pause(){
+  if(over || paused) return;
   paused = true;
   $("pauseOv").classList.add("show");
   $("resume").focus({preventScroll:true});
-});
-$("resume").addEventListener("click", () => {
+}
+function resume(){
   paused = false; $("pauseOv").classList.remove("show"); arm();
+}
+window.addEventListener("popstate", () => {
+  if(history.state && history.state.play) return;
+  if(over || paused){ history.back(); return; }
+  pause();
+});
+$("resume").addEventListener("click", resume);
+$("pause").addEventListener("click", pause);
+document.addEventListener("keydown", e => {
+  if(e.key !== "Escape" && e.key.toLowerCase() !== "p" || e.repeat) return;
+  if(paused) resume(); else pause();
 });
 
 /* testing (Vadim): typing "xyz", or the page opened with ?testi, shows a

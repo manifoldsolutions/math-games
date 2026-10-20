@@ -477,9 +477,21 @@ games/<category>/<course>/<game>/index.html
   (`| + 1`) and the flying rewards stay.
 - Unsolved on landing → trash: single grey bricks, the equation's text faded
   on them while the block is whole. Trash above the red line → Game Over.
-- Points (Vadim): 100 per solved equation; a perfect solve (no more
-  operations than the fewest, no joker) +50 and +1 operation to the
-  emptiest basic brick; a negative bomb 25 × |n| even in an empty well
+- Points (Vadim): 100 per solved equation, and without a joker two kinds of
+  bonus, points only (Vadim dropped the +1 operation to the emptiest basic
+  brick that a perfect solve used to give). "Täydellinen!" +100: no more
+  throws than the fewest the player's bricks allow (`fewestThrows`): a ±2 or
+  ±2x is one throw, so x − 2 = 0 needs one +2 if the player had a +2 when
+  they started on the equation (or used one on it); without a +2, two +1
+  is the best. "Siisti!" +50: otherwise no wasted step: steps ≤ par, where
+  a ±2 or ±2x is two steps (`STEPS`), so two +1 when there is a +2. It is
+  derived from how the equation was built, not by a search; dividing first
+  (2x + 2 = 8 → :2 → −1) is not counted, which can only make "Täydellinen"
+  easier. The result dialog has both rows. Dropping the +1 costs the
+  economy: in perfect games (3 000, levels 1–3) a joker is needed 1.4 / 4.1
+  / 8.3 times a level (it was 0.1 / 0.2 / 3.2), and on level 3 an equation
+  can't be solved at all 0.4 times a level (it was 0.01); the measurements
+  above were made with the +1. A negative bomb 25 × |n| even in an empty well
   ("plus bombs give operations, minus bombs give points") and +20 per trash
   brick it clears; 10 per reward unit that fits nowhere. Each trash brick
   left at the end costs 20. No height bonus (Vadim). The result dialog lists
@@ -491,7 +503,9 @@ games/<category>/<course>/<game>/index.html
   without one); a back during play only takes that step away and opens
   "Peli on tauolla" with "Jatka peliä" (primary) and "Valikkoon" (the course
   page). Everything stops meanwhile. A second back in the pause, or a back in
-  the other dialogs, leaves the page as usual.
+  the other dialogs, leaves the page as usual. The same pause also comes
+  from "⏸ Tauko" under the well (beside "↺ Alusta", on every screen) and
+  from P or Esc (Vadim: for PCs); P or Esc also goes on again.
 - Start dialog (Vadim): when the page opens, the game waits behind "Taso 1",
   "30 yhtälöä" and Aloita. The tap on Aloita is the touch
   that lets the pause catch back from the first swipe on (without it, a
