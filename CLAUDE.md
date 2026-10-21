@@ -536,6 +536,17 @@ games/<category>/<course>/<game>/index.html
   rc}: a root has a factor rc, so ·(−1), ·2 and :2 give −√(x² + 1),
   2√(x² + 1), ½√(x² + 1) (·2 used to leave a root unchanged), and √ of a
   side that is clearly negative (−√2 − 1) is refused like a negative number.
+- Squared binomials (Vadim, level 3, `bin`, `binEquation`): (x + k)² = n²,
+  k = ±1, ±2, n = 0 … 3, 12 % of the equations (`BIN_P`; measured about 2 a
+  level, the slots they take leave x⁴ at 2.9 a level instead of 3.6). √
+  gives x + k = ±n (`binRoot`; x + k = 0 for n = 0), the ± on the number
+  side (`pn`), then −k gives x = ±n − k, solved as two bombs, n − k and
+  −n − k (`pnAnswers`, `p.two`; (x + 1)² = 4 → x + 1 = ±2 → x = ±2 − 1 →
+  1 and −3). The brackets are real here, in IBM Plex Sans. Before the √,
+  bricks go beside the square ((x + 1)² + 1 = 5; √ then goes around it,
+  lost), ·2 and ·(−1) put a factor before it (2(x + 1)², −(x + 1)²), :2
+  makes a fraction of an odd one. √ on a side with ±n is refused. The
+  joker writes x = ±n − k. "Täydellinen": √ and −k (`fewestThrows`).
 - Level 3's contradictions: x² = a negative number in any dress (x² + 5 = 1,
   x² = −2, 2x² + 5 = x² + 1).
 - Level 3's bricks (Vadim): ±1, ±x, ±x², √, :2, ·2, ·(−1), the joker, ⚡,

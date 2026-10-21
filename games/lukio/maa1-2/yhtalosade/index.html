@@ -300,7 +300,7 @@ const EQUATIONS = 30;           // equations per level
 // fresh: the well is emptied of trash first (the trash left costs as at the
 // end); div: the share of equations that
 // end with 2x = 2n and need :2; big: big equations (bigEquation); frac:
-// fraction equations (fracEquation); shoot: the chance that a zero bomb also
+// fraction equations (fracEquation); bin: (x + k)² = n² (binEquation); shoot: the chance that a zero bomb also
 // shoots down the lowest equation, [first, last] (Vadim, `shootLowest`);
 // contra: contradictions from the equation `from` on, each with chance p, at
 // most max (Vadim: 1.5 on average, near the end where the well is crowded),
@@ -333,7 +333,7 @@ const LEVELS = [
   // (kept from level 2: x² = −x² + 8), ·(−1), the joker, ⚡, ±2 and ±2x
   // (Vadim: they stay, refilled as before); √ before ±x², as every square needs it
   {fresh:true, first:[["sq"], ["-x2", "+x2"]],
-   squares:[.3, .8], div:.25, big:true, frac:true, fourth:{from:4, to:20, p:.6}, contra:{from:20, max:2, p:.18, square:true},
+   squares:[.3, .8], div:.25, big:true, frac:true, bin:true, fourth:{from:4, to:20, p:.6}, contra:{from:20, max:2, p:.18, square:true},
    short:.2, gifts:{"J":1, "-x2":2, "+x2":2, ":2":2, "*2":2, "*-1":1, "+2":2, "-2":2, "+2x":2, "-2x":2}},
 ].map(l => ({...LEVEL, ...l}));
 const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0, "*-1":0, "N":0, "sq":0, "+x2":0, "-x2":0};
@@ -365,6 +365,7 @@ const ANSWERS = [-6,-5,-4,-3,-2,-1,3,4,5,6,7,8];   // x = n: half negative, the 
 // ±x left go from BIG_LOW to none
 const BIG_TEN = .4, BIG_K = 4, BIG_P = [.05, .25], BIG_LOW = 8;
 const FRAC_P = .15;             // fraction equations (Vadim, fracEquation): this share of a level's equations
+const BIN_P = .12;              // (x + k)² = n² (Vadim, binEquation): this share of level 3's equations
 // From the first equation to the last (t = 0 … 1) the game gets harder (Vadim).
 // Each target moves linearly from its first value to its second; the draw
 // prefers values near it (a bell curve with the given spread).
@@ -504,6 +505,11 @@ function toGo(p){
     const g = toGo({L:A, R:B});
     return g && {...g, mul:(g.mul || 0) + m};
   }
+  const bs = L.bin ? L : R.bin ? R : null;
+  if(bs){   // (x + k)² = n²: √, then k off
+    if((bs.bc ?? 1) !== 1 || [bs.p4, bs.q, bs.a, bs.b, bs.pa, bs.root, bs.pn].some(Boolean) || !plain(bs === L ? R : L)) return null;
+    return {kb:0, kq:0, k:bs.bin.b, div:0, deg:2};
+  }
   if(L.root || R.root || L.pa || R.pa) return null;
   if(L.p4 || R.p4 || L.q || R.q){
     const deg = L.p4 || R.p4 ? 4 : 2, top = deg === 4 ? "p4" : "q";
@@ -572,6 +578,14 @@ function bigEquation(){
   const n = Math.random() < BIG_TEN ? 10 : 8, div = rnd(1, 2), k = rnd(-BIG_K, BIG_K);
   return {n, kq:0, kb:0, k, div, deg:0, par:Math.abs(k) + div};
 }
+// A squared binomial (Vadim, levels with `bin`): (x + k)² = n², k = ±1, ±2,
+// n = 0 … 3. √ gives x + k = ±n (binRoot), then −k: x = ±n − k, two bombs.
+function binEquation(){
+  const k = pick([-2, -1, 1, 2]), n = rnd(0, 3);
+  return {n, kq:0, kb:0, k, div:0, deg:2, bin:true, par:1 + Math.abs(k)};
+}
+// what an equation's bombs pay back (the positive answers)
+const payback = f => f.bin ? (f.n ? Math.max(f.n - f.k, 0) + Math.max(-f.n - f.k, 0) : Math.max(-f.k, 0)) : f.deg ? f.n : Math.max(f.n, 0);
 // x⁴ may come on equation i (the level's `fourth`: early, Vadim)
 const fourthNow = i => !!lv().fourth && i >= lv().fourth.from && i <= lv().fourth.to;
 // A fraction equation (Vadim, levels with `frac`, only while the player has
@@ -628,16 +642,17 @@ function makeEquation(recent, c, i){
   if(Math.random() < (lv().short || 0)) for(const j of ["+x2", "-x2"]) if(promised.has(j)) cc[j] = Math.max(c[j], 2);
   const ok = f => {
     const p = plan(f, cc);
-    if(!p || total - sum(p) + (f.deg ? f.n : Math.max(f.n, 0)) < KEEP) return false;
+    if(!p || total - sum(p) + payback(f) < KEEP) return false;
     // no :2, ·2, ±x² or √ equation before the player has that brick (Vadim: no bad luck)
     const need = [f.deg && "sq", f.kq > 0 && "-x2", f.kq < 0 && "+x2", f.div && ":2", f.mul && "*2"].filter(Boolean);
-    return !need.some(j => !(cc[j] > 0)) && !recent.includes([f.n, f.kq, f.kb, f.k, f.div, f.deg, f.mul].join());
+    return !need.some(j => !(cc[j] > 0)) && !recent.includes([f.n, f.kq, f.kb, f.k, f.div, f.deg, f.mul, f.bin].join());
   };
   const find = (draw, n) => { for(let t = 0; t < n; t++){ const f = draw(); if(ok(f)) return f; } return null; };
   // a big one now and then (bigChance), else the level's own; when no equation
   // of the level can be afforded, a big one if the player has :2
   let e = (lv().big && Math.random() < bigChance(c) && find(bigEquation, 50))
        || (lv().frac && Math.random() < FRAC_P && find(() => fracEquation(i), 50))
+       || (lv().bin && Math.random() < BIN_P && find(binEquation, 50))
        || find(() => drawEquation(i), 200) || (lv().big && find(bigEquation, 50)) || null;
   if(!e){
     // one operation with the fullest brick (a joker: any), x = the biggest answer
@@ -648,17 +663,18 @@ function makeEquation(recent, c, i){
       : one ? {n, kq:0, kb:one[0], k:one[1], div:+(j === ":2"), deg:0, par:Math.abs(one[0]) + Math.abs(one[1]) + (j === ":2")}
       : {...drawEquation(i), n, deg:0, kq:0};
   }
-  recent.push([e.n, e.kq, e.kb, e.k, e.div, e.deg, e.mul].join()); if(recent.length > 6) recent.shift();
+  recent.push([e.n, e.kq, e.kb, e.k, e.div, e.deg, e.mul, e.bin].join()); if(recent.length > 6) recent.shift();
   const m = 2**e.div;
   let L = {a:m + e.kb, b:e.k}, R = {a:e.kb, b:m*e.n + e.k};
   if(e.deg === 2){ L = {q:m + e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:m*e.n**2 + e.k}; }
   if(e.deg === 4){ L = {p4:1, q:e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:e.n**4 + e.k}; }
   if(e.frac){ L = {a:0, b:0, f:e.deg === 4 ? {p4:1} : e.deg ? {q:1} : {a:1, b:e.k}, fd:2}; R = {a:0, b:e.deg ? e.n**e.deg/2 : (e.n + e.k)/2}; }
+  if(e.bin){ L = {a:0, b:0, bin:{a:1, b:e.k}}; R = {a:0, b:e.n**2}; }
   if(Math.random() < .5) [L, R] = [R, L];
   return {...e, L, R};
 }
-const plain = s => !s.p4 && !s.q && !s.a && !s.root && !s.pa && !s.fd;   // a side that is just a number
-const bare = (s, key) => s[key] === 1 && ["p4", "q", "a", "b"].every(j => j === key || !s[j]) && !s.root && !s.pa && !s.fd;   // just x⁴ / x² / x
+const plain = s => !s.p4 && !s.q && !s.a && !s.root && !s.pa && !s.fd && !s.bin && !s.pn;   // a side that is just a number
+const bare = (s, key) => s[key] === 1 && ["p4", "q", "a", "b"].every(j => j === key || !s[j]) && !s.root && !s.pa && !s.fd && !s.bin && !s.pn;   // just x⁴ / x² / x
 // rows an equation takes: a fraction makes it two rows tall (Vadim), also under a root
 const hasFrac = s => !!s && (!!s.fd || hasFrac(s.root));
 const ht = p => hasFrac(p.L) || hasFrac(p.R) ? 2 : 1;
@@ -671,10 +687,11 @@ const ht = p => hasFrac(p.L) || hasFrac(p.R) ? 2 : 1;
 // its top changes sign for ·(−1)
 function timesSide(s, t){
   const even = v => !v || Number.isInteger(v/2);
-  if(t === .5 && !s.fd && ![s.p4, s.q, s.a, s.b, s.pa, s.root && (s.rc ?? 1)].every(even)) return {a:0, b:0, f:{...s}, fd:2};
-  if(t === .5 && s.fd && [s.p4, s.q, s.a, s.b, s.pa, s.root].some(Boolean))
+  if(t === .5 && !s.fd && ![s.p4, s.q, s.a, s.b, s.pa, s.pn, s.root && (s.rc ?? 1), s.bin && (s.bc ?? 1)].every(even)) return {a:0, b:0, f:{...s}, fd:2};
+  if(t === .5 && s.fd && [s.p4, s.q, s.a, s.b, s.pa, s.pn, s.root, s.bin].some(Boolean))
     s = {a:0, b:0, f:addSides(timesSide(outerOf(s), s.fd), s.f), fd:s.fd};   // (x + 1)/2 + 1 → (x + 3)/2
-  const r = {...s, p4:(s.p4 || 0)*t, q:(s.q || 0)*t, a:s.a*t, b:s.b*t, ...(s.root && {rc:(s.rc ?? 1)*t}), ...(s.pa && {pa:Math.abs(s.pa*t)})};
+  const r = {...s, p4:(s.p4 || 0)*t, q:(s.q || 0)*t, a:s.a*t, b:s.b*t, ...(s.root && {rc:(s.rc ?? 1)*t}),
+             ...(s.bin && {bc:(s.bc ?? 1)*t}), ...(s.pa && {pa:Math.abs(s.pa*t)}), ...(s.pn && {pn:Math.abs(s.pn*t)})};   // −(±2) = ±2
   if(!s.fd) return r;
   const f = t < 0 ? timesSide(s.f, -1) : s.f, fd = s.fd/Math.abs(t);
   return fd > 1 ? {...r, f, fd} : addSides(r, f);
@@ -687,11 +704,14 @@ function addSides(x, y){
   if(pa) z.pa = pa; else delete z.pa;
   if(y.pr) z.pr = y.pr;
   if(y.root && !x.root){ z.root = y.root; z.rc = y.rc; }
+  if(y.bin && !x.bin){ z.bin = y.bin; z.bc = y.bc; }
+  const pn = (x.pn || 0) + (y.pn || 0);
+  if(pn) z.pn = pn; else delete z.pn;
   return z;
 }
 // the answer if the equation is x = n or n = x (n may be ±), else null
 function solvedValue(L, R){
-  if([L, R].some(s => s.p4 || s.q || s.root || s.pa || s.fd)) return null;
+  if([L, R].some(s => s.p4 || s.q || s.root || s.pa || s.fd || s.bin || s.pn)) return null;
   if(L.a === 1 && L.b === 0 && R.a === 0) return R.b;
   if(R.a === 1 && R.b === 0 && L.a === 0) return L.b;
   return null;
@@ -717,11 +737,13 @@ function sideHTML(s){
   // after √ on x⁴ = 16: ±4, whose minus bursts away (x² ≥ 0; pmGone)
   if(s.pmGone) return `<span class="pmgo"><span class="pm">±</span><span class="pm2"><b>+</b><i>(${minus})</i></span></span>${cHTML(s.b)}`;
   if(s.fd) terms.push(["frac", 1]);
+  if(s.bin) terms.push(["bin", s.bc ?? 1]);
   if(s.p4) terms.push(["p4", s.p4]);
   if(s.q) terms.push(["q", s.q]);
   if(s.pa) terms.push(["pm", s.pa]);
   if(s.a && !back) terms.push(["x", s.a]);
   if(s.root) terms.push(["r", s.rc ?? 1]);
+  if(s.pn) terms.push(["pn", s.pn]);
   if(s.b) terms.push(["c", s.b]);
   if(back) terms.push(["x", s.a]);
   if(!terms.length) return `<span class="cterm">0</span>`;
@@ -729,6 +751,12 @@ function sideHTML(s){
     // a fraction (Vadim): its top over a bar over its bottom; it comes first
     if(t === "frac") return `<span class="frac"><span class="num">${sideHTML({a:0, b:0, ...s.f})}</span>`
                             + `<span class="den">${cHTML(s.fd)}</span></span>`;
+    // x + 1 = ±2 (after √ of (x + 1)² = 4): the ± with its number
+    if(t === "pn") return `<span class="op">±</span>${cHTML(v)}`;
+    if(t === "bin"){   // (x + 1)², its brackets in IBM Plex Sans; a factor before them after ·2 or ·(−1)
+      const body = (Math.abs(v) === 1 ? "" : numText(Math.abs(v))) + `<span class="paren">(</span>${sideHTML(s.bin)}<span class="paren">)</span>²`;
+      return i === 0 ? (v < 0 ? `<span class="xterm">${minus}</span>` : "") + body : `<span class="op">${v < 0 ? minus : "+"}</span>${body}`;
+    }
     // ±2x, ±√2x (after √ of 4x², 2x²): its own sign, whatever its place
     if(t === "pm") return `<span class="op">±</span><span class="xterm">${v === 1 ? "" : numText(v)}</span>`
                           + (s.pr ? rootHTML({a:0, b:s.pr}) : "") + `<span class="xterm">x</span>`;
@@ -860,7 +888,7 @@ function spawn(){
   const el = document.createElement("div"); el.className = "piece";
   board.appendChild(el);
   const p = {L:e.L, R:e.R, n:e.n, par:e.par, contra:e.contra, deg:e.deg, ops:0, steps:0, used:{}, avail:null,
-             make:{kb:e.kb, kq:e.kq, k:e.k, div:e.div, deg:e.deg, mul:e.mul}, el, y:1, x0:0, w:3, bomb:null};
+             make:{kb:e.kb, kq:e.kq, k:e.k, div:e.div, deg:e.deg, mul:e.mul, bin:e.bin}, el, y:1, x0:0, w:3, bomb:null};
   p.y = ht(p);
   measure(p);
   p.x0 = freeColumn(p.w);
@@ -938,7 +966,8 @@ function applyOp(key, p, x){
   // (Vadim), except on a negative number: x² = n² gives x = ±n, x⁴ = n⁴ gives
   // x² = n², anything else gets √ on both sides (x² + 1 = 2 → √(x² + 1) = √2)
   // and can't be solved any more: no brick squares.
-  const r = o.sqrt ? rootOf(p) : null, rooted = o.sqrt && r == null && [sqrtSide(p.L), sqrtSide(p.R)];
+  const r = o.sqrt ? rootOf(p) : null, bq = o.sqrt && r == null ? binRoot(p) : null;
+  const rooted = o.sqrt && r == null && !bq && [sqrtSide(p.L), sqrtSide(p.R)];
   if(o.contra || o.joker && p.contra || rooted && !(rooted[0] && rooted[1])){
     if(o.contra && p.contra) contraNow(p, x);
     else if(o.sqrt) fizzle(p, rooted[0] ? 1 : 0);
@@ -947,7 +976,7 @@ function applyOp(key, p, x){
   }
   for(const s of [p.L, p.R]) delete s.pmGone;
   if(o.joker) writeAnswer(p);
-  else if(o.sqrt){ if(r != null) writeAnswer(p, r); else{ [p.L, p.R] = rooted; dropMinus(p); } }
+  else if(o.sqrt){ if(r != null) writeAnswer(p, r); else if(bq) [p.L, p.R] = bq; else{ [p.L, p.R] = rooted; dropMinus(p); } }
   else if(o.times){   // :2 of odd numbers gives fractions, and ±1 can't take them away (Vadim)
     p.L = timesSide(p.L, o.times); p.R = timesSide(p.R, o.times);
   }
@@ -959,16 +988,32 @@ function applyOp(key, p, x){
   if(pm != null){ const xs = {a:1, b:0}, ns = {a:0, b:pm, pm:pm !== 0}; [p.L, p.R] = p.L.pa ? [xs, ns] : [ns, xs]; }
   const mid = redraw(p);
   note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - ht(p)));
-  const v = solvedValue(p.L, p.R);
-  if(v != null) solvedNow(p, v, x);
+  const two = pnAnswers(p), v = two ? null : solvedValue(p.L, p.R);
+  if(two || v != null) solvedNow(p, v, x, two);
   return true;
 }
 // the joker's way (and a zero bomb's shot, and √ with its root r): x on the
 // side that had the most x (x⁴ before x² before x), the answer on the other,
 // ± for a square
 function writeAnswer(p, r = p.n){
-  const xs = {a:1, b:0}, ns = {a:0, b:r, pm:p.deg > 0 && r !== 0}, w = s => 1e4*(s.p4 || 0) + 100*(s.q || 0) + s.a;
+  const k = p.make && p.make.bin ? p.make.k : null;   // (x + k)² = n²: x = ±n − k
+  const xs = {a:1, b:0}, ns = k != null ? {a:0, b:-k, ...(r && {pn:r})} : {a:0, b:r, pm:p.deg > 0 && r !== 0};
+  const w = s => 1e4*(s.p4 || 0) + 100*(s.q || 0) + s.a + 10*!!s.bin;
   [p.L, p.R] = w(p.L) > w(p.R) ? [xs, ns] : [ns, xs];
+}
+// (x + k)² = n² (Vadim): √ gives x + k = ±n, or x + k = 0 for n = 0; else null
+function binRoot(p){
+  const pure = s => s.bin && (s.bc ?? 1) === 1 && ![s.p4, s.q, s.a, s.b, s.pa, s.root, s.fd, s.pn].some(Boolean);
+  const [U, V] = pure(p.L) ? [p.L, p.R] : [p.R, p.L];
+  if(!pure(U) || !plain(V) || V.b < 0 || !Number.isInteger(Math.sqrt(V.b))) return null;
+  const n = Math.sqrt(V.b), I = {...U.bin}, N = n ? {a:0, b:0, pn:n} : {a:0, b:0};
+  return U === p.L ? [I, N] : [N, I];
+}
+// x = ±n + c (x + 1 = ±2 after −1: x = ±2 − 1): its two answers, else null
+function pnAnswers(p){
+  const pnOnly = s => s.pn && !s.a && !s.q && !s.p4 && !s.root && !s.pa && !s.fd && !s.bin;
+  const [U, V] = pnOnly(p.L) ? [p.R, p.L] : [p.L, p.R];
+  return pnOnly(V) && bare(U, "a") ? [V.b + V.pn, V.b - V.pn] : null;
 }
 // x² = c with c ≥ 0 a square (either way round): √c, else null
 function rootOf(p){
@@ -979,7 +1024,7 @@ function rootOf(p){
 }
 // one side exactly ±x and the other a number (4 = ±x): that number's size, else null
 function pmAnswer(p){
-  const pmx = s => s.pa === 1 && !s.pr && !s.p4 && !s.q && !s.a && !s.b && !s.root && !s.fd;
+  const pmx = s => s.pa === 1 && !s.pr && !s.p4 && !s.q && !s.a && !s.b && !s.root && !s.fd && !s.bin && !s.pn;
   const [U, V] = pmx(p.L) ? [p.L, p.R] : [p.R, p.L];
   return pmx(U) && plain(V) ? Math.abs(V.b) : null;
 }
@@ -987,7 +1032,7 @@ function pmAnswer(p){
 // √(k·x²) = ±√k·x (Vadim: 64 = 4x² → 8 = ±2x, then :2), else √( … ); null
 // for a negative number, or a side with ±x (it may be negative)
 function sqrtSide(s){
-  if(s.pa || s.f && s.f.pa) return null;
+  if(s.pa || s.pn || s.f && s.f.pa) return null;
   if(s.fd){   // x² or x⁴ alone over a square (Vadim): x²/4 → ±x/2, x⁴/4 → x²/2, then ·2; any other fraction gets √ around it
     const f = s.f, d = Math.sqrt(s.fd);
     if(f.p4 > 0 && !f.q && !f.a && !f.b && !f.root && !s.p4 && !s.q && !s.a && !s.b && !s.root && Number.isInteger(d) && Number.isInteger(Math.sqrt(f.p4)*1024))
@@ -1066,15 +1111,16 @@ function shotDown(p, from){
   if(p.contra){ contraNow(p, from); return; }   // the blowup, as with the ⚡
   p.joker = true;
   writeAnswer(p); redraw(p);
-  solvedNow(p, p.n, from);
+  const two = pnAnswers(p);
+  solvedNow(p, two ? null : solvedValue(p.L, p.R), from, two);
 }
 const sign = v => v > 0 ? "pos" : v < 0 ? "neg" : "zero";
 // Solved: it locks, glows in its bomb's colour with a burst of sparks for GLOW
 // seconds (still falling, the fall never slows) and then turns into the bomb.
 // Without a joker (Vadim): in the fewest throws there could be it is perfect
 // (PERFECT points), else with no more steps than needed it is neat (NEAT).
-function solvedNow(p, v, from){
-  p.glow = 0; p.answer = v; p.from = from; p.pm = !!(p.L.pm || p.R.pm);
+function solvedNow(p, v, from, two = null){
+  p.glow = 0; p.answer = v; p.two = two; p.from = from; p.pm = !!two || !!(p.L.pm || p.R.pm);
   p.el.classList.remove("target");
   p.el.classList.add("solved", p.pm ? "pm" : sign(v));
   const x = X(p.x0 + p.w/2), y = Y(p.y - ht(p)/2);
@@ -1222,9 +1268,10 @@ function note(text, x, y, cls = ""){
 // x = ±n: two bombs, n and −n, knocked apart (Vadim)
 function toBombs(p){
   if(!p.pm) return toBomb(p, p.answer, p.from);
+  const [u, w] = p.two || [p.answer, -p.answer];   // x = ±3: 3 and −3; x = ±2 − 1: 1 and −3
   const twin = {...p, el:document.createElement("div")}, mid = p.x0 + p.w/2;
   board.appendChild(twin.el); pieces.push(twin);
-  toBomb(p, p.answer, mid - 1); toBomb(twin, -p.answer, mid + 1);
+  toBomb(p, u, mid - 1); toBomb(twin, w, mid + 1);
 }
 // the bomb starts at the equation's middle, falling as the equation fell; the
 // solving operation knocks it sideways, away from where it was dropped (from)
