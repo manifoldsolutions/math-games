@@ -65,6 +65,8 @@ games/<category>/<course>/<game>/index.html
   - positive constants: yellow (`--brown-ink`, `--gold`)
   - negative constants: magenta (`--magenta`, `--magenta-ink`)
   - cyan (`--accent`) = things you interact with; magenta = highlights; `--red` = danger / errors
+  - orange (`--orange`, `--orange-ink`) = ⚡, "no solution": a power move, not
+    an error (Vadim; red looked like "not allowed")
 - Fonts: Orbitron (`--display`) for titles only; Chakra Petch (`--ui`, `--math`) for everything else.
 - Glow is applied to whole groups (one filter per cup/panel), never to
   hundreds of small shapes — it must stay smooth on old phones.
@@ -258,7 +260,9 @@ games/<category>/<course>/<game>/index.html
   brings the next one at once (Vadim), and the timetable goes on from there:
   the gap from n to n + 1 is min(the timetable's gap, the time until the
   well is empty). For now every level has the same settings (Vadim, `LEVEL`;
-  a level only lists what is its own): 0.55 → 0.8 rows/s, gaps 16 → 5.6 s
+  a level only lists what is its own): the fall from the chosen speed (see
+  Speed), gaps 16 → 5.6 s at the fall 0.55 → 0.8 (`REF_FALL`), scaled with
+  the speed's fall
   (on a 19-row phone well about 2 → 4 equations on the screen, fewer in a
   shorter desktop well), positive answers 80 % → 30 % over the level (more
   negative bombs, which clear trash, towards the end), the zero bomb's shot
@@ -301,9 +305,26 @@ games/<category>/<course>/<game>/index.html
   0.15 to 0.07 (3.5 → 2.2 at 50 %).
 - `·2` multiplies both sides by 2 (the key is `"*2"`). It is one of level 2's
   new bricks (a zero bomb, 3 uses, see New bricks); from level 2 on zero
-  bombs may also add single uses (`GIFT_FROM`). Nothing needs it yet (it
-  undoes a :2 that gave fractions; Vadim: later levels may need it). Its
+  bombs may also add single uses (`GIFT_FROM`). The fraction equations need
+  it (below); it also undoes a :2 that gave fractions. Its
   dot is drawn bigger (`.mul`), the font's · is tiny.
+- Fraction equations (Vadim, levels 2 and 3, `frac`, `fracEquation`): 15 %
+  of the equations (`FRAC_P`; measured 14.5 %, about 4 a level), only while
+  the player has ·2 (the generator reserves the ·2 a falling one still
+  needs, `toGo`): x/2 = 4 (an even x), (x ± 1)/2 = m (an odd x; no brackets
+  on screen, the top over a bar over 2), and on level 3, as often as its
+  squares, x²/2 = 8 (x = ±2 … ±8). ·2 and at most one more throw (−1, √);
+  ·2 counts in "Täydellinen" (`mul`). A side is then {…, f, fd}: its top
+  f over fd, the side's other terms beside it. The equation (and its trash,
+  `ht`, `hasFrac`, the text faded on it) is two rows tall, one again once
+  the bottom is gone (its bottom edge stays). Bricks (`timesSide`): ±1, ±x,
+  ±x² go beside the fraction, (x + 1)/2 + 1 = 5, and ·2 merges them, x + 3
+  = 10; ·2 halves the bottom (gone at 1), :2 doubles it (x/2 → x/4),
+  ·(−1) changes the top's sign. √ goes around a fraction side (lost),
+  except x² alone over a square (Vadim): x²/2 = 8 → :2 → x²/4 = 4 → √ →
+  ±x/2 = 2 → ·2 → x = ±4. Simulated (500 games): perfect play needs fewer
+  jokers (level 3: 4.3 → 3.6), and at 50 % play fewer equations can't be
+  solved (level 3: 2.0 → 1.2 a level).
 - `·(−1)` (Vadim, key `"*-1"`) multiplies every term on both sides by −1: a
   rescue, e.g. with many +x and no −x (2x + 1 = x + 4 → −2x − 1 = −x − 4,
   then +x and +1), and the school step −x = −3 → x = 3 (−x = −3 is not
@@ -318,7 +339,7 @@ games/<category>/<course>/<game>/index.html
   an operation brick (the corners under the walls too), and holds the ±
   operations: −2x −x +x +2x | −2 −1 +1 +2 (x on the left, numbers on the
   right, number-line order). A slot whose operation the player doesn't have
-  yet is a plain floor brick. The rest go in the walls near the floor, from
+  yet, or that has run out for good (`retire`), is a plain floor brick. The rest go in the walls near the floor, from
   the bottom up: the joker, ⚡, −x², +x² on the left; :2, ·2, ·(−1), √ on
   the right. Every brick keeps its place on every level (Vadim: nothing
   moves when a level starts; √ and ±x² may come on level 2, while ±2 and
@@ -343,6 +364,17 @@ games/<category>/<course>/<game>/index.html
   now (the equation under the brick while dragging slowly, the one the flick
   points at while swiping) and what bricks are flying to, checked every
   frame.
+- Dragging must never get stuck (a friend's Windows Chrome, 2026-10-21):
+  Chrome may refuse pointer capture ("No active pointer with the given id
+  is found"); the old code then never listened for the move and the release,
+  so the brick froze and no brick could be thrown again. Now capture is only
+  tried, the drag listens on the whole window, a new press with the same
+  pointer ends a drag or pull whose release was lost (the brick flies back),
+  and `aim` copes with no position yet (an error there stopped the frame
+  loop). The well has `translate="no"`: a page translation (his Chrome
+  turned "↺ Alusta" into "↺ Platform") leaves equations and bricks alone.
+  Tested with Chrome's own mouse and touch input and with events sent into
+  the page (Chrome refuses capture for those).
 - Pull area: a rectangle 80 % of the interior width (between the walls) wide
   and 1.2 times that tall, centred across the interior and on the equation's
   middle up and down, clipped to the interior. An equation nearer a wall than
@@ -391,8 +423,15 @@ games/<category>/<course>/<game>/index.html
 - x = 0 → a cyan zero bomb (bounces like the others, clears nothing). It
   gives one use of a new operation: +2, −2, +2x, −2x or a joker "x = ?" that
   solves any equation at once. As long as one of the five is missing, a zero
-  bomb always brings a missing one (Vadim); only when all five are there does
-  it add one use to one of them (one with room). Picked at random, the joker
+  bomb always brings a missing one (Vadim). With nothing new to bring it
+  bursts (`coinBurst`, Vadim; it used to add one use to one brick): +1 for
+  every brick the player has, ⚡ and the joker too, but not ±2 and ±2x when
+  they run out; a gold "+1" flies to each. In practice only on level 3,
+  where the next level's bricks no longer keep coming: simulated 2.3 / 1.9
+  / 1.2 bursts there (perfect / 80 % / 50 % play), and with them level 3
+  has 1.3 contradictions instead of 0.8 (more ⚡), the perfect player needs
+  4.3 jokers instead of 5.3, and holds 94 bricks at the end instead of 74.
+  Picked at random, the joker
   half as often as each of the others (`GIFTS`; ·(−1) is a sixth gift, see
   above, so on level 1 there are six to collect). A new brick appears in its
   slot (see Slots); after that positive bombs can refill it too, the joker
@@ -427,18 +466,23 @@ games/<category>/<course>/<game>/index.html
   4 − x = 1 − x). They come only from the 20th equation on, at most 2 a
   level, 1.5 on average (chance 0.18 each, `contra`; measured 1.51, mostly
   around the 24th), and only while the player has a ⚡ left. The ⚡ brick
-  ("no solution", key `"N"`, a drawn red lightning bolt, as in maths for a
+  ("no solution", key `"N"`, a drawn orange lightning bolt, as in maths for a
   contradiction) sits in the left wall above the joker; it comes from a zero
   bomb with 2 uses (see New bricks), bombs never refill it (`NO_REFILL`), and
   what is left goes on to level 3 (it used to be set to 2 on each level). The ⚡ on a contradiction:
-  it glows red 0.5 s, then blows up at once: every equation still falling
+  lightning strikes it from the top of the well (0.25 s), it glows orange
+  0.5 s with crackling sparks, then blows up at once: every equation still falling
   unsolved goes without becoming a bomb, 100 points each ("Räjäytetyt
   yhtälöt n × 100" in the result). The contradiction itself counts as a
   solved equation everywhere (100 in "Ratkaistut yhtälöt"; Vadim: "no
   solution" is its solution). Glowing ones, bombs and the
-  trash stay; bricks flying to the ones that went come back. A red flash
-  over the well, a big red ring, a shake; red because a contradiction is an
-  error (Vadim). The ⚡ on an equation with a solution, or the joker on a
+  trash stay; bricks flying to the ones that went come back. Lightning jumps
+  from it to each one that goes (`bolts`: one SVG, one glow), which flashes
+  orange and bursts; an orange flash over the well, a big orange ring, a
+  shake (no flash or shake with reduced motion). Orange, not red (Vadim:
+  red looked like "not allowed"; it was red as "an error"); red stays for
+  what is refused (√ of a negative number, the minus of x² = ±4: `.sparks.no`).
+  The same when a zero bomb's shot hits a contradiction. The ⚡ on an equation with a solution, or the joker on a
   contradiction, is wasted (Vadim: bouncing back would let students test
   every equation). Normal operations work on a contradiction but never
   solve it (3 = 5 does nothing by itself, Vadim: declaring "no solution" is
@@ -464,13 +508,19 @@ games/<category>/<course>/<game>/index.html
   `PM_T`, about 1.4 s; the equation works normally meanwhile). A second √
   gives x = ±n. x⁴ is only on one side.
 - √ (level 3) always works on both sides, like :2 (Vadim): exactly x² = n²
-  gives x = ±n (x² = 0: x = 0), √(x⁴) = x², a square number its root, and
-  anything else gets √ around it: x² + 1 = 2 → √(x² + 1) = √2 (drawn with a
+  gives x = ±n (x² = 0: x = 0), √(x⁴) = x², a square number its root,
+  k·x² alone on a side ±√k·x (Vadim; `pa`, `pr`: 64 = 4x² → 8 = ±2x, then
+  :2 → 4 = ±x, solved as x = ±4 with two bombs; 128 = 4x² → √128 = ±2x and
+  128 = 2x² → √128 = ±√2x can't be finished; x² = 2 → ±x = √2), and
+  anything else gets √ around it. The ±x term is its own term: ±1, ±x, ±x²
+  go beside it and can be taken off again (8 + x = ±2x + x → −x), :2, ·2,
+  ·(−1) scale it (−(±2x) = ±2x), √ on a side with it is refused (it may be
+  negative). Anything else: x² + 1 = 2 → √(x² + 1) = √2 (drawn with a
   bar over what is under the root, `rootHTML`; Chakra Petch's "(" looks like
   "["). Nothing squares, so such an equation can't be solved any more and
   ends as trash, though bricks still work on it (−1: √(x² + 1) − 1 = √2 − 1;
   a second √ nests) and the joker or the zero bomb's shot still solve it.
-  Only √ of a negative number is refused: the brick is wasted, the negative
+  Only √ of a negative number (or of a ±x side) is refused: the brick is wasted, that
   side flashes red and the root bursts in red sparks (`fizzle`). x = ±n glows
   gold and magenta and becomes two bombs, n and −n, knocked apart (one
   equation: 100 points). par counts each √. Sides are {p4, q, a, b, root,
@@ -482,9 +532,10 @@ games/<category>/<course>/<game>/index.html
 - Level 3's bricks (Vadim): ±1, ±x, ±x², √, :2, ·2, ·(−1), the joker, ⚡
   and what is left of ±2 and ±2x. From the moment the first of √ and ±x²
   comes (usually near the end of level 2), no bomb refills ±2 and ±2x and no
-  zero bomb brings them new (`QUIET`, `quiet`, Vadim): they run out, and stay
-  grey at 0 (they used to become points when level 3 started, then for a
-  while uses of √ and ±x²). Every brick keeps its count (Vadim), and the
+  zero bomb brings them new (`QUIET`, `quiet`, `runOut`, Vadim): they run
+  out, and one at 0 goes for good, its slot plain floor (`retire`; at once
+  if it is already at 0 when √ or ±x² comes). They used to become points
+  when level 3 started, then for a while uses of √ and ±x². Every brick keeps its count (Vadim), and the
   well is emptied. √ and ±x² also
   come from zero bombs (see New bricks; the gifts there after them: the
   joker, −x², +x², :2, ·2, ·(−1), `gifts`); bombs refill √. The generator never gives an equation that needs a ±x²
@@ -505,7 +556,9 @@ games/<category>/<course>/<game>/index.html
   positive, magenta if negative) in a flickering ring of flames of its own
   colour, bigger for a bigger |n| (`fireSize`). A positive bomb gives n back:
   n splits at random (fair shuffle) into 1 … 4 parts that fly to different
-  bricks. Empty bricks come first (Vadim): each part goes to an empty one
+  bricks: 1 part 15 %, 2 30 %, 3 30 %, 4 25 % (`PARTS`, Vadim; it was 25 %
+  each, so a 10 went whole into one brick a quarter of the time), scaled when
+  the bomb or the bricks allow fewer (a 3: 20 / 40 / 40 %). Empty bricks come first (Vadim): each part goes to an empty one
   (count 0, not the joker; ⚡ never) with the chance max(1/3, empty/all)
   (`EMPTY_MIN`), half the time to one this bomb hasn't refilled yet, else to
   any empty one; the other parts go to their random brick as before, which
@@ -543,9 +596,14 @@ games/<category>/<course>/<game>/index.html
   they started on the equation (or used one on it); without a +2, two +1
   is the best. "Siisti!" +50: otherwise no wasted step: steps ≤ par, where
   a ±2 or ±2x is two steps (`STEPS`), so two +1 when there is a +2. It is
-  derived from how the equation was built, not by a search; dividing first
-  (2x + 2 = 8 → :2 → −1) is not counted, which can only make "Täydellinen"
-  easier. The result dialog has both rows. Dropping the +1 costs the
+  derived from how the equation was built, not by a search: each kind (x,
+  number, x²) is taken off in parts before, between and after the halvings
+  (`split`, sharing the bricks), so dividing first counts (Vadim: 2x + 2 = 4
+  → −1, −1, :2 got "Täydellinen"; now "Siisti", and :2, −1 is
+  "Täydellinen"; 4x + 6 = 46 → :2, −1, :2, −1). Checked offline against a
+  search of all throws (1 232 shapes and brick sets): equal for every shape
+  the game makes; only with a constant ±4 and ±2 boxes (never made) does
+  halving and ·2 back save a throw. The result dialog has both rows. Dropping the +1 costs the
   economy: in perfect games (3 000, levels 1–3) a joker is needed 1.4 / 4.1
   / 8.3 times a level (it was 0.1 / 0.2 / 3.2), and on level 3 an equation
   can't be solved at all 0.4 times a level (it was 0.01); the measurements
@@ -569,6 +627,16 @@ games/<category>/<course>/<game>/index.html
   that lets the pause catch back from the first swipe on (without it, a
   first drag caught by the gesture left the page). "Pelaa uudestaan" and
   "↺ Alusta" start at once.
+- Speed (Vadim, `SPEEDS`): a slider with three stops, Hidas / Keskinopea /
+  Nopea (the labels can be tapped; "Pisteet ×1,5" under them), in the start
+  dialog and the end dialog (not between levels); Keskinopea at first, kept
+  for "↺ Alusta" and "Pelaa uudestaan", nothing saved. The fall over each
+  level: 0.25 → 0.5, 0.4 → 0.65, 0.6 → 0.85 rows/s (it was 0.55 → 0.8 for
+  everyone, then briefly 0.75); the gaps scale with it (35 → 9, 22 → 7,
+  15 → 5.3 s), so a well holds about as many equations at every speed.
+  Every point ×1, ×1,5, ×2 as it is earned, the trash left at the end too;
+  the result rows show the points as earned, then "Nopeus: Keskinopea ×1,5"
+  and the total (whole points).
 
 ## Open questions (ask Vadim before deciding)
 
@@ -601,6 +669,8 @@ games/<category>/<course>/<game>/index.html
   button appears under the game. In the two older games it goes through
   `nextLevel()`/`enterLevel()`, so a level's intro chapter still comes first.
   In Yhtälösade it ends the level at once: what is in the air goes away, the
-  trash and counts go on. Keep it hidden from students.
+  trash and counts go on, and every brick the player could have by the end
+  of that level gets +3 (Vadim: the basic ones, its gifts, the next level's
+  new ones, ⚡; not ±2 / ±2x once they run out). Keep it hidden from students.
 - Deploy = commit and push. When a game starts using `assets/theme.css`, push
   the theme file in the same commit.

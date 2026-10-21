@@ -43,6 +43,7 @@
   --accent:#00e5ff;  --accent-ink:#5ef1ff;
   --magenta:#ff3df2; --magenta-ink:#ff7cf7;
   --red:#ff3d6e;     /* danger, errors, lost lives */
+  --orange:#ff9a3d;  --orange-ink:#ffb870;   /* ⚡, "no solution": a power move, not an error */
 
   /* maths colours — used the same way in every game */
   --green:#39ff9e; --green-ink:#7dffbf; --green-wash:#06291a;   /* x, variables */

@@ -69,11 +69,20 @@
   .piece .op{ margin:0 .1em; }
   .mul{ display:inline-block; transform:scale(1.8); margin-right:.12em; }   /* the · of ·2 is tiny in Chakra Petch */
   .paren{ font-family:"IBM Plex Sans", sans-serif; }   /* Chakra Petch's "(" looks like "[" */
+  /* a fraction (Vadim): the top over a bar over the bottom, the equation two rows tall */
+  .frac{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 .08em; }
+  .frac .num{ padding:0 .12em .06em; border-bottom:.08em solid currentColor; }
+  .frac .den{ padding-top:.06em; }
   /* solved: it glows in the colour of the bomb it becomes, with a burst of sparks */
   .piece.pos, .sparks.pos{ --fc:var(--gold); }
   .piece.neg, .sparks.neg{ --fc:var(--magenta); }
   .piece.zero, .sparks.zero{ --fc:var(--accent); }
-  .piece.contra, .sparks.contra{ --fc:var(--red); }   /* a contradiction (Vadim: an error, so red) */
+  /* a contradiction blown up (Vadim: orange, the ⚡'s colour; red looked like "not allowed") */
+  .piece.contra, .sparks.contra{ --fc:var(--orange); }
+  .sparks.no{ --fc:var(--red); }   /* refused: √ of a negative number, the minus of x² = ±4 */
+  .piece.zapped{ pointer-events:none; border-color:var(--orange); box-shadow:0 0 18px var(--orange);
+                 animation:zapped .4s ease-out forwards; }   /* hit by the chain lightning */
+  @keyframes zapped{ from{ filter:brightness(1.8); } to{ opacity:0; } }
   .piece.solved.pm{ border-color:var(--gold); box-shadow:-10px 0 18px var(--gold), 10px 0 18px var(--magenta); }   /* x = ±n */
   .root{ color:var(--ink); }
   .radicand{ display:inline-block; line-height:1.1; border-top:.08em solid var(--ink); padding:.06em .08em 0; margin-left:-.06em; }
@@ -154,7 +163,7 @@
     box-shadow:0 0 8px rgba(0,229,255,.3); cursor:grab; font-family:var(--math); font-weight:700;
     transition:box-shadow .15s ease, opacity .15s ease;
   }
-  .opb[hidden]{ display:none; }   /* the new operations: not earned yet */
+  .opb[hidden]{ display:none; }   /* not earned yet, or run out for good (retire) */
   .opb[data-op="*-1"] .lbl{ font-size:.82em; }   /* ·(−1) is wider than the others */
   .opb .cnt{ font-family:var(--ui); font-weight:600; color:var(--ink); font-variant-numeric:tabular-nums; }
   .opb .bat{ width:70%; height:5px; border:1px solid var(--line); border-radius:2px; overflow:hidden; }
@@ -183,9 +192,16 @@
   .ring.pos{ border-color:var(--gold); }
   .ring.neg{ border-color:var(--magenta); }
   .ring.zero{ border-color:var(--accent); }
-  .ring.contra{ border:6px solid var(--red); }
-  /* the contradiction's blowup: a red flash over the well and a shake */
-  .flash{ pointer-events:none; z-index:4; background:var(--red); animation:flash .6s ease-out forwards; }
+  .ring.contra{ border:6px solid var(--orange); }
+  /* the contradiction's blowup: lightning, an orange flash over the well and a shake */
+  .flash{ pointer-events:none; z-index:4; background:var(--orange); animation:flash .6s ease-out forwards; }
+  .bolts{ pointer-events:none; z-index:5; overflow:visible; filter:drop-shadow(0 0 4px var(--orange));
+          animation:bolts .3s linear forwards; }   /* one glow for all the bolts */
+  .bolts polyline{ fill:none; stroke-linejoin:round; stroke-linecap:round; }
+  .bolts .glow{ stroke:var(--orange); opacity:.75; }
+  .bolts .core{ stroke:var(--orange-ink); }
+  @keyframes bolts{ 0%, 30%{ opacity:1; } 40%{ opacity:.35; } 50%, 70%{ opacity:1; } 100%{ opacity:0; } }
+  @media (prefers-reduced-motion: reduce){ .bolts{ animation:none; } }
   @keyframes flash{ from{ opacity:.45; } to{ opacity:0; } }
   #board.shake{ animation:shake .45s ease; }
   @keyframes shake{
@@ -193,7 +209,7 @@
     60%{ transform:translateX(calc(-50% - 3px)); } 80%{ transform:translateX(calc(-50% + 2px)); }
   }
   @media (prefers-reduced-motion: reduce){ #board.shake{ animation:none; } }
-  .bolt{ width:.85em; height:1.3em; fill:var(--red); vertical-align:-.25em; }
+  .bolt{ width:.85em; height:1.3em; fill:var(--orange); vertical-align:-.25em; }
   @keyframes boom{ from{ transform:scale(.2); opacity:1; } to{ transform:scale(1); opacity:0; } }
   .fly{
     pointer-events:none; z-index:6; font-family:var(--math); font-weight:700; color:var(--brown-ink);
@@ -202,6 +218,17 @@
   }
   #pauseOv h2{ margin-bottom:24px; }
   .win .result{ margin-bottom:18px; }   /* no message under it (Vadim: no explanations for now) */
+  /* the speed: a slider with three stops whose labels can be tapped too */
+  .speedpick{ margin:4px 0 22px; }
+  .speedpick input{ width:100%; margin:0; accent-color:var(--accent); cursor:pointer; }
+  .speedlabels{ display:flex; justify-content:space-between; margin-top:6px; }
+  .speedlabels button{
+    background:none; border:none; padding:8px 4px; font:inherit; font-family:var(--ui); font-weight:600;
+    color:var(--muted); cursor:pointer;
+  }
+  .speedlabels button.on{ color:var(--accent-ink); }
+  .speedlabels button:focus-visible{ outline:2px solid var(--magenta); outline-offset:2px; }
+  .speedmult{ color:var(--muted); font-family:var(--ui); font-size:14px; }
 </style>
 </head>
 <body class="game">
@@ -218,7 +245,8 @@
       <span>Ratkaistu: <b id="solved">0</b></span>
       <span>Roskaa: <b id="trashCount">0</b></span>
     </div>
-    <div class="stage" id="stage"><div id="board" aria-label="Kaivo, johon yhtälöt putoavat"></div></div>
+    <!-- translate="no": a browser's page translation must not touch the equations and bricks -->
+    <div class="stage" id="stage"><div id="board" translate="no" aria-label="Kaivo, johon yhtälöt putoavat"></div></div>
     <div class="subctrl">
       <button id="pause" title="Tauko (P tai Esc)">⏸&#xFE0E; Tauko</button>
       <button id="restart">↺ Alusta</button>
@@ -231,6 +259,14 @@
       <h2 id="ovTitle"></h2>
       <div class="result" id="ovResult"></div>
       <div class="score" id="ovScore"></div>
+      <!-- the speed (start and end dialogs only; SPEEDS) -->
+      <div class="speedpick" id="speedPick" hidden>
+        <input type="range" id="speedRange" min="0" max="2" step="1" value="1" aria-label="Nopeus">
+        <div class="speedlabels">
+          <button type="button" data-s="0">Hidas</button><button type="button" data-s="1">Keskinopea</button><button type="button" data-s="2">Nopea</button>
+        </div>
+        <div class="speedmult" id="speedMult"></div>
+      </div>
       <div class="btns">
         <button class="primary" id="again">Pelaa uudestaan</button>
         <a href="../../../../#/lukio/maa1-2">Palaa kurssiin</a>
@@ -256,16 +292,16 @@ const WALL = 1.5;               // wall width in cells (the operation bricks sit
 const EQUATIONS = 30;           // equations per level
 // Levels (Vadim): the next one goes on with the trash, the counts and the
 // operations left by the previous one. Every level has LEVEL's settings
-// unless it says otherwise (Vadim: the same for all levels for now). fall: rows per
-// second (never slowed, not even while dragging), [first, last], growing
-// linearly with the equations of the level (Vadim, `ramp`); gap: seconds from
-// one equation to the next, [after the first, before the last], shrinking
-// linearly (Vadim, `wantSpawn`; on a 19-row phone well that is about 2 → 4
-// equations on the screen); pos: the share of positive
+// unless it says otherwise (Vadim: the same for all levels for now). The fall
+// comes from the speed the player chose (SPEEDS); gap: seconds from one
+// equation to the next at the fall REF_FALL, [after the first, before the
+// last], shrinking linearly (Vadim, `wantSpawn`; on a 19-row phone well that
+// is about 2 → 4 equations on the screen), scaled with the fall; pos: the share of positive
 // answers among x ≠ 0, [first, last], reached at the equation posBy;
 // fresh: the well is emptied of trash first (the trash left costs as at the
 // end); div: the share of equations that
-// end with 2x = 2n and need :2; big: big equations (bigEquation); shoot: the chance that a zero bomb also
+// end with 2x = 2n and need :2; big: big equations (bigEquation); frac:
+// fraction equations (fracEquation); shoot: the chance that a zero bomb also
 // shoots down the lowest equation, [first, last] (Vadim, `shootLowest`);
 // contra: contradictions from the equation `from` on, each with chance p, at
 // most max (Vadim: 1.5 on average, near the end where the well is crowded),
@@ -279,22 +315,31 @@ const EQUATIONS = 30;           // equations per level
 // previous level's equation NEXT_FROM on (see giftFor); gifts: the zero
 // bomb's gifts there (else GIFTS).
 // More negative answers towards the end: more bombs that clear trash.
-const LEVEL = {fall:[.55, .8], gap:[16, 5.6], pos:[.8, .3], posBy:EQUATIONS, shoot:[0, .5]};
+const LEVEL = {gap:[16, 5.6], pos:[.8, .3], posBy:EQUATIONS, shoot:[0, .5]};
+// The speed (Vadim), chosen in the start and end dialogs: the fall in rows
+// per second over each level's equations, [first, last], growing linearly
+// (`ramp`; never slowed, not even while dragging), and every point times
+// mult. The gaps (LEVEL.gap, set for REF_FALL) scale with the fall, so a
+// well holds about as many equations at every speed.
+const SPEEDS = [{name:"Hidas", fall:[.25, .5], mult:1}, {name:"Keskinopea", fall:[.4, .65], mult:1.5},
+                {name:"Nopea", fall:[.6, .85], mult:2}];
+const REF_FALL = [.55, .8];
+let speed = SPEEDS[1];
 const LEVELS = [
   {},   // the old levels 1 and 2 in one (Vadim)
   // ⚡ after the others: it is no use before the contradictions (Vadim)
-  {fresh:true, first:[[":2", "*2", "J"], ["N"]], div:1/3, big:true, contra:{from:20, max:2, p:.18}},
+  {fresh:true, first:[[":2", "*2", "J"], ["N"]], div:1/3, big:true, frac:true, contra:{from:20, max:2, p:.18}},
   // x² (Vadim): a mix, more of them towards the end; ±1, ±x, ±x², √, :2, ·2
   // (kept from level 2: x² = −x² + 8), ·(−1), the joker, ⚡ and what is left
   // of ±2 and ±2x (quiet); √ before ±x², as every square needs it
   {fresh:true, first:[["sq"], ["-x2", "+x2"]],
-   squares:[.3, .8], div:.25, big:true, fourth:{from:10, p:.5}, contra:{from:20, max:2, p:.18, square:true},
+   squares:[.3, .8], div:.25, big:true, frac:true, fourth:{from:10, p:.5}, contra:{from:20, max:2, p:.18, square:true},
    short:.2, gifts:{"J":1, "-x2":2, "+x2":2, ":2":2, "*2":2, "*-1":1}},
 ].map(l => ({...LEVEL, ...l}));
 const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0, "*-1":0, "N":0, "sq":0, "+x2":0, "-x2":0};
 const BASE = ["+x", "-x", "+1", "-1"];                 // always there; the others come from zero bombs
 // A zero bomb brings a new operation as long as one of these is missing, then
-// one use of one of them (Vadim). Weights: the joker and ·(−1) come half as often.
+// +1 for every brick (coinBurst, Vadim). Weights: the joker and ·(−1) come half as often.
 // ·2 only from level 2 (the :2 level) on (GIFT_FROM; Vadim: it undoes a :2 that gave fractions).
 // ·(−1) (Vadim): a rescue, e.g. with many +x and no −x; the generator never counts on it.
 const GIFTS = {"+2":2, "-2":2, "+2x":2, "-2x":2, "J":1, "*2":2, "*-1":1};
@@ -310,12 +355,14 @@ const FIRST_COUNT = {":2":3, "*2":3, "*-1":3, "N":2, "sq":4, "+x2":3, "-x2":3};
 const CAP = 99;                 // no brick holds more (a reward part that doesn't fit goes on to another brick)
 const BAT = 9;                  // the battery bar is full from this count up
 const EMPTY_MIN = 1/3;          // a positive bomb's part goes to an empty brick at least this often (splitReward)
+const PARTS = [.15, .3, .3, .25];   // a positive bomb splits into 1 … 4 parts this often (Vadim; scaled if fewer are possible)
 const KEEP = 4;                 // the generator keeps the total count at least this (see makeEquation)
 const ANSWERS = [-6,-5,-4,-3,-2,-1,3,4,5,6,7,8];   // x = n: half negative, the positive ones pay for the rest
 // big equations (Vadim, bigEquation): this share has x = 10 (else 8), a
 // constant up to BIG_K; their chance BIG_P[0], up to BIG_P[1] when the ±1 and
 // ±x left go from BIG_LOW to none
 const BIG_TEN = .4, BIG_K = 4, BIG_P = [.05, .25], BIG_LOW = 8;
+const FRAC_P = .15;             // fraction equations (Vadim, fracEquation): this share of a level's equations
 // From the first equation to the last (t = 0 … 1) the game gets harder (Vadim).
 // Each target moves linearly from its first value to its second; the draw
 // prefers values near it (a bell curve with the given spread).
@@ -381,9 +428,11 @@ const OPS = {
 };
 const NO_REFILL = ["N"];        // bombs never refill these (Vadim: the 2 it comes with, that's all)
 // ...nor (Vadim) ±2 and ±2x once one of √ and ±x² has come (usually near the
-// end of level 2): they run out, also on level 3; no zero bomb brings them either
+// end of level 2): they run out, also on level 3, and go when empty (retire);
+// no zero bomb brings them either
 const QUIET = ["+2", "-2", "+2x", "-2x"], QUIET_AFTER = ["sq", "-x2", "+x2"];
-const quiet = () => [...NO_REFILL, ...(QUIET_AFTER.some(j => promised.has(j)) ? QUIET : [])];
+const runOut = () => QUIET_AFTER.some(j => promised.has(j)) ? QUIET : [];
+const quiet = () => [...NO_REFILL, ...runOut()];
 // where the bricks sit (Vadim), the same on every level: the ± operations in
 // the floor, 8 slots of 1.5 × 2 cells from the left (x on the left, numbers
 // on the right, in number-line order), the rest in a wall, row counted from
@@ -436,9 +485,10 @@ const sum = o => Object.values(o).reduce((a, b) => a + b, 0);
 function plan(e, c){
   const x = part(-e.kb, c, "+x", "-x", "+2x", "-2x"), b = part(-e.k, c, "+1", "-1", "+2", "-2");
   const x2 = e.kq ? part(-e.kq, c, "+x2", "-x2") : {}, roots = e.deg === 4 ? 2 : e.deg ? 1 : 0;
-  if(x && b && x2 && (c[":2"] || 0) >= e.div && (c.sq || 0) >= roots){
+  if(x && b && x2 && (c[":2"] || 0) >= e.div && (c["*2"] || 0) >= (e.mul || 0) && (c.sq || 0) >= roots){
     const p = {...x, ...b, ...x2};
     if(e.div) p[":2"] = e.div;
+    if(e.mul) p["*2"] = e.mul;
     if(roots) p.sq = roots;
     return p;
   }
@@ -450,7 +500,14 @@ function plan(e, c){
 // or a root after a √)
 function toGo(p){
   const L = p.L, R = p.R;
-  if(L.root || R.root) return null;
+  if(L.fd || R.fd){   // a fraction: what is left after ·2 (as often as it takes), and those ·2
+    if(L.fd && R.fd || !Number.isInteger(Math.log2(L.fd || R.fd))) return null;
+    let A = L, B = R, m = 0;
+    while(A.fd || B.fd){ A = timesSide(A, 2); B = timesSide(B, 2); m++; }
+    const g = toGo({L:A, R:B});
+    return g && {...g, mul:(g.mul || 0) + m};
+  }
+  if(L.root || R.root || L.pa || R.pa) return null;
   if(L.p4 || R.p4 || L.q || R.q){
     const deg = L.p4 || R.p4 ? 4 : 2, top = deg === 4 ? "p4" : "q";
     const [U, V] = (L[top] || 0) > (R[top] || 0) ? [L, R] : [R, L], uq = U.q || 0, vq = V.q || 0;
@@ -517,6 +574,21 @@ function bigEquation(){
   const n = Math.random() < BIG_TEN ? 10 : 8, div = rnd(1, 2), k = rnd(-BIG_K, BIG_K);
   return {n, kq:0, kb:0, k, div, deg:0, par:Math.abs(k) + div};
 }
+// A fraction equation (Vadim, levels with `frac`, only while the player has
+// ·2): (x + k)/2 = m, k = 0 for an even x, ±1 for an odd one, and on a
+// level with squares, as often as its squares, x²/2 = m (x = ±2 … ±8): ·2
+// and at most one more throw (−1, √).
+function fracEquation(i){
+  const t = Math.min(1, (i - 1)/(EQUATIONS - 1)), at = ([a, b]) => a + (b - a)*t;
+  if(lv().squares && Math.random() < at(lv().squares)){
+    const n = weighted([2, 4, 6, 8], v => bell(v, at(SQ_SIZE), SIZE_SPREAD));
+    return {n, kq:0, kb:0, k:0, div:0, deg:2, mul:1, frac:true, par:2};
+  }
+  const tp = Math.min(1, (i - 1)/(lv().posBy - 1)), plus = Math.random() < lv().pos[0] + (lv().pos[1] - lv().pos[0])*tp;
+  const n = weighted(ANSWERS.filter(v => plus ? v > 0 : v < 0), v => bell(Math.abs(v), at(SIZE), SIZE_SPREAD));
+  const k = n % 2 ? pick([-1, 1]) : 0;
+  return {n, kq:0, kb:0, k, div:0, deg:0, mul:1, frac:true, par:1 + Math.abs(k)};
+}
 // the chance of a big one: BIG_P[0], up to BIG_P[1] as the ±1 and ±x left
 // (after what the equations falling need) go from BIG_LOW down to none
 const bigChance = c => BIG_P[0] + (BIG_P[1] - BIG_P[0])*Math.max(0, 1 - BASE.reduce((s, j) => s + c[j], 0)/BIG_LOW);
@@ -552,14 +624,15 @@ function makeEquation(recent, c, i){
   const ok = f => {
     const p = plan(f, cc);
     if(!p || total - sum(p) + (f.deg ? f.n : Math.max(f.n, 0)) < KEEP) return false;
-    // no :2, ±x² or √ equation before the player has that brick (Vadim: no bad luck)
-    const need = [f.deg && "sq", f.kq > 0 && "-x2", f.kq < 0 && "+x2", f.div && ":2"].filter(Boolean);
-    return !need.some(j => !(cc[j] > 0)) && !recent.includes([f.n, f.kq, f.kb, f.k, f.div, f.deg].join());
+    // no :2, ·2, ±x² or √ equation before the player has that brick (Vadim: no bad luck)
+    const need = [f.deg && "sq", f.kq > 0 && "-x2", f.kq < 0 && "+x2", f.div && ":2", f.mul && "*2"].filter(Boolean);
+    return !need.some(j => !(cc[j] > 0)) && !recent.includes([f.n, f.kq, f.kb, f.k, f.div, f.deg, f.mul].join());
   };
   const find = (draw, n) => { for(let t = 0; t < n; t++){ const f = draw(); if(ok(f)) return f; } return null; };
   // a big one now and then (bigChance), else the level's own; when no equation
   // of the level can be afforded, a big one if the player has :2
   let e = (lv().big && Math.random() < bigChance(c) && find(bigEquation, 50))
+       || (lv().frac && Math.random() < FRAC_P && find(() => fracEquation(i), 50))
        || find(() => drawEquation(i), 200) || (lv().big && find(bigEquation, 50)) || null;
   if(!e){
     // one operation with the fullest brick (a joker: any), x = the biggest answer
@@ -570,19 +643,36 @@ function makeEquation(recent, c, i){
       : one ? {n, kq:0, kb:one[0], k:one[1], div:+(j === ":2"), deg:0, par:Math.abs(one[0]) + Math.abs(one[1]) + (j === ":2")}
       : {...drawEquation(i), n, deg:0, kq:0};
   }
-  recent.push([e.n, e.kq, e.kb, e.k, e.div, e.deg].join()); if(recent.length > 6) recent.shift();
+  recent.push([e.n, e.kq, e.kb, e.k, e.div, e.deg, e.mul].join()); if(recent.length > 6) recent.shift();
   const m = 2**e.div;
   let L = {a:m + e.kb, b:e.k}, R = {a:e.kb, b:m*e.n + e.k};
   if(e.deg === 2){ L = {q:m + e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:m*e.n**2 + e.k}; }
   if(e.deg === 4){ L = {p4:1, q:e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:e.n**4 + e.k}; }
+  if(e.frac){ L = {a:0, b:0, f:e.deg ? {q:1} : {a:1, b:e.k}, fd:2}; R = {a:0, b:e.deg ? e.n**2/2 : (e.n + e.k)/2}; }
   if(Math.random() < .5) [L, R] = [R, L];
   return {...e, L, R};
 }
-const plain = s => !s.p4 && !s.q && !s.a && !s.root;   // a side that is just a number
-const bare = (s, key) => s[key] === 1 && ["p4", "q", "a", "b"].every(j => j === key || !s[j]) && !s.root;   // just x⁴ / x² / x
+const plain = s => !s.p4 && !s.q && !s.a && !s.root && !s.pa && !s.fd;   // a side that is just a number
+const bare = (s, key) => s[key] === 1 && ["p4", "q", "a", "b"].every(j => j === key || !s[j]) && !s.root && !s.pa && !s.fd;   // just x⁴ / x² / x
+// rows an equation takes: a fraction makes it two rows tall (Vadim), also under a root
+const hasFrac = s => !!s && (!!s.fd || hasFrac(s.root));
+const ht = p => hasFrac(p.L) || hasFrac(p.R) ? 2 : 1;
+// a side times t (·2, :2, ·(−1)): a root keeps its own factor, ±x stays ±
+// (−(±2x) = ±2x); a fraction (f over fd, Vadim) halves its bottom for ·2 and
+// is gone at 1, its top joining the side ((x + 1)/2 = 4 → x + 1 = 8), doubles
+// it for :2 (x/2 → x/4), and its top changes sign for ·(−1)
+function timesSide(s, t){
+  const r = {...s, p4:(s.p4 || 0)*t, q:(s.q || 0)*t, a:s.a*t, b:s.b*t, ...(s.root && {rc:(s.rc ?? 1)*t}), ...(s.pa && {pa:Math.abs(s.pa*t)})};
+  if(!s.fd) return r;
+  const f = t < 0 ? {q:-(s.f.q || 0), a:-(s.f.a || 0), b:-(s.f.b || 0), pa:s.f.pa, pr:s.f.pr} : s.f, fd = s.fd/Math.abs(t);
+  if(fd > 1) return {...r, f, fd};
+  delete r.f; delete r.fd;
+  return {...r, q:r.q + (f.q || 0), a:r.a + (f.a || 0), b:r.b + (f.b || 0),
+          ...((r.pa || f.pa) && {pa:(r.pa || 0) + (f.pa || 0)}), ...(f.pr && {pr:f.pr})};
+}
 // the answer if the equation is x = n or n = x (n may be ±), else null
 function solvedValue(L, R){
-  if([L, R].some(s => s.p4 || s.q || s.root)) return null;
+  if([L, R].some(s => s.p4 || s.q || s.root || s.pa || s.fd)) return null;
   if(L.a === 1 && L.b === 0 && R.a === 0) return R.b;
   if(R.a === 1 && R.b === 0 && L.a === 0) return L.b;
   return null;
@@ -607,14 +697,22 @@ function sideHTML(s){
   if(s.pm) return `<span class="op">±</span>${cHTML(s.b)}`;
   // after √ on x⁴ = 16: ±4, whose minus bursts away (x² ≥ 0; pmGone)
   if(s.pmGone) return `<span class="pmgo"><span class="pm">±</span><span class="pm2"><b>+</b><i>(${minus})</i></span></span>${cHTML(s.b)}`;
+  if(s.fd) terms.push(["frac", 1]);
   if(s.p4) terms.push(["p4", s.p4]);
   if(s.q) terms.push(["q", s.q]);
+  if(s.pa) terms.push(["pm", s.pa]);
   if(s.a && !back) terms.push(["x", s.a]);
   if(s.root) terms.push(["r", s.rc ?? 1]);
   if(s.b) terms.push(["c", s.b]);
   if(back) terms.push(["x", s.a]);
   if(!terms.length) return `<span class="cterm">0</span>`;
   return terms.map(([t, v], i) => {
+    // a fraction (Vadim): its top over a bar over its bottom; it comes first
+    if(t === "frac") return `<span class="frac"><span class="num">${sideHTML({a:0, b:0, ...s.f})}</span>`
+                            + `<span class="den">${cHTML(s.fd)}</span></span>`;
+    // ±2x, ±√2x (after √ of 4x², 2x²): its own sign, whatever its place
+    if(t === "pm") return `<span class="op">±</span><span class="xterm">${v === 1 ? "" : numText(v)}</span>`
+                          + (s.pr ? rootHTML({a:0, b:s.pr}) : "") + `<span class="xterm">x</span>`;
     const body = t === "p4" ? xHTML(v, "⁴") : t === "q" ? xHTML(v, "²") : t === "x" ? xHTML(v)
                : t === "r" ? (Math.abs(v) === 1 ? "" : numText(Math.abs(v))) + rootHTML(s.root) : cHTML(v);
     if(i === 0) return v < 0 ? `<span class="${t === "c" ? "pterm" : t === "r" ? "root" : "xterm"}">${minus}</span>${body}` : body;
@@ -626,7 +724,8 @@ function sideHTML(s){
 function rootHTML(inner){
   return `<span class="root">√</span><span class="radicand">${sideHTML(inner)}</span>`;
 }
-const num = v => v < 0 ? minus + -v : String(v);   // a score with a real minus sign
+const num = v => (v = Math.round(v)) < 0 ? minus + -v : String(v);   // a score, whole, with a real minus sign
+const pt = v => num(v*speed.mult);   // points as the player gets them (the speed's multiplier)
 const eqHTML = (L, R) => `<span class="side">${sideHTML(L)}</span><span class="eq">=</span><span class="side">${sideHTML(R)}</span>`;
 
 /* ── state ──────────────────────────────────────────────────────────────── */
@@ -742,7 +841,8 @@ function spawn(){
   const el = document.createElement("div"); el.className = "piece";
   board.appendChild(el);
   const p = {L:e.L, R:e.R, n:e.n, par:e.par, contra:e.contra, deg:e.deg, ops:0, steps:0, used:{}, avail:null,
-             make:{kb:e.kb, kq:e.kq, k:e.k, div:e.div, deg:e.deg}, el, y:1, x0:0, w:3, bomb:null};
+             make:{kb:e.kb, kq:e.kq, k:e.k, div:e.div, deg:e.deg, mul:e.mul}, el, y:1, x0:0, w:3, bomb:null};
+  p.y = ht(p);
   measure(p);
   p.x0 = freeColumn(p.w);
   pieces.push(p); since = 0;
@@ -757,7 +857,7 @@ function wantSpawn(dt){
   if(over || eqNo >= EQUATIONS) return false;
   since += dt;
   if(!inAir().length) return true;
-  const [a, b] = lv().gap;
+  const g = lv().gap, a = g[0]*REF_FALL[0]/speed.fall[0], b = g[1]*REF_FALL[1]/speed.fall[1];   // scaled with the fall
   return since >= a + (b - a)*Math.min(1, (eqNo - 1)/(EQUATIONS - 2));
 }
 // counts minus what the equations still falling need: two of them must not
@@ -790,7 +890,7 @@ function measure(p){
 // (only width and left are animated, so the fall itself is set straight every frame)
 function drawPiece(p){
   const el = p.el;
-  if(p.bomb == null) place(el, X(p.x0), Y(p.y - 1), p.w*cell, cell);
+  if(p.bomb == null) place(el, X(p.x0), Y(p.y - ht(p)), p.w*cell, ht(p)*cell);
   else{ const d = 2*BOMB_R*cell; place(el, X(p.bx) - d/2, Y(p.by) - d/2, d, d); }
 }
 function sizeBomb(p){
@@ -811,7 +911,7 @@ function applyOp(key, p, x){
   if(!p || p.bomb != null || p.glow != null || over || paused || counts[key] <= 0) return false;
   const o = OPS[key];
   if(!p.avail) p.avail = {...counts};   // what the player had when they started on it
-  counts[key]--; drawCount(key);
+  counts[key]--; drawCount(key); retire();
   p.ops++; p.steps += STEPS[key] || 1; p.used[key] = (p.used[key] || 0) + 1;
   if(o.joker) p.joker = true;
   // the ⚡ works only on a contradiction and the joker only on an equation
@@ -822,7 +922,7 @@ function applyOp(key, p, x){
   const r = o.sqrt ? rootOf(p) : null, rooted = o.sqrt && r == null && [sqrtSide(p.L), sqrtSide(p.R)];
   if(o.contra || o.joker && p.contra || rooted && !(rooted[0] && rooted[1])){
     if(o.contra && p.contra) contraNow(p, x);
-    else if(o.sqrt) fizzle(p);
+    else if(o.sqrt) fizzle(p, rooted[0] ? 1 : 0);
     else{ p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit"); }
     return true;
   }
@@ -830,15 +930,16 @@ function applyOp(key, p, x){
   if(o.joker) writeAnswer(p);
   else if(o.sqrt){ if(r != null) writeAnswer(p, r); else{ [p.L, p.R] = rooted; dropMinus(p); } }
   else if(o.times){   // :2 of odd numbers gives fractions, and ±1 can't take them away (Vadim)
-    const t = o.times, by = s => ({...s, p4:(s.p4 || 0)*t, q:(s.q || 0)*t, a:s.a*t, b:s.b*t, ...(s.root && {rc:(s.rc ?? 1)*t})});
-    p.L = by(p.L); p.R = by(p.R);
+    p.L = timesSide(p.L, o.times); p.R = timesSide(p.R, o.times);
   }
   else{
     const add = s => ({...s, q:(s.q || 0) + (o.q || 0), a:s.a + o.a, b:s.b + o.b});
     p.L = add(p.L); p.R = add(p.R);
   }
+  const pm = pmAnswer(p);   // 4 = ±x: x = ±4
+  if(pm != null){ const xs = {a:1, b:0}, ns = {a:0, b:pm, pm:pm !== 0}; [p.L, p.R] = p.L.pa ? [xs, ns] : [ns, xs]; }
   const mid = redraw(p);
-  note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - 1));
+  note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - ht(p)));
   const v = solvedValue(p.L, p.R);
   if(v != null) solvedNow(p, v, x);
   return true;
@@ -857,9 +958,27 @@ function rootOf(p){
   const r = Math.sqrt(V.b);
   return Number.isInteger(r) ? r : null;
 }
+// one side exactly ±x and the other a number (4 = ±x): that number's size, else null
+function pmAnswer(p){
+  const pmx = s => s.pa === 1 && !s.pr && !s.p4 && !s.q && !s.a && !s.b && !s.root && !s.fd;
+  const [U, V] = pmx(p.L) ? [p.L, p.R] : [p.R, p.L];
+  return pmx(U) && plain(V) ? Math.abs(V.b) : null;
+}
 // √ of one side: a number's root (a whole one if it is a square), √(x⁴) = x²,
-// else √( … ); null for a negative number
+// √(k·x²) = ±√k·x (Vadim: 64 = 4x² → 8 = ±2x, then :2), else √( … ); null
+// for a negative number, or a side with ±x (it may be negative)
 function sqrtSide(s){
+  if(s.pa || s.f && s.f.pa) return null;
+  if(s.fd){   // x² alone over a square (Vadim): x²/4 → ±x/2, then ·2; any other fraction gets √ around it
+    const f = s.f, d = Math.sqrt(s.fd);
+    if(!(f.q > 0 && !f.a && !f.b && !s.p4 && !s.q && !s.a && !s.b && !s.root && Number.isInteger(d))) return {a:0, b:0, root:s};
+    const r = Math.sqrt(f.q);
+    return {a:0, b:0, f:Number.isInteger(r*1024) ? {pa:r} : {pa:1, pr:f.q}, fd:d};
+  }
+  if(s.q > 0 && !s.p4 && !s.a && !s.b && !s.root){
+    const r = Math.sqrt(s.q);   // 4 → 2; 2 → √2 (pr), which no brick takes away
+    return Number.isInteger(r*1024) ? {a:0, b:0, pa:r} : {a:0, b:0, pa:1, pr:s.q};
+  }
   if(s.root && s.rc < 0 && !s.p4 && !s.q && !s.a && s.b <= 0) return null;   // −√2 − 1: negative too
   if(plain(s)){
     if(s.b < 0) return null;
@@ -881,17 +1000,17 @@ function dropMinus(p){
     const m = on() && p.el.querySelector(".pmgo i");
     if(!m) return;
     const r = m.getBoundingClientRect(), b = board.getBoundingClientRect();
-    sparks(r.left - b.left + r.width/2, r.top - b.top + r.height/2, "contra");
+    sparks(r.left - b.left + r.width/2, r.top - b.top + r.height/2, "no");
   }, PM_T[0]*1000);
   setTimeout(() => { if(on()){ delete V.pmGone; redraw(p, false); } }, PM_T[1]*1000);
 }
-// √ on a negative number (Vadim): the root bumps into it, it flashes red, and
-// the root bursts in red sparks there; the brick is wasted
-function fizzle(p){
-  const side = p.el.querySelectorAll(".side")[plain(p.L) && p.L.b < 0 ? 0 : 1];
+// √ on a negative number, or on ±x (Vadim): the root bumps into that side (i),
+// it flashes red, and the root bursts in red sparks there; the brick is wasted
+function fizzle(p, i){
+  const side = p.el.querySelectorAll(".side")[i];
   const r = side.getBoundingClientRect(), b = board.getBoundingClientRect();
   side.classList.remove("zap"); side.offsetWidth; side.classList.add("zap");
-  sparks(r.left - b.left + r.width/2, r.top - b.top + r.height/2, "contra");
+  sparks(r.left - b.left + r.width/2, r.top - b.top + r.height/2, "no");
 }
 // after a change: new width, the same middle (in whole columns), a bump
 // unless quiet; the middle
@@ -934,7 +1053,7 @@ function solvedNow(p, v, from){
   p.glow = 0; p.answer = v; p.from = from; p.pm = !!(p.L.pm || p.R.pm);
   p.el.classList.remove("target");
   p.el.classList.add("solved", p.pm ? "pm" : sign(v));
-  const x = X(p.x0 + p.w/2), y = Y(p.y - .5);
+  const x = X(p.x0 + p.w/2), y = Y(p.y - ht(p)/2);
   if(p.pm){ sparks(x, y, "pos"); sparks(x, y, "neg"); }
   else sparks(x, y, sign(v));
   solved++; $("solved").textContent = solved;
@@ -942,68 +1061,122 @@ function solvedNow(p, v, from){
   points("solve", POINTS, null, 0, 0);
   if(perfect){ pts.perfects++; points("perfect", PERFECT, null, 0, 0); }
   if(neat){ pts.neats++; points("neat", NEAT, null, 0, 0); }
-  note(perfect ? `Täydellinen! +${POINTS + PERFECT}` : neat ? `Siisti! +${POINTS + NEAT}` : `+${POINTS}`, x, Y(p.y) + cell*.9, "pts");
+  note(perfect ? `Täydellinen! +${pt(POINTS + PERFECT)}` : neat ? `Siisti! +${pt(POINTS + NEAT)}` : `+${pt(POINTS)}`, x, Y(p.y) + cell*.9, "pts");
 }
 // The fewest throws that solve p's equation as it came (Vadim): ±2 and ±2x
 // do two steps in one, if the player had them when they started on it (or
 // used them on it: a brick may come meanwhile). Built from how it was made,
-// not by a search. Dividing first (2x + 2 = 8 → :2 → −1) isn't counted, so
-// it can only make this more than the true fewest, never less.
+// not by a search of moves: each kind (x, number, x²) is taken off in parts
+// before, between and after the halvings (Vadim: 2x + 2 = 4 → :2 → −1 is
+// two throws; 4x + 6 = 46 → :2, −1, :2, −1), the cheapest split counts.
+// Checked offline against a search of all throws.
 function fewestThrows(p){
   const a = {...p.avail}, e = p.make;
   for(const [key, n] of Object.entries(p.used)) a[key] = Math.max(a[key] || 0, n);
-  return throws(-e.kb, a, "+x", "-x", "+2x", "-2x") + throws(-e.k, a, "+1", "-1", "+2", "-2")
-       + throws(-(e.kq || 0), a, "+x2", "-x2") + e.div + e.deg/2;
+  return split(-e.kb, e.div, a, "+x", "-x", "+2x", "-2x") + split(-e.k, e.div, a, "+1", "-1", "+2", "-2")
+       + split(-(e.kq || 0), e.div, a, "+x2", "-x2") + e.div + (e.mul || 0) + e.deg/2;
 }
-// the fewest bricks of size 1 (one, minus) and 2 (two, minusTwo) that add up to v, at most a[key] of each
-function throws(v, a, one, minus, two, minusTwo){
+// v taken off in d + 1 parts around d halvings, v = r0 + 2·r1 + 4·r2 …
+// (before a halving what is left must be even): the fewest bricks for the
+// cheapest split, the parts sharing the bricks
+function split(v, d, a, one, minus, two, minusTwo){
   let best = Infinity;
-  for(let U = 0; U <= (a[two] || 0); U++) for(let M = 0; M <= (a[minusTwo] || 0); M++){
-    const r = v - 2*(U - M);
-    if(r > 0 ? r > (a[one] || 0) : -r > (a[minus] || 0)) continue;
-    best = Math.min(best, U + M + Math.abs(r));
-  }
+  const go = (rest, i, parts) => {
+    if(i === d){ best = Math.min(best, throws([...parts, rest], a, one, minus, two, minusTwo)); return; }
+    for(let r = rest - 4; r <= rest + 4; r++) if((rest - r) % 2 === 0) go((rest - r)/2, i + 1, [...parts, r]);
+  };
+  go(v, 0, []);
   return best;
 }
-/* A contradiction blown up with the ⚡ (Vadim): it glows red for GLOW seconds
-   (it counts as solved, 100 points: "no solution" is its solution), then
-   blows up at once (blowUp): every equation still falling unsolved goes,
-   without becoming a bomb, for 100 points each. Glowing ones, bombs and the trash stay; bricks flying to
-   the ones that went come back. A red flash over the well, a big ring and a
+// the fewest bricks of size 1 (one, minus) and 2 (two, minusTwo) that make
+// each of the amounts vs, at most a[key] of each in all
+function throws(vs, a, one, minus, two, minusTwo){
+  let best = Infinity;
+  const go = (i, U, M, P, N, n) => {   // twos, minus twos, ones, minus ones so far; n bricks
+    if(n >= best) return;
+    if(i === vs.length){ best = n; return; }
+    for(let u = 0; u <= 2 && U + u <= (a[two] || 0); u++) for(let m = 0; m <= 2 && M + m <= (a[minusTwo] || 0); m++){
+      const r = vs[i] - 2*(u - m), q = Math.max(r, 0), s = Math.max(-r, 0);
+      if(P + q <= (a[one] || 0) && N + s <= (a[minus] || 0)) go(i + 1, U + u, M + m, P + q, N + s, n + u + m + q + s);
+    }
+  };
+  go(0, 0, 0, 0, 0, 0);
+  return best;
+}
+/* A contradiction blown up with the ⚡ (Vadim), in orange: lightning strikes
+   it from the top of the well, and it glows with crackling sparks for GLOW
+   seconds (it counts as solved, 100 points: "no solution" is its solution),
+   then blows up at once (blowUp): lightning jumps from it to every equation
+   still falling unsolved, and they go, without becoming bombs, for 100 points
+   each. Glowing ones, bombs and the trash stay; bricks flying to the ones
+   that went come back. An orange flash over the well, a big ring and a
    shake. */
 function contraNow(p, from){
   p.glow = 0; p.blast = true; p.from = from;
   p.el.classList.remove("target");
   p.el.classList.add("solved", "contra");
-  const x = X(p.x0 + p.w/2), y = Y(p.y - .5);
+  const x = X(p.x0 + p.w/2), y = Y(p.y - ht(p)/2);
+  bolts([[x + (Math.random() - .5)*cell*2, 0, x, y]], 250);
   sparks(x, y, "contra");
+  setTimeout(() => { if(pieces.includes(p)) sparks(X(p.x0 + p.w/2), Y(p.y - ht(p)/2), "contra"); }, GLOW*500);
   solved++; $("solved").textContent = solved;
   points("solve", POINTS, null, 0, 0);
-  note(`+${POINTS}`, x, Y(p.y) + cell*.9, "pts");
+  note(`+${pt(POINTS)}`, x, Y(p.y) + cell*.9, "pts");
 }
 function blowUp(p){
-  const x = X(p.x0 + p.w/2), y = Y(p.y - .5);
+  const x = X(p.x0 + p.w/2), y = Y(p.y - ht(p)/2);
   p.el.remove(); pieces.splice(pieces.indexOf(p), 1);
   const hit = inAir();
+  bolts(hit.map(q => [x, y, X(q.x0 + q.w/2), Y(q.y - ht(q)/2)]), 350);
   for(const q of hit){
-    sparks(X(q.x0 + q.w/2), Y(q.y - .5), "contra");
+    const ghost = q.el.cloneNode(true);   // the equation flashes and fades where it was hit
+    ghost.classList.remove("target"); ghost.classList.add("zapped");
+    board.appendChild(ghost); setTimeout(() => ghost.remove(), 400);
+    sparks(X(q.x0 + q.w/2), Y(q.y - ht(q)/2), "contra");
     q.el.remove(); pieces.splice(pieces.indexOf(q), 1);
   }
   pts.destroyed += hit.length;
-  if(hit.length) points("blast", POINTS*hit.length, `+${POINTS*hit.length}`, x, y);
+  if(hit.length) points("blast", POINTS*hit.length, `+${pt(POINTS*hit.length)}`, x, y);
   ring("contra", x, y, COLS*cell*.8);
+  if(reduced()) return;   // no flash, no shake
   const fl = document.createElement("div"); fl.className = "flash";
   board.appendChild(fl); place(fl, X(0), 0, COLS*cell, ROWS*cell);
   setTimeout(() => fl.remove(), 600);
   board.classList.remove("shake"); board.offsetWidth; board.classList.add("shake");
 }
+// jagged lightning bolts [x1, y1, x2, y2] (px in the board), all in one SVG
+// with one glow, gone after ms
+function bolts(lines, ms){
+  if(!lines.length) return;
+  const NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+  const w = (COLS + 2*WALL)*cell, h = (ROWS + FLOOR)*cell;
+  svg.setAttribute("class", "bolts"); svg.setAttribute("width", w); svg.setAttribute("height", h);
+  svg.setAttribute("viewBox", `0 0 ${w} ${h}`);
+  for(const [x1, y1, x2, y2] of lines){
+    const len = Math.hypot(x2 - x1, y2 - y1) || 1, n = Math.max(3, Math.round(len/(cell*.7)));
+    const pts = [];
+    for(let i = 0; i <= n; i++){
+      const t = i/n, off = i && i < n ? (Math.random() - .5)*cell*.7 : 0;   // sideways, the ends exact
+      pts.push(`${x1 + (x2 - x1)*t - (y2 - y1)/len*off},${y1 + (y2 - y1)*t + (x2 - x1)/len*off}`);
+    }
+    for(const [cls, sw] of [["glow", .14], ["core", .05]]){
+      const pl = document.createElementNS(NS, "polyline");
+      pl.setAttribute("class", cls); pl.setAttribute("points", pts.join(" ")); pl.setAttribute("stroke-width", cell*sw);
+      svg.appendChild(pl);
+    }
+  }
+  board.appendChild(svg); place(svg, 0, 0);
+  setTimeout(() => svg.remove(), ms);
+}
 // score, by kind for the result; a note at (x, y) unless text is null
+// (pts: as earned, for the result's rows; score: times the speed's mult)
 function points(kind, v, text, x, y){
-  pts[kind] += v; score += v; $("score").textContent = num(score);
+  pts[kind] += v; score += v*speed.mult; $("score").textContent = num(score);
   if(text) note(text, x, y, "pts");
 }
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 function sparks(x, y, cls){
-  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+  if(reduced()) return;
   const box = document.createElement("div"); box.className = "sparks " + cls;
   board.appendChild(box); place(box, x, y);
   for(let i = 0; i < 26; i++){
@@ -1033,9 +1206,9 @@ function toBombs(p){
 // solving operation knocks it sideways, away from where it was dropped (from)
 function toBomb(p, v, from){
   p.bomb = v; p.glow = null;
-  p.bx = Math.max(BOMB_R, Math.min(COLS - BOMB_R, p.x0 + p.w/2)); p.by = p.y - .5;
+  p.bx = Math.max(BOMB_R, Math.min(COLS - BOMB_R, p.x0 + p.w/2)); p.by = p.y - ht(p)/2;
   const away = p.bx - from, dir = Math.abs(away) < .5 ? (Math.random() < .5 ? -1 : 1) : Math.sign(away);
-  p.vx = dir*KICK*(.75 + .5*Math.random()); p.vy = ramp(lv().fall); p.touched = null;
+  p.vx = dir*KICK*(.75 + .5*Math.random()); p.vy = ramp(speed.fall); p.touched = null;
   p.el.className = "bomb " + sign(v);
   p.el.innerHTML = `<i class="fire"></i><span class="core">${v < 0 ? minus + Math.abs(v) : v}</span>`;
   sizeBomb(p); drawPiece(p);
@@ -1087,14 +1260,14 @@ function stepBomb(p, dt){
 /* ── landing ────────────────────────────────────────────────────────────── */
 function land(p){
   pieces.splice(pieces.indexOf(p), 1);
-  const r = surface(p.x0, p.x0 + p.w - 1) - 1;
+  const r = surface(p.x0, p.x0 + p.w - 1) - 1, h = ht(p);   // a fraction: two rows of trash (Vadim)
   const id = ++blocks.n;
   for(const s of [p.L, p.R]) delete s.pmGone;
-  blocks[id] = {html:eqHTML(p.L, p.R), w:p.w, font:p.el.style.fontSize};
+  blocks[id] = {html:eqHTML(p.L, p.R), w:p.w, h, font:p.el.style.fontSize};
   p.el.remove();
-  for(let c = p.x0; c < p.x0 + p.w; c++) addBrick(r, c, id);
+  for(let c = p.x0; c < p.x0 + p.w; c++) for(let k = 0; k < h; k++) addBrick(r - k, c, id);
   drawTrashText(); drawTrashCount();
-  if(r < DANGER) gameOver();
+  if(r - h + 1 < DANGER) gameOver();
 }
 function addBrick(r, c, block){
   const el = document.createElement("div"); el.className = "trash";
@@ -1106,19 +1279,19 @@ function placeBrick(b){
   const g = Math.max(1, cell*.06);
   place(b.el, X(b.c) + g, Y(b.r) + g, cell - 2*g, cell - 2*g);
 }
-// a block's text stays while all its bricks are there, side by side in one row
+// a block's text stays while all its bricks are there, as they landed (w × h)
 function drawTrashText(){
   for(const el of board.querySelectorAll(".trashtext")) el.remove();
   for(const [id, bl] of Object.entries(blocks)){
     if(id === "n") continue;
-    const own = bricks.filter(b => b.block === +id);
-    if(own.length !== bl.w || own.some(b => b.r !== own[0].r)) continue;
-    const c0 = Math.min(...own.map(b => b.c));
-    if(Math.max(...own.map(b => b.c)) - c0 !== bl.w - 1) continue;
+    const own = bricks.filter(b => b.block === +id), h = bl.h || 1;
+    if(own.length !== bl.w*h) continue;
+    const c0 = Math.min(...own.map(b => b.c)), r0 = Math.min(...own.map(b => b.r));
+    if(Math.max(...own.map(b => b.c)) - c0 !== bl.w - 1 || Math.max(...own.map(b => b.r)) - r0 !== h - 1) continue;
     const el = document.createElement("div"); el.className = "trashtext";
     el.innerHTML = bl.html; el.style.fontSize = bl.font;
     board.appendChild(el);
-    place(el, X(c0), Y(own[0].r), bl.w*cell, cell);
+    place(el, X(c0), Y(r0), bl.w*cell, h*cell);
   }
 }
 const drawTrashCount = () => $("trashCount").textContent = bricks.length;
@@ -1139,9 +1312,9 @@ function explode(p){
   }
   if(p.bomb === 0){
     ring("zero", x, y, cell*1.2);
-    const key = giftFor(counts, promised);
-    if(key){ fly(key, OPS[key].html, promised.has(key) ? 1 : FIRST_COUNT[key] || 1, x, y); promised.add(key); }
-    else points("spare", SPARE_POINTS, `+${SPARE_POINTS}`, x, y);
+    const key = giftFor(promised);
+    if(key){ fly(key, OPS[key].html, FIRST_COUNT[key] || 1, x, y); promised.add(key); retire(); }
+    else coinBurst(x, y);
     if(Math.random() < ramp(lv().shoot)) shootLowest(x, y, p.bx);
     return;
   }
@@ -1151,7 +1324,7 @@ function explode(p){
   const hit = bricks.filter(b => Math.hypot(b.c + .5 - p.bx, b.r + .5 - p.by) <= R);
   pts.cleared += hit.length;
   points("neg", NEG_POINTS*-p.bomb, null, 0, 0);
-  points("clear", CLEAR_POINTS*hit.length, `+${NEG_POINTS*-p.bomb + CLEAR_POINTS*hit.length}`, x, y);
+  points("clear", CLEAR_POINTS*hit.length, `+${pt(NEG_POINTS*-p.bomb + CLEAR_POINTS*hit.length)}`, x, y);
   for(const b of hit) b.el.classList.add("gone");
   bricks = bricks.filter(b => !hit.includes(b));
   drawTrashText();
@@ -1193,7 +1366,7 @@ function looseBricks(){
   }
   return bricks.filter(b => !held.has(b));
 }
-// a positive bomb n: n split at random into 1 … 4 parts for different bricks
+// a positive bomb n: n split at random into 1 … 4 parts (as often as PARTS) for different bricks
 // (any the player has, the new ones too). Each part goes to an empty brick
 // (not the joker) with the chance max(EMPTY_MIN, empty/all) (Vadim): half the
 // time to one this bomb hasn't refilled yet, else to any empty one. The other
@@ -1201,7 +1374,7 @@ function looseBricks(){
 // fill a brick past CAP goes on to a random brick that still has room (all
 // full: the rest is lost). Returns {brick: amount}.
 function splitReward(n, c, keys){
-  const k = rnd(1, Math.min(n, 4, keys.length));
+  const k = weighted([1, 2, 3, 4].slice(0, Math.min(n, 4, keys.length)), j => PARTS[j - 1]);
   const parts = Array(k).fill(1);
   for(let i = k; i < n; i++) parts[rnd(0, k - 1)]++;
   const empty = keys.filter(j => j !== "J" && c[j] <= 0), toEmpty = Math.max(EMPTY_MIN, empty.length/keys.length);
@@ -1229,17 +1402,27 @@ const firstGroups = (i, soon) =>
 const firstMissing = i => firstGroups(i).flat().some(j => !promised.has(j));
 // a zero bomb: a new operation (have: the ones there or on their way), the
 // first groups' before the level's other missing gifts (the next level's
-// early once none of those is missing, Vadim), else one more use of a gift
-// with room (Vadim); null: all full
-function giftFor(c, have){
+// early once none of those is missing, Vadim); null: nothing new (coinBurst)
+function giftFor(have){
   const G = lv().gifts || GIFTS;
   const no = quiet(), keys = Object.keys(G).filter(j => (GIFT_FROM[j] || 1) <= level && !no.includes(j)), missing = keys.filter(j => !have.has(j));
   for(const g of firstGroups(eqNo, !missing.length)){
     const m = g.filter(j => !have.has(j));
     if(m.length) return pick(m);
   }
-  const from = missing.length ? missing : keys.filter(j => c[j] < CAP);
-  return from.length ? weighted(from, j => G[j]) : null;
+  return missing.length ? weighted(missing, j => G[j]) : null;
+}
+// a zero bomb with nothing new to bring (Vadim): +1 for every brick the
+// player has, ⚡ and the joker too, but not ±2 and ±2x when they run out
+function coinBurst(x, y){
+  const no = runOut();
+  for(const key of owned) if(!no.includes(key)) fly(key, "+1", 1, x, y);
+}
+// ±2 and ±2x that have run out for good go (Vadim): their slot becomes floor
+function retire(){
+  for(const key of runOut()) if(owned.has(key) && counts[key] <= 0){
+    owned.delete(key); opEls[key].hidden = true; layout();
+  }
 }
 function shuffle(list){   // Fisher–Yates: every order equally likely
   for(let i = list.length - 1; i > 0; i--){ const j = rnd(0, i); [list[i], list[j]] = [list[j], list[i]]; }
@@ -1248,7 +1431,7 @@ function shuffle(list){   // Fisher–Yates: every order equally likely
 function share(n, x, y){
   const no = quiet(), give = splitReward(n, counts, [...owned].filter(j => !no.includes(j))), spare = n - sum(give);
   for(const [key, a] of Object.entries(give)) fly(key, "+" + a, a, x, y);
-  if(spare) points("spare", SPARE_POINTS*spare, `+${SPARE_POINTS*spare}`, x, y);
+  if(spare) points("spare", SPARE_POINTS*spare, `+${pt(SPARE_POINTS*spare)}`, x, y);
 }
 // A label flies from (x, y) to its brick and adds a there (a new brick
 // appears). What no longer fits when it arrives (several rewards on their
@@ -1293,14 +1476,14 @@ function dropArea(p){
   if(p.w > s){ l = p.x0; r = x1; }
   else if(p.x0 < e){ l = p.x0; r = l + s; }
   else if(x1 > COLS - e){ r = x1; l = r - s; }
-  const m = p.y - .5, h = AREA_TALL*(r - l);
+  const m = p.y - ht(p)/2, h = AREA_TALL*(r - l);
   return {l, r, t:Math.max(0, m - h/2), b:Math.min(ROWS, m + h/2)};
 }
 function targetAt(pt){
   const x = pt.x/cell - WALL, y = pt.y/cell;
   let best = null, bd = Infinity;
   for(const p of inAir()){
-    const dx = Math.max(p.x0 - x, 0, x - p.x0 - p.w), dy = Math.max(p.y - 1 - y, 0, y - p.y);
+    const dx = Math.max(p.x0 - x, 0, x - p.x0 - p.w), dy = Math.max(p.y - ht(p) - y, 0, y - p.y);
     const d = Math.hypot(dx, dy);
     if(d < bd){ best = p; bd = d; }
   }
@@ -1327,7 +1510,7 @@ function flick(now){
   if(d < FLICK_MIN || d/Math.max(.016, (now - base.t)/1000) < FLICK) return null;
   return {x:dx/d, y:dy/d};
 }
-const box = p => ({l:p.x0 - MISS, r:p.x0 + p.w + MISS, t:p.y - 1 - MISS, b:p.y + MISS});
+const box = p => ({l:p.x0 - MISS, r:p.x0 + p.w + MISS, t:p.y - ht(p) - MISS, b:p.y + MISS});
 const inside = (o, b) => o.x >= b.l && o.x <= b.r && o.y >= b.t && o.y <= b.b;
 // where the line from o along the unit vector d enters box b (0 inside), or null
 function enters(o, d, b){
@@ -1341,6 +1524,7 @@ function enters(o, d, b){
   return t0;
 }
 function aim(now){
+  if(!drag.trail.length) return null;   // no position yet (it must never break the frame loop)
   const o = drag.trail[drag.trail.length - 1], d = flick(now), list = inAir();
   if(!d) return list.find(p => inside(o, box(p))) || null;
   let hit = null, ht = Infinity, near = null, na = AIM_MAX*Math.PI/180;
@@ -1369,7 +1553,7 @@ function showTarget(){
    just goes out if its equation is gone. */
 let flights = [];
 const flyingTo = key => flights.filter(f => f.key === key && f.p).length;
-const pieceMiddle = p => ({x:X(p.x0 + p.w/2), y:Y(p.y - .5)});
+const pieceMiddle = p => ({x:X(p.x0 + p.w/2), y:Y(p.y - ht(p)/2)});
 function launch(f, from){
   const to = f.p ? pieceMiddle(f.p) : opCenter(f.key);
   f.from = from; f.t = 0;
@@ -1400,11 +1584,13 @@ function startDrag(e, key){
   board.appendChild(g);
   g.style.width = src.offsetWidth + "px"; g.style.height = src.offsetWidth + "px";
   drag = {key, g, id:e.pointerId, trail:[]};
-  src.setPointerCapture(e.pointerId);
+  // Some setups refuse the capture (a friend's Windows Chrome: the drag
+  // stuck for good); the page-wide listeners carry the drag without it
+  try{ src.setPointerCapture(e.pointerId); }catch(err){}
   moveDrag(e);
-  src.addEventListener("pointermove", moveDrag);
-  src.addEventListener("pointerup", endDrag);
-  src.addEventListener("pointercancel", endDrag);
+  window.addEventListener("pointermove", moveDrag);
+  window.addEventListener("pointerup", endDrag);
+  window.addEventListener("pointercancel", endDrag);
 }
 function moveDrag(e){
   if(!drag || e.pointerId !== drag.id) return;
@@ -1416,10 +1602,9 @@ function moveDrag(e){
 }
 function endDrag(e){
   if(!drag || e.pointerId !== drag.id) return;
-  const src = opEls[drag.key];
-  src.removeEventListener("pointermove", moveDrag);
-  src.removeEventListener("pointerup", endDrag);
-  src.removeEventListener("pointercancel", endDrag);
+  window.removeEventListener("pointermove", moveDrag);
+  window.removeEventListener("pointerup", endDrag);
+  window.removeEventListener("pointercancel", endDrag);
   const pt = boardXY(e), now = performance.now();
   drag.trail.push({x:pt.x/cell - WALL, y:pt.y/cell, t:now});
   const t = e.type === "pointerup" ? aim(now) : null;
@@ -1439,6 +1624,12 @@ function endDrag(e){
    first half of a double tap. */
 let pull = null, lastTap = null;
 function dropFast(p){ if(p && p.bomb == null && !paused) p.fast = true; }
+// A press with the pointer of a drag or pull still open: its release was lost
+// (it must never stay stuck); the brick flies back first, the pull just ends
+document.addEventListener("pointerdown", e => {
+  if(drag && e.pointerId === drag.id) endDrag({pointerId:drag.id, type:"pointercancel", clientX:e.clientX, clientY:e.clientY});
+  if(pull && e.pointerId === pull.id) pull = null;
+}, true);
 board.addEventListener("pointerdown", e => {
   if(over || paused || drag || pull || e.target.closest(".opb")) return;
   const pt = boardXY(e), p = targetAt(pt);
@@ -1448,7 +1639,7 @@ board.addEventListener("pointerdown", e => {
   if(lastTap && lastTap.p === p && now - lastTap.t < 300){ lastTap = null; dropFast(p); return; }
   lastTap = null;
   pull = {p, id:e.pointerId, x0:pt.x, y0:pt.y, t0:now, done:0, moved:0};
-  board.setPointerCapture(e.pointerId);
+  try{ board.setPointerCapture(e.pointerId); }catch(err){}   // may be refused (see startDrag)
 });
 board.addEventListener("pointermove", e => {
   if(!pull || paused || e.pointerId !== pull.id) return;
@@ -1485,7 +1676,7 @@ function frame(t){
       if(over) break;
       if(!pieces.includes(p)) continue;   // gone in a contradiction's blowup
       if(p.bomb != null){ stepBomb(p, dt); continue; }
-      p.y += (p.fast ? DROP : ramp(lv().fall))*dt;
+      p.y += (p.fast ? DROP : ramp(speed.fall))*dt;
       const s = surface(p.x0, p.x0 + p.w - 1);
       if(p.glow != null){   // solved and glowing: it rests on the trash if it gets there
         p.y = Math.min(p.y, s); drawPiece(p);
@@ -1505,7 +1696,7 @@ function frame(t){
 /* ── start and end ──────────────────────────────────────────────────────── */
 function newGame(){
   $("overlay").classList.remove("show"); $("pauseOv").classList.remove("show"); paused = false;
-  for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .shot, .sparks, .flash")) el.remove();
+  for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .shot, .sparks, .flash, .bolts")) el.remove();
   counts = {...START}; pieces = []; bricks = []; blocks = {n:0}; nextBrickId = 0; gameNo++;
   score = 0; recent = []; drag = null; pull = null; lastTap = null; busy = 0; flights = [];
   pts = {solve:0, perfect:0, perfects:0, neat:0, neats:0, neg:0, clear:0, cleared:0, spare:0, left:0, blast:0, destroyed:0};
@@ -1550,7 +1741,19 @@ function scoreRows(from){
     (d("destroyed") ? row("Räjäytetyt yhtälöt", `${d("destroyed")} × ${POINTS}`) : "") +
     (d("spare") ? row("Täysi varasto", d("spare")) : "");
 }
-function showDialog(button, then){
+// the speed slider (start and end dialogs): it sets `speed` at once
+const multText = m => "×" + String(m).replace(".", ",");
+function setSpeed(i){
+  speed = SPEEDS[i]; $("speedRange").value = i;
+  for(const b of document.querySelectorAll(".speedlabels button")) b.classList.toggle("on", +b.dataset.s === i);
+  $("speedMult").textContent = `Pisteet ${multText(speed.mult)}`;
+}
+$("speedRange").addEventListener("input", e => setSpeed(+e.target.value));
+for(const b of document.querySelectorAll(".speedlabels button")) b.addEventListener("click", () => setSpeed(+b.dataset.s));
+setSpeed(SPEEDS.indexOf(speed));
+const speedRow = () => row(`Nopeus: ${speed.name}`, multText(speed.mult));
+function showDialog(button, then, pick = false){
+  $("speedPick").hidden = !pick;
   $("again").textContent = button; onAgain = then;
   $("overlay").classList.add("show");
   $("again").focus({preventScroll:true});
@@ -1564,33 +1767,35 @@ function showStart(){
   $("ovTitle").textContent = "Taso 1";
   $("ovResult").textContent = `${EQUATIONS} yhtälöä`;
   $("ovScore").innerHTML = "";
-  showDialog("Aloita", () => { over = false; $("overlay").classList.remove("show"); });
+  showDialog("Aloita", () => { over = false; $("overlay").classList.remove("show"); }, true);
 }
 // a level done: its own points. The trash left goes on to the next level and
 // is no loss yet, unless the next level starts with an empty well: then it
 // costs now, as at the end of the game.
 function showLevel(){
   const fresh = LEVELS[level].fresh, left = fresh ? bricks.length : 0;
-  if(left){ pts.left += left; score -= CLEAR_POINTS*left; $("score").textContent = num(score); }
+  if(left){ pts.left += left; score -= CLEAR_POINTS*left*speed.mult; $("score").textContent = num(score); }
   $("ovTitle").textContent = `Taso ${level} läpi!`;
   $("ovResult").textContent = `${solved}/${EQUATIONS} ratkaistu`;
   $("ovScore").innerHTML = scoreRows(start.pts) +
     (fresh ? row("Roskaa jäi", `${left ? minus : ""}${left} × ${CLEAR_POINTS}`) : "") +
+    speedRow() +
     row(`Taso ${level}`, num(score - start.score), "tot") +
     (level > 1 ? row("Pisteet yhteensä", num(score)) : "");
   showDialog("Seuraava taso", startLevel);
 }
 // the end of the game: trash left costs as much as clearing it would have given (Vadim)
 function showResult(title){
-  const left = bricks.length, total = score - CLEAR_POINTS*left;
+  const left = bricks.length, total = score - CLEAR_POINTS*left*speed.mult;
   $("score").textContent = num(total);
   $("ovTitle").textContent = title;
   $("ovResult").textContent = `${pts.solve/POINTS}/${(level - 1)*EQUATIONS + eqNo} ratkaistu`;
   const all = pts.left + left;   // with what earlier levels left behind (already taken off)
   $("ovScore").innerHTML = scoreRows(null) +
     row("Roskaa jäi", `${all ? minus : ""}${all} × ${CLEAR_POINTS}`) +
+    speedRow() +
     row("Pisteet", num(total), "tot");
-  showDialog("Pelaa uudestaan", newGame);
+  showDialog("Pelaa uudestaan", newGame, true);
 }
 
 $("restart").addEventListener("click", newGame);
@@ -1632,13 +1837,22 @@ document.addEventListener("keydown", e => {
 
 /* testing (Vadim): typing "xyz", or the page opened with ?testi, shows a
    button that ends the level now (what is in the air goes away; the trash
-   and the counts go on). Students never see it. */
+   and the counts go on, every brick of the level +3). Students never see it. */
 const TEST_CODE = "xyz"; let typed = "";
 const showTestTools = () => { $("skipLevel").hidden = false; };
 if(new URLSearchParams(location.search).has("testi")) showTestTools();
 document.addEventListener("keydown", e => { typed = (typed + e.key.toLowerCase()).slice(-TEST_CODE.length); if(typed === TEST_CODE) showTestTools(); });
 $("skipLevel").addEventListener("click", () => {
   if(over) return;
+  // +3 for every brick the player could have by the end of this level (Vadim):
+  // the basic ones, its gifts, the next level's first ones, ⚡; not ±2 / ±2x once they run out
+  const no = runOut(), G = lv().gifts || GIFTS;
+  const all = [...BASE, ...Object.keys(G).filter(j => (GIFT_FROM[j] || 1) <= level),
+               ...firstGroups(EQUATIONS, true).flat(), ...(lv().contra ? ["N"] : [])];
+  for(const key of new Set(all)) if(!no.includes(key)){
+    counts[key] = Math.min(CAP, counts[key] + 3); promised.add(key); own(key); drawCount(key);
+  }
+  retire();
   for(const p of pieces) p.el.remove();
   pieces = []; eqNo = EQUATIONS;   // the loop ends the level once the rewards on their way have arrived
 });
