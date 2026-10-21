@@ -81,6 +81,19 @@ body{
     radial-gradient(90% 60% at 50% 30%, #1a1240 0%, var(--bg) 70%) fixed,
     var(--bg);
 }
+/* "Metalli" skin (Vadim: Yhtälösade's chapter 2, levels 4–): an ember
+   background, iron bars, rusty plates. A game sets body.metal; the maths
+   colours, cyan and ⚡ orange stay as they are. */
+body.metal{
+  --bg:#120806; --surface:#1f0f0a; --surface-2:#2c1610; --line:#4f2a1c;
+  --iron-dark:#121417; --iron:#5d646b; --iron-hi:#8c949b; --iron-shade:#3a4046; --iron-top:#2a2f34; --iron-bottom:#16191c;
+  --rust:#8a3f1d; --rust-hi:#c06a35; --rust-plate:#2e211c; --rust-plate-hi:#54392d; --rust-edge:#6b3a24;
+  background:
+    linear-gradient(rgba(255,154,61,.05) 1px, transparent 1px) 0 0/28px 28px,
+    linear-gradient(90deg, rgba(255,154,61,.05) 1px, transparent 1px) 0 0/28px 28px,
+    radial-gradient(90% 60% at 50% 30%, #3c1608 0%, var(--bg) 70%) fixed,
+    var(--bg);
+}
 a{ color:inherit; }
 ::selection{ background:rgba(0,229,255,.35); }
 

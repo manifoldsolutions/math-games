@@ -656,6 +656,51 @@ games/<category>/<course>/<game>/index.html
   the result rows show the points as earned, then "Nopeus: Keskinopea ×1,5"
   and the total (whole points).
 
+## Yhtälösade, chapter 2 (levels 4–6; level 4 built)
+
+- Chapter 2 (Vadim): a fresh start after level 3. The dialog after level 3
+  pays every brick left 10 points ("Poistuneet operaatiot") and says
+  "Seuraavaksi: Luku 2 · Taso 4"; level 4 starts with an empty well, its own
+  bricks (`start`) and its own places (`OP_AT2`, `slotOf`). A zero bomb never
+  brings the next chapter's bricks (`firstGroups`). Tag `luku1-valmis` is the
+  game just before chapter 2.
+- Look (Vadim chose, from mockups in `temp/`): the "Metalli" skin,
+  `body.metal` in `assets/theme.css`: an ember background, walls and floor
+  of iron bars (`--iron-*`), trash of rusty plates (`--rust-*`). The maths
+  colours, cyan, ⚡ orange and the red line stay. Not a lighter page: lighter
+  means Esittely.
+- Level 4 (Vadim): only multiplying and dividing, no ±1. Bricks ·2 :2 ·3 :3
+  ·x, 4 each at the start (floor: :3 :2 ·2 ·3 ·x, then ·(−1) √ joker; ⚡ in
+  the left wall); zero bombs bring ·(−1), √, the joker, then ⚡ (`first`).
+  Equations (`multEquation`, `multBuild`): x = n, or x² = n² (30 %,
+  `MULT_SQ`, once √ is there), with both sides divided by ±2^a·3^b·x^c, so
+  each side stays one term: 3x = 12, x/2 = 4, 2x/3 = 4, 12/x = 3, 4 = 12/x,
+  x²/2 = 8, x/4 = 4/x, 6/x = x/6. 1–4 throws, each as likely, mixed over
+  the whole level (Vadim: the speed already makes it harder). Its "no
+  solution" (⚡, from the 20th equation): k/x = 0 and x/k = −j/x
+  (`multContradiction`). "Täydellinen": the bricks commute, so the fewest is
+  |a| + |b| + c + the minus + √, except that √ first halves the 2s and 3s
+  (x/4 = 4/x → ·x → x²/4 = 4 → √ → ±x/2 = 2 → ·2: 3 throws, ⌈a/2⌉ + ⌈b/2⌉).
+- Sides gain x³ (`p3`) and n/x (`m`, drawn as a fraction, two rows);
+  ·x (`timesX`) raises every power (12/x → 12; a side it can't take, ±x or a
+  root, wastes the brick); :3 and ·3 work as :2 and ·2 (`timesSide`: a side
+  that doesn't divide becomes a fraction, 2x → 2x/3; ·3 on x/2 → 3x/2). The
+  generator plans level 4 from the recipe (`need`), and for an equation in
+  the air from its sides (`mono`, `multNeeds`).
+- Simulated (500 games; perfect / 80 % / 50 % play): jokers 1.3 / 1.4 / 1.8
+  a level, unsolvable 0 / 0.25 / 0.8, no fallback, about 6 zeros (they come
+  often while the new bricks are missing), 1.5 contradictions, 2 bursts,
+  2.2 throws an equation.
+- Planned, not built (Vadim): level 5 brackets and rational expressions:
+  ±1 and ±x back, "Avaa sulut" ((x + 1)² = x² + 7 → open → −x²), "Neliöksi"
+  (x² + 4x + 4 = 9 → (x + 2)² = 9), "Nollasääntö" (x(x − 5) = 0 splits into
+  x = 0 and x − 5 = 0, two falling equations; no :x brick, it would lose
+  x = 0), the reciprocal brick 1/□ (not cross-multiplying). Level 6: ∛ (one
+  answer, negatives fine), ^2 and ^3, 2^□ and log₂ (base 2 only); no
+  fractional powers for now. "No solution" in every family (√x = −3,
+  2^x = −4, 1/(x + 1) = 0). The recipe idea (an equation = bricks applied
+  backwards from x = n) is to carry over.
+
 ## Open questions (ask Vadim before deciding)
 
 - "Weighing": the scale accepts a box removed on one side and x diamonds on the
@@ -664,7 +709,6 @@ games/<category>/<course>/<game>/index.html
   row in the chain simply has no annotation.
 - Division (e.g. 3x = 12 with ÷2/÷3/÷4 tokens that split a cup into equal
   piles): as extra levels in this game, or a separate game "Yhtälövaaka 2"?
-- Yhtälösade: what comes after level 3 (x²) is not designed yet.
 - Yhtälösade: ⚡ is no longer reset to 2 on level 3 and nothing refills it,
   so a player who used both on level 2 gets no level 3 contradictions
   (x² = a negative number). Should zero bombs on level 3 be able to give ⚡?
