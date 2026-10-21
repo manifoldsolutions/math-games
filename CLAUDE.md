@@ -656,7 +656,7 @@ games/<category>/<course>/<game>/index.html
   the result rows show the points as earned, then "Nopeus: Keskinopea ×1,5"
   and the total (whole points).
 
-## Yhtälösade, chapter 2 (levels 4–6; level 4 built)
+## Yhtälösade, chapter 2 (levels 4–6; levels 4 and 5 built)
 
 - Chapter 2 (Vadim): a fresh start after level 3. The dialog after level 3
   pays every brick left 10 points ("Poistuneet operaatiot") and says
@@ -672,11 +672,16 @@ games/<category>/<course>/<game>/index.html
 - Level 4 (Vadim): only multiplying and dividing, no ±1. Bricks ·2 :2 ·3 :3
   ·x, 4 each at the start (floor: :3 :2 ·2 ·3 ·x, then ·(−1) √ joker; ⚡ in
   the left wall); zero bombs bring ·(−1), √, the joker, then ⚡ (`first`).
-  Equations (`multEquation`, `multBuild`): x = n, or x² = n² (30 %,
+  Equations (`multEquation`, `multBuild`): x = n, or x² = n² (about 39 %,
   `MULT_SQ`, once √ is there), with both sides divided by ±2^a·3^b·x^c, so
   each side stays one term: 3x = 12, x/2 = 4, 2x/3 = 4, 12/x = 3, 4 = 12/x,
-  x²/2 = 8, x/4 = 4/x, 6/x = x/6. 1–4 throws, each as likely, mixed over
-  the whole level (Vadim: the speed already makes it harder). Its "no
+  x²/2 = 8, x/6 = 6/x. 1–4 throws, each as likely, mixed over the whole
+  level (Vadim: the speed already makes it harder). Each of ·2, :2, ·3, :3
+  mostly at most once (Vadim: else it is prime factoring, 24x = k, and those
+  bricks run out): a brick needed twice (4x, x/9, x/4 = 4/x) a tenth as likely
+  (`MULT_TWICE`; measured 10 % of the equations, it was 30 %), never three
+  times (it was 14 %); ·(−1) less often (23 %). The recipe is drawn first,
+  then an answer that keeps its sides whole (near the level's size). Its "no
   solution" (⚡, from the 20th equation): k/x = 0 and x/k = −j/x
   (`multContradiction`). "Täydellinen": the bricks commute, so the fewest is
   |a| + |b| + c + the minus + √, except that √ first halves the 2s and 3s
@@ -687,19 +692,48 @@ games/<category>/<course>/<game>/index.html
   that doesn't divide becomes a fraction, 2x → 2x/3; ·3 on x/2 → 3x/2). The
   generator plans level 4 from the recipe (`need`), and for an equation in
   the air from its sides (`mono`, `multNeeds`).
-- Simulated (500 games; perfect / 80 % / 50 % play): jokers 1.3 / 1.4 / 1.8
-  a level, unsolvable 0 / 0.25 / 0.8, no fallback, about 6 zeros (they come
-  often while the new bricks are missing), 1.5 contradictions, 2 bursts,
-  2.2 throws an equation.
-- Planned, not built (Vadim): level 5 brackets and rational expressions:
-  ±1 and ±x back, "Avaa sulut" ((x + 1)² = x² + 7 → open → −x²), "Neliöksi"
-  (x² + 4x + 4 = 9 → (x + 2)² = 9), "Nollasääntö" (x(x − 5) = 0 splits into
-  x = 0 and x − 5 = 0, two falling equations; no :x brick, it would lose
-  x = 0), the reciprocal brick 1/□ (not cross-multiplying). Level 6: ∛ (one
-  answer, negatives fine), ^2 and ^3, 2^□ and log₂ (base 2 only); no
-  fractional powers for now. "No solution" in every family (√x = −3,
-  2^x = −4, 1/(x + 1) = 0). The recipe idea (an equation = bricks applied
-  backwards from x = n) is to carry over.
+- Simulated (500 games; perfect / 50 % play): jokers 0.2 / 1.0 a level
+  (1.3 / 1.8 before the bricks were spread over the recipes), unsolvable 0 /
+  0.5, no fallback, about 6 zeros (they come often while the new bricks are
+  missing), 1.5 contradictions, 2 bursts, 2.1 throws an equation.
+- Level 5 (Vadim): brackets and reciprocals. Level 4's bricks all stay
+  (Vadim), +1 and −1 come at the start (`add`, 4 each), and from zero bombs
+  (from level 4's 20th equation on) ab=0 and 1/□, then neliö and avaa, then
+  ±x² (3 each): 17 bricks. New ones in the walls (`OP_AT2`): left avaa, ⚡,
+  neliö, ab=0, 1/□; right −1, +1, −x², +x². Labels are words ("avaa",
+  "neliö", "ab=0") and 1/□ with a drawn box (`.word`, `.box`).
+  Equations (`bracketEquation`, about equally often): avaa sulut ((x + 1)² =
+  x² + 7: avaa, −x², −1, :2; for (x − 1)² also ·(−1)), neliöksi (x² + 2x +
+  1 = 9: neliö, √, −1; two bombs, ±m − k), the zero-product rule (x(x − 3)
+  = 0, x² − 3x = 0, (x − 1)(x + 2) = 0, expanded too), 1/□ (1/(x + 2) = 1/5,
+  3/(x + 1) = 1, 2/(x − 1) = 2/3: 1/□, ·k, ∓a) and levels 3–4's ((x + 1)² =
+  9, −(x + 1)² = −9, level 4 recipes with at most one scaling; they keep
+  ·x and ·(−1) in use). Each needs at most one of ·2, :2, ·3, :3 (Vadim:
+  never two in a row; measured 0 in 1 500). A zero is a level 4 one, half
+  as often as on other levels (the x = 0 parts of the rule are zero bombs
+  too). "No solution": 1/(x + a) = 0 (1/□ refuses 1/0, red as √ of a
+  negative), (x + a)² = −4 and x² + 2x + 1 = −4 (√ refuses).
+- Level 5's sides: 1/(…) (`rec` over a factor `rk`: 3 over x + 1, two rows;
+  :2 on it doubles the inside, 3/(2x + 2)) and products (`fac`, x(x − 3),
+  (x − 2)(x + 1), real brackets in IBM Plex Sans). avaa (`openSide`) writes
+  out (x + k)² and products, neliö (`squareSide`) makes x² + 2kx + k² a
+  square, 1/□ (`recSide`) turns a side over (k/(x + 1) → (x + 1)/k,
+  numbers, x/4 → 4/x, anything else 1/(…)); a brick that changes no side
+  is wasted (a bump). ab=0 (`zpParts`): one side 0, the other a product,
+  (x + k)² or x² + px + q with whole roots; the factor with the smaller
+  root stays (x = 0 is solved at once), the other falls beside it as an
+  equation of its own (`spawnChild`): it gives its bomb and 100 points
+  ("Nollasäännön osat"), isn't counted as an equation, no bonus. The joker
+  (and a zero bomb's shot) on one gives both answers that way
+  (`jokerAnswer`). "Täydellinen" from the recipe (`p.fewest`; for the rule:
+  ab=0 and the first part's throws); the generator plans from the recipe
+  less what was thrown (`toGo`).
+- Simulated (400 games; perfect / 80 % / 50 % play): jokers 2.5 / 2.5 /
+  2.8 a level, unsolvable 0 / 0.04 / 0.4, no fallback, about 3 throws an
+  equation, 4.5 bursts (each +1 for 17 bricks: 126 bricks at the end).
+- Planned, not built (Vadim): level 6: ∛ (one answer, negatives fine), ^2
+  and ^3, 2^□ and log₂ (base 2 only); no fractional powers for now. "No
+  solution" in every family (√x = −3, 2^x = −4). Recipes as on levels 4–5.
 
 ## Open questions (ask Vadim before deciding)
 
