@@ -342,7 +342,7 @@ games/<category>/<course>/<game>/index.html
   an operation brick (the corners under the walls too), and holds the ±
   operations: −2x −x +x +2x | −2 −1 +1 +2 (x on the left, numbers on the
   right, number-line order). A slot whose operation the player doesn't have
-  yet, or that has run out for good (`retire`), is a plain floor brick. The rest go in the walls near the floor, from
+  yet is a plain floor brick. The rest go in the walls near the floor, from
   the bottom up: the joker, ⚡, −x², +x² on the left; :2, ·2, ·(−1), √ on
   the right. Every brick keeps its place on every level (Vadim: nothing
   moves when a level starts; √ and ±x² may come on level 2, while ±2 and
@@ -428,8 +428,8 @@ games/<category>/<course>/<game>/index.html
   solves any equation at once. As long as one of the five is missing, a zero
   bomb always brings a missing one (Vadim). With nothing new to bring it
   bursts (`coinBurst`, Vadim; it used to add one use to one brick): +1 for
-  every brick the player has, ⚡ and the joker (up to 4) too, but not ±2 and ±2x when
-  they run out; a gold "+1" flies to each. In practice only on level 3,
+  every brick the player has, ⚡ and the joker (up to 4) too; a gold "+1"
+  flies to each. In practice only on level 3,
   where the next level's bricks no longer keep coming: simulated 2.3 / 1.9
   / 1.2 bursts there (perfect / 80 % / 50 % play), and with them level 3
   has 1.3 contradictions instead of 0.8 (more ⚡), the perfect player needs
@@ -538,23 +538,21 @@ games/<category>/<course>/<game>/index.html
   side that is clearly negative (−√2 − 1) is refused like a negative number.
 - Level 3's contradictions: x² = a negative number in any dress (x² + 5 = 1,
   x² = −2, 2x² + 5 = x² + 1).
-- Level 3's bricks (Vadim): ±1, ±x, ±x², √, :2, ·2, ·(−1), the joker, ⚡
-  and what is left of ±2 and ±2x. From the moment the first of √ and ±x²
-  comes (usually near the end of level 2), no bomb refills ±2 and ±2x and no
-  zero bomb brings them new (`QUIET`, `quiet`, `runOut`, Vadim): they run
-  out, and one at 0 goes for good, its slot plain floor (`retire`; at once
-  if it is already at 0 when √ or ±x² comes). They used to become points
-  when level 3 started, then for a while uses of √ and ±x². Every brick keeps its count (Vadim), and the
-  well is emptied. √ and ±x² also
+- Level 3's bricks (Vadim): ±1, ±x, ±x², √, :2, ·2, ·(−1), the joker, ⚡,
+  ±2 and ±2x. ±2 and ±2x stay to the end, refilled by every kind of bomb
+  as on the earlier levels (Vadim changed his mind; for a while they stopped
+  being refilled once √ or ±x² came and vanished at 0, and before that they
+  became points, then uses of √ and ±x², when level 3 started). Every brick
+  keeps its count (Vadim), and the well is emptied. √ and ±x² also
   come from zero bombs (see New bricks; the gifts there after them: the
-  joker, −x², +x², :2, ·2, ·(−1), `gifts`); bombs refill √. The generator never gives an equation that needs a ±x²
+  joker, −x², +x², :2, ·2, ·(−1), ±2, ±2x, `gifts`); bombs refill √. The generator never gives an equation that needs a ±x²
   (or √, :2) the player hasn't got (Vadim: no bad luck), and once they have
   one, squares that need it come 3 times as often (`X2_MORE`; measured: 73 %
   of the squares need ±x² then, it was 51 %). Running out sometimes is fine
   (Vadim): with chance 0.2 (`short`) an equation may need more ±x² than are
   left, if the player has that brick (measured 0.4 a level). Checked with a perfect
   player over levels 1–3 (3 000 games, before the New bricks rules, the
-  quiet ±2 and ±2x and the cap 99): stuck 0.01 times a level, a joker
+  ±2 and ±2x leaving and the cap 99): stuck 0.01 times a level, a joker
   needed 3.3 times a level (11 %, it was 0.9): mostly ±1 runs short (more
   zero bombs, which pay nothing back; more x⁴, which need two √; rewards
   spread over more bricks).
@@ -680,6 +678,6 @@ games/<category>/<course>/<game>/index.html
   In Yhtälösade it ends the level at once: what is in the air goes away, the
   trash and counts go on, and every brick the player could have by the end
   of that level gets +3 (Vadim: the basic ones, its gifts, the next level's
-  new ones, ⚡; not ±2 / ±2x once they run out). Keep it hidden from students.
+  new ones, ⚡). Keep it hidden from students.
 - Deploy = commit and push. When a game starts using `assets/theme.css`, push
   the theme file in the same commit.
