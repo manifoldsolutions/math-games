@@ -656,7 +656,7 @@ games/<category>/<course>/<game>/index.html
   the result rows show the points as earned, then "Nopeus: Keskinopea ×1,5"
   and the total (whole points).
 
-## Yhtälösade, chapter 2 (levels 4–6; levels 4 and 5 built)
+## Yhtälösade, chapter 2 (levels 4–6, built)
 
 - Chapter 2 (Vadim): a fresh start after level 3. The dialog after level 3
   pays every brick left 10 points ("Poistuneet operaatiot") and says
@@ -731,9 +731,58 @@ games/<category>/<course>/<game>/index.html
 - Simulated (400 games; perfect / 80 % / 50 % play): jokers 2.5 / 2.5 /
   2.8 a level, unsolvable 0 / 0.04 / 0.4, no fallback, about 3 throws an
   equation, 4.5 bursts (each +1 for 17 bricks: 126 bricks at the end).
-- Planned, not built (Vadim): level 6: ∛ (one answer, negatives fine), ^2
-  and ^3, 2^□ and log₂ (base 2 only); no fractional powers for now. "No
-  solution" in every family (√x = −3, 2^x = −4). Recipes as on levels 4–5.
+- Level 6 (Vadim): roots, powers and logarithms (base 2 only, no
+  fractional powers for now) with lean bricks. Only +1, −1, :2, √, the
+  joker and ⚡ stay (`keep`; the others are paid 10 points each, as at a
+  chapter's start). Zero bombs bring the new ones in three groups
+  (`first`): log₂ and ∛, then □² and 2^□, then □³, 3 each. After that a
+  zero bomb gives one of them, √ or the joker (`gifts`), and once all
+  are there, +1 to every brick. The new ones go in the floor slots that
+  level 5's bricks left: ∛ :2 □² □³ 2^□ log₂ √ joker. ±1 stay in the
+  right wall and ⚡ in the left. ∛ is drawn as √ with a small 3 (`CBRT`):
+  the font's ∛ is cramped.
+- Equations (`powEquation`) come in five families, about equally often,
+  with 1–3 throws mixed (measured 22 / 46 / 32 %):
+  - cubes: x³ = −8 (∛), x³ + 1 = 9, 2x³ = 16 (:2, ∛);
+  - roots undone: √x = 3 (□²), ∛x = −2 (□³), √(x + 1) = 3, ∛(x − 2) = 1;
+  - exponents: 2^x = 16 (log₂), 2^(x + 1) = 8, 2^(2x) = 64 (log₂, :2),
+    2^(x²) = 16 (log₂, √: two bombs, ±2);
+  - logarithms: log₂ x = 3 (2^□), log₂(x − 1) = 2, log₂ x + 1 = 4;
+  - level 3's (x + a)² = m².
+  Answers −9 … 10. Its zeros use the new bricks or the kept ones
+  (x + 1 = 1, 2x = 0, x² = 0), so a player without the new bricks can
+  still earn them. When nothing else can be afforded: x ± 1 = 8 ± 1
+  (`powLifeline`).
+- Sides gain 2^(…) (`ex`, factor `ec`), log₂(…) (`lg`, `lc`) and ∛(…)
+  (`cr`, `cc`).
+  - ∛ (`cbrtSide`) always works, negatives too: a cube gives its root,
+    8x³ → 2x, anything else gets ∛(…).
+  - □² and □³ (`powerSide`) raise both sides: √(…) and ∛(…) lose their
+    root, numbers and kx get the power, x + k → (x + k)², 2^u → 2^(2u). A
+    side they can't write (x² + 1, log₂ x) wastes the brick.
+  - 2^□ (`exp2Side`) undoes log₂, turns a number into its power
+    (2^−2 = 1/4), and anything else into 2^(…).
+  - log₂ (`log2Side`) undoes 2^, turns a power of 2 into its exponent
+    (1/4 → −2), and anything else into log₂(…). A number ≤ 0 is refused,
+    like √ of a negative number.
+- False roots: □² can give answers the equation doesn't have (√x = −3 →
+  x = 9; x + 1 = 4 → (x + 1)² = 16 → √ → x = 3 or −5). Every equation
+  knows its true answers (`truth`, `truthOf`). A bomb that isn't one of
+  them bursts in red sparks instead and gives nothing. A contradiction
+  never counts as solved, so √x = −3 → x = 9 isn't a solve: the ⚡ is the
+  way.
+- "No solution" (⚡, from the 20th equation, at most 2): √x = −3,
+  √(x + 1) = −2, 2^x = −4, 2^(x + 1) = 0 (`powContradiction`).
+- Simulated (500 games; perfect / 80 % / 50 % play):
+  - level 6 starts with 26 / 24 / 18 kept bricks (±1 about 2–3 each);
+  - jokers 1.3 / 2.1 / 2.6 a level;
+  - unsolvable 0 / 0.04 / 0.5, no fallback;
+  - about 7 zeros, since the new bricks come through them (medians:
+    log₂ and ∛ by the 4th equation, □² and 2^□ by the 8th, □³ by the
+    11th);
+  - 3.8 bursts, 2 throws an equation, 83 / 75 / 60 bricks at the end.
+  An auto-player in headless Chrome played levels 1–6 through with no
+  errors.
 
 ## Open questions (ask Vadim before deciding)
 

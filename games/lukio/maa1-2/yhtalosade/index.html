@@ -30,8 +30,10 @@
      ·(−1), √, the joker and ⚡ from zero bombs), the "metal" look, and only
      multiplying and dividing: 12/x = 3, x/4 = 4/x, 2x/3 = 4. Level 5 keeps
      them and adds ±1, ±x² and four bricks that rewrite a side: avaa,
-     neliö, ab=0 (an equation splits in two) and 1/□. First draft, 5
-     levels: numbers are to be balanced (Vadim).
+     neliö, ab=0 (an equation splits in two) and 1/□. Level 6 keeps only
+     ±1, :2, √, the joker and ⚡ and brings ∛, □², □³, 2^□ and log₂: x³ = −8,
+     √x = 3, 2^(x + 1) = 8, log₂(x − 1) = 2. First draft, 6 levels: numbers
+     are to be balanced (Vadim).
      ════════════════════════════════════════════════════════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -83,6 +85,11 @@
   /* level 5's bricks: a word (avaa, neliö, ab=0), and 1/□ with a drawn box */
   .opb .word{ font-family:var(--ui); font-size:.6em; font-weight:700; color:var(--ink); }
   .opb .box{ display:inline-block; width:.55em; height:.7em; border:.09em solid var(--ink); vertical-align:-.06em; margin-left:.04em; }
+  /* level 6: 2 to a power (a real superscript), log with its 2 below */
+  sup.ex{ font-size:.62em; vertical-align:.75em; line-height:0; margin-left:.03em; }
+  .opb sup.ex .box{ width:.6em; height:.75em; }
+  .fn{ color:var(--ink); }
+  .fn sub{ font-size:.62em; vertical-align:-.3em; line-height:0; }
   /* a fraction (Vadim): the top over a bar over the bottom, the equation two rows tall */
   .frac{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 .08em; }
   .frac .num{ padding:0 .12em .06em; border-bottom:.08em solid currentColor; }
@@ -99,6 +106,8 @@
   @keyframes zapped{ from{ filter:brightness(1.8); } to{ opacity:0; } }
   .piece.solved.pm{ border-color:var(--gold); box-shadow:-10px 0 18px var(--gold), 10px 0 18px var(--magenta); }   /* x = ±n */
   .root{ color:var(--ink); }
+  .root.cb{ position:relative; margin-left:.12em; }   /* ∛ drawn as √ with a small 3: the font's ∛ is cramped */
+  .root.cb i{ position:absolute; left:-.12em; top:.12em; font-style:normal; font-size:.45em; line-height:1; }
   .radicand{ display:inline-block; line-height:1.1; border-top:.08em solid var(--ink); padding:.06em .08em 0; margin-left:-.06em; }
   .zap{ display:inline-block; animation:zap .5s ease; }   /* √ bumps into a negative number */
   .zap *{ animation:zapc .5s ease; }
@@ -339,7 +348,9 @@ const EQUATIONS = 30;           // equations per level
 // bricks and the "metal" look); start: a new chapter's bricks (the old ones
 // go, their uses paid as points); mult: level 4's multiplying-only equations
 // (multEquation); add: bricks given when the level starts (the others
-// stay); brackets: level 5's equations (bracketEquation).
+// stay); brackets: level 5's equations (bracketEquation); keep: the only
+// bricks that stay (the others go, their uses paid as points; the level's
+// new ones only from its own zero bombs); pow: level 6's (powEquation).
 // More negative answers towards the end: more bombs that clear trash.
 const LEVEL = {gap:[16, 5.6], pos:[.8, .3], posBy:EQUATIONS, shoot:[0, .5]};
 // The speed (Vadim), chosen in the start and end dialogs: the fall in rows
@@ -370,9 +381,13 @@ const LEVELS = [
   {fresh:true, chapter:2, brackets:true, add:{"+1":4, "-1":4},
    first:[["zp", "rec"], ["sqr", "open"], ["-x2", "+x2"]],
    gifts:{"zp":2, "rec":2, "sqr":2, "open":2, "-x2":2, "+x2":2, "*-1":1, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, brackets:true}},
+  // Level 6 (Vadim): roots, powers and logarithms, with a lean set of bricks
+  {fresh:true, chapter:2, pow:true, keep:["+1", "-1", ":2", "sq", "J", "N"],
+   first:[["log2", "cbrt"], ["pw2", "exp2"], ["pw3"]],
+   gifts:{"log2":2, "cbrt":2, "pw2":2, "exp2":2, "pw3":2, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, pow:true}},
 ].map(l => ({...LEVEL, ...l}));
 const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0, "*-1":0, "N":0, "sq":0, "+x2":0, "-x2":0,
-               ":3":0, "*3":0, "*x":0, "open":0, "sqr":0, "zp":0, "rec":0};
+               ":3":0, "*3":0, "*x":0, "open":0, "sqr":0, "zp":0, "rec":0, "cbrt":0, "pw2":0, "pw3":0, "exp2":0, "log2":0};
 const BASE = ["+x", "-x", "+1", "-1"];                 // always there; the others come from zero bombs
 // A zero bomb brings a new operation as long as one of these is missing, then
 // +1 for every brick (coinBurst, Vadim). Weights: the joker and ·(−1) come half as often.
@@ -387,7 +402,7 @@ const GIFT_FROM = {"*2":2};
 // at the start of their level.
 const NEXT_FROM = 20, ZERO_NEW = .3;
 // a new brick comes with this many uses (else 1; later gifts give 1)
-const FIRST_COUNT = {":2":3, "*2":3, "*-1":3, "N":2, "sq":4, "+x2":3, "-x2":3, "open":3, "sqr":3, "zp":3, "rec":3};
+const FIRST_COUNT = {":2":3, "*2":3, "*-1":3, "N":2, "sq":4, "+x2":3, "-x2":3, "open":3, "sqr":3, "zp":3, "rec":3, "cbrt":3, "pw2":3, "pw3":3, "exp2":3, "log2":3};
 const CAP = 99;                 // no brick holds more (a reward part that doesn't fit goes on to another brick)
 const JOKER_CAP = 4;            // …and the joker no more than this (Vadim: too many at the end of level 3)
 const capOf = key => key === "J" ? JOKER_CAP : CAP;
@@ -449,6 +464,8 @@ const NEG_POINTS = 25;          // × |n| for a negative bomb, trash or no trash
 const CLEAR_POINTS = 20;        // per trash brick cleared; the same is taken off for each one left at the end
 const SPARE_POINTS = 10;        // per reward unit that doesn't fit anywhere (every brick full)
 
+const CBRT = `<span class="root cb"><i>3</i>√</span>`;   // ∛, on the brick and in equations
+
 const OPS = {
   "+x": {a: 1, b: 0, html:`<span class="op">+</span><span class="xterm">x</span>`},
   "-x": {a:-1, b: 0, html:`<span class="op">−</span><span class="xterm">x</span>`},
@@ -470,6 +487,12 @@ const OPS = {
   "sqr": {sqr:true, html:`<span class="word">neliö</span>`},
   "zp":  {zp:true, html:`<span class="word">ab=0</span>`},
   "rec": {rec:true, html:`<span class="cterm">1</span><span class="op">/</span><span class="box"></span>`},
+  // level 6 (Vadim): ∛, both sides to the power 2 or 3, 2 to the power of a side, log₂ of a side
+  "cbrt":{cbrt:true, html:CBRT},
+  "pw2": {power:2, html:`<span class="box"></span><span class="op">²</span>`},
+  "pw3": {power:3, html:`<span class="box"></span><span class="op">³</span>`},
+  "exp2":{exp2:true, html:`<span class="cterm">2</span><sup class="ex"><span class="box"></span></sup>`},
+  "log2":{log2:true, html:`<span class="fn">log<sub>2</sub></span>`},
   // "no solution" (Vadim): a lightning bolt, as in maths for a contradiction
   "N":  {contra:true, html:`<svg class="bolt" viewBox="0 0 16 24" aria-hidden="true"><path d="M10 0 1 14h6l-2 10 10-15H9z"/></svg>`},
   "sq": {sqrt:true, html:`<span class="root">√</span>`},   // both sides; x² = n² gives x = ±n
@@ -489,11 +512,13 @@ const OP_AT = {"-2x":["F",0], "-x":["F",1], "+x":["F",2], "+2x":["F",3],
 // chapter 2 (levels 4–, Vadim): a fresh set of bricks with its own places
 const OP_AT2 = {":3":["F",0], ":2":["F",1], "*2":["F",2], "*3":["F",3], "*x":["F",4], "*-1":["F",5], "sq":["F",6], "J":["F",7], "N":["L",4],
                 // level 5: rewriting a side on the left, ±1 and ±x² on the right
-                "open":["L",2], "sqr":["L",6], "zp":["L",8], "rec":["L",10], "-1":["R",2], "+1":["R",4], "-x2":["R",6], "+x2":["R",8]};
+                "open":["L",2], "sqr":["L",6], "zp":["L",8], "rec":["L",10], "-1":["R",2], "+1":["R",4], "-x2":["R",6], "+x2":["R",8],
+                // level 6: in the floor slots level 5's bricks left (they never meet: firstGroups)
+                "cbrt":["F",0], "pw2":["F",2], "pw3":["F",3], "exp2":["F",4], "log2":["F",5]};
 const slotOf = key => (lv() && lv().chapter === 2 ? OP_AT2 : OP_AT)[key];
 const FLOOR = 2;                // floor height in cells (as tall as an operation brick)
 const OP_NOTE = {"+x":"+ x", "-x":"− x", "+1":"+ 1", "-1":"− 1", "+2":"+ 2", "-2":"− 2",
-                 "+2x":"+ 2x", "-2x":"− 2x", "J":"jokeri", ":2":": 2", "*2":"· 2", "*-1":"· (−1)", ":3":": 3", "*3":"· 3", "*x":"· x", "open":"avaa sulut", "sqr":"neliöksi", "zp":"nollasääntö", "rec":"1/□", "N":"ristiriita", "sq":"√", "+x2":"+ x²", "-x2":"− x²"};
+                 "+2x":"+ 2x", "-2x":"− 2x", "J":"jokeri", ":2":": 2", "*2":"· 2", "*-1":"· (−1)", ":3":": 3", "*3":"· 3", "*x":"· x", "open":"avaa sulut", "sqr":"neliöksi", "zp":"nollasääntö", "rec":"1/□", "cbrt":"∛", "pw2":"( )²", "pw3":"( )³", "exp2":"2^( )", "log2":"log₂", "N":"ristiriita", "sq":"√", "+x2":"+ x²", "-x2":"− x²"};
 
 const $ = id => document.getElementById(id);
 const board = $("board"), stage = $("stage");
@@ -568,7 +593,7 @@ function toGo(p){
     if((bs.bc ?? 1) !== 1 || [bs.p4, bs.q, bs.a, bs.b, bs.pa, bs.root, bs.pn].some(Boolean) || !plain(bs === L ? R : L)) return null;
     return {kb:0, kq:0, k:bs.bin.b, div:0, deg:2};
   }
-  if(L.root || R.root || L.pa || R.pa || L.p3 || R.p3 || L.m || R.m || L.rec || R.rec || L.fac || R.fac) return null;
+  if([L, R].some(s => s.root || s.pa || s.p3 || s.m || s.rec || s.fac || s.ex || s.lg || s.cr)) return null;
   if(L.p4 || R.p4 || L.q || R.q){
     const deg = L.p4 || R.p4 ? 4 : 2, top = deg === 4 ? "p4" : "q";
     const [U, V] = (L[top] || 0) > (R[top] || 0) ? [L, R] : [R, L], uq = U.q || 0, vq = V.q || 0;
@@ -705,7 +730,7 @@ function bracketEquation(i){
   const ones = (v, need = {}) => { if(v) need[v > 0 ? "+1" : "-1"] = (need[v > 0 ? "+1" : "-1"] || 0) + Math.abs(v); return need; };   // ±1 throws to add v
   const make = (L, R, need, answers, sig, more = {}) => {
     const n = sum(need);
-    return {n:answers[0], kq:0, kb:0, k:0, div:0, deg:0, recipe:true, L, R, need, fewest:n, par:n,
+    return {n:answers[0], kq:0, kb:0, k:0, div:0, deg:0, recipe:true, L, R, need, fewest:n, par:n, answers,
             pay:answers.reduce((u, v) => u + Math.max(v, 0), 0), sig:sig.join(), ...more};
   };
   const kind = pick(["open", "sqr", "zp", "rec", "old"]);
@@ -741,6 +766,80 @@ function bracketEquation(i){
   }
   return multEquation(i, true, false);
 }
+// Level 6 (Vadim): roots, powers and logarithms, built backwards from the
+// answer, 1–4 throws, at most one :2, about equally often: cubes (x³ = −8: ∛;
+// x³ + 1 = 9; 2x³ = 16), roots undone (√x = 3: □²; ∛x = −2: □³; √(x + 1) = 3),
+// exponentials (2^x = 16: log₂; 2^(x + 1) = 8; 2^(2x) = 64; 2^(x²) = 16: log₂,
+// √, two bombs), logarithms (log₂ x = 3: 2^□; log₂(x − 1) = 2; log₂ x + 1 = 4)
+// and now and then (x + 1)² = 9. A zero: 2^x = 1, x³ = 0, √x = 0, log₂(x + 1) = 0.
+// Answers within −9 … 10. lean: only the ones a short recipe needs (the lifeline).
+function powEquation(i, lean = false){
+  const t = Math.min(1, (i - 1)/(EQUATIONS - 1)), at = ([u, v]) => u + (v - u)*t;
+  const ones = (v, need = {}) => { if(v) need[v > 0 ? "+1" : "-1"] = (need[v > 0 ? "+1" : "-1"] || 0) + Math.abs(v); return need; };
+  const make = (L, R, need, answers, sig, more = {}) => {
+    if(answers.some(v => v < -9 || v > 10)) return null;
+    const n = sum(need);
+    return {n:answers[0], kq:0, kb:0, k:0, div:0, deg:0, recipe:true, L, R, need, fewest:n, par:n, answers,
+            pay:answers.reduce((u, v) => u + Math.max(v, 0), 0), sig:sig.join(), ...more};
+  };
+  const X = {a:1, b:0}, num = v => ({a:0, b:v});
+  if(Math.random() < (firstMissing(i) ? ZERO_NEW : i <= ZERO_FIRST ? ZERO_START : ZERO)){   // x = 0 (also with the bricks kept: they bring the new ones)
+    const v = rnd(0, 6), j = pick([1, -1]);
+    return v === 0 ? make({a:0, b:0, ex:X, ec:1}, num(1), {log2:1}, [0], ["z", v])
+         : v === 1 ? make({p3:1, a:0, b:0}, num(0), {cbrt:1}, [0], ["z", v])
+         : v === 2 ? make({a:0, b:0, root:X}, num(0), {pw2:1}, [0], ["z", v])
+         : v === 3 ? make({a:0, b:0, lg:{a:1, b:1}, lc:1}, num(0), ones(-1, {exp2:1}), [0], ["z", v])
+         : v === 4 ? make({a:1, b:j}, num(j), ones(-j), [0], ["z", v, j])
+         : v === 5 ? make({a:2, b:0}, num(0), {":2":1}, [0], ["z", v])
+         : make({q:1, a:0, b:0}, num(0), {sq:1}, [0], ["z", v]);
+  }
+  const k = pick([1, -1, 2, -2]), kind = lean ? pick(["cube", "root", "exp", "log"]) : pick(["cube", "root", "exp", "log", "old"]);
+  const v = lean ? 0 : rnd(1, 4) - (Math.random() < .3);   // 0 (the plain one) about a fifth of the time
+  if(kind === "cube"){
+    const n = pick([1, -1, 2, -2, 3, -3]);
+    if(v < 1) return make({p3:1, a:0, b:0}, num(n**3), {cbrt:1}, [n], [kind, 0, n]);   // x³ = −8
+    if(v < 3) return make({p3:1, a:0, b:k}, num(n**3 + k), ones(-k, {cbrt:1}), [n], [kind, 1, n, k]);   // x³ + 1 = 9
+    return Math.abs(n) > 2 ? null : make({p3:2, a:0, b:0}, num(2*n**3), {":2":1, cbrt:1}, [n], [kind, 2, n]);   // 2x³ = 16
+  }
+  if(kind === "root"){
+    const n = rnd(1, 3), m = pick([1, -1, 2, -2]);
+    if(v === 0) return make({a:0, b:0, root:X}, num(n), {pw2:1}, [n*n], [kind, 0, n]);   // √x = 3
+    if(v === 1) return make({a:0, b:0, cr:X, cc:1}, num(m), {pw3:1}, [m**3], [kind, 1, m]);   // ∛x = −2
+    if(v <= 3) return make({a:0, b:0, root:{a:1, b:k}}, num(n), ones(-k, {pw2:1}), [n*n - k], [kind, 2, n, k]);   // √(x + 1) = 3
+    return make({a:0, b:0, cr:{a:1, b:k}, cc:1}, num(m), ones(-k, {pw3:1}), [m**3 - k], [kind, 3, m, k]);   // ∛(x − 2) = 1
+  }
+  if(kind === "exp"){
+    const n = rnd(0, 6);
+    if(v < 1) return make({a:0, b:0, ex:X, ec:1}, num(2**n), {log2:1}, [n], [kind, 0, n]);   // 2^x = 16
+    if(v < 3) return n + k < 0 || n + k > 6 ? null : make({a:0, b:0, ex:{a:1, b:k}, ec:1}, num(2**(n + k)), ones(-k, {log2:1}), [n], [kind, 1, n, k]);   // 2^(x + 1) = 8
+    if(Math.random() < .5) return n > 3 ? null : make({a:0, b:0, ex:{a:2, b:0}, ec:1}, num(4**n), {log2:1, ":2":1}, [n], [kind, 2, n]);   // 2^(2x) = 64
+    const m = rnd(1, 2);   // 2^(x²) = 16: log₂, √, x = ±2
+    return make({a:0, b:0, ex:{q:1, a:0, b:0}, ec:1}, num(2**(m*m)), {log2:1, sq:1}, [m, -m], [kind, 3, m], {deg:2});
+  }
+  if(kind === "log"){
+    const m = rnd(0, 3);
+    if(v < 1) return make({a:0, b:0, lg:X, lc:1}, num(m), {exp2:1}, [2**m], [kind, 0, m]);   // log₂ x = 3
+    if(v < 3) return make({a:0, b:0, lg:{a:1, b:k}, lc:1}, num(m), ones(-k, {exp2:1}), [2**m - k], [kind, 1, m, k]);   // log₂(x − 1) = 2
+    return make({a:0, b:k, lg:X, lc:1}, num(m + k), ones(-k, {exp2:1}), [2**m], [kind, 2, m, k]);   // log₂ x + 1 = 4
+  }
+  const m = rnd(1, 3);   // (x + a)² = m²: √, ∓a
+  return make({a:0, b:0, bin:{a:1, b:k}}, num(m*m), ones(-k, {sq:1}), [m - k, -m - k], ["old", k, m], {n:m, k, bin:true, deg:2});
+}
+// when nothing else can be afforded: x + k = n with the ±1 the player has
+function powLifeline(c){
+  const j = c["+1"] >= c["-1"] ? "+1" : "-1", n = 8;
+  return {n, kq:0, kb:0, k:0, div:0, deg:0, recipe:true, L:{a:1, b:j === "+1" ? -1 : 1}, R:{a:0, b:n + (j === "+1" ? -1 : 1)},
+          need:{[j]:1}, fewest:1, par:1, pay:n, sig:"life"};
+}
+// level 6's "no solution" (Vadim): √x = −3 (□² gives x = 9, which is false:
+// it never counts as solved), √(x + 1) = −2, 2^x = −4, 2^(x + 1) = 0 (log₂ refuses)
+function powContradiction(){
+  const v = rnd(0, 3), n = rnd(1, 3);
+  let L = v === 0 ? {a:0, b:0, root:{a:1, b:0}} : v === 1 ? {a:0, b:0, root:{a:1, b:1}} : v === 2 ? {a:0, b:0, ex:{a:1, b:0}, ec:1} : {a:0, b:0, ex:{a:1, b:1}, ec:1};
+  let R = {a:0, b:v === 3 ? 0 : v === 2 ? -(2**n) : -n};
+  if(Math.random() < .5) [L, R] = [R, L];
+  return {n:null, kq:0, kb:0, k:0, div:0, deg:0, par:1, contra:true, L, R};
+}
 // level 5's "no solution" (Vadim): 1/(x + a) = 0 (1/□ refuses 1/0), (x + a)² = −4
 // and x² + 2x + 1 = −4 (√ refuses)
 function bracketContradiction(){
@@ -767,7 +866,7 @@ function multContradiction(){
 }
 // a side that is one term P/Q·x^k ({P, Q, k}; ±x: pm), else null
 function mono(s){
-  if(s.root || s.bin || s.pn || s.pr || s.rec || s.fac) return null;
+  if(s.root || s.bin || s.pn || s.pr || s.rec || s.fac || s.ex || s.lg || s.cr) return null;
   const t = [["m", -1], ["b", 0], ["a", 1], ["q", 2], ["p3", 3], ["p4", 4]].filter(([j]) => s[j]);
   if(s.pa) return t.length || s.fd ? null : {P:s.pa, Q:1, k:1, pm:true};
   if(s.fd){ const u = !t.length && mono(s.f); return u && Number.isInteger(u.P) ? {...u, Q:u.Q*s.fd} : null; }
@@ -793,7 +892,7 @@ function multNeeds(L, R){
 // a side times x (·x, level 4): each power of x one up (12/x → 12, 3x → 3x²);
 // null where that can't be written (x⁴, a root, ±x, a squared bracket)
 function timesX(s){
-  if(s.p4 || s.root || s.pa || s.bin || s.rec || s.fac) return null;
+  if(s.p4 || s.root || s.pa || s.bin || s.rec || s.fac || s.ex || s.lg || s.cr) return null;
   const r = {...s, m:0, b:s.m || 0, a:s.b || 0, q:s.a || 0, p3:s.q || 0, p4:s.p3 || 0};
   if(s.pn){ delete r.pn; r.pa = s.pn; }   // ±2 · x = ±2x
   if(s.fd){ r.f = timesX(s.f); if(!r.f) return null; }
@@ -857,7 +956,7 @@ function zpParts(p){
 function spawnChild(p, [L, R], n){
   const el = document.createElement("div"); el.className = "piece";
   board.appendChild(el);
-  const q = {L, R, n, par:1, contra:false, deg:0, ops:0, steps:0, used:{}, avail:null, child:true,
+  const q = {L, R, n, par:1, contra:false, deg:0, ops:0, steps:0, used:{}, avail:null, child:true, truth:[n],
              make:{kb:0, kq:0, k:0, div:0, deg:0}, el, y:p.y, x0:0, w:3, bomb:null};
   measure(q);
   q.x0 = p.x0 + p.w + q.w <= COLS ? p.x0 + p.w : Math.max(0, p.x0 - q.w);
@@ -873,6 +972,45 @@ function jokerAnswer(p){
   writeAnswer(p, p.zp[0]);
   return [[{a:1, b:0}, {a:0, b:p.zp[1]}], p.zp[1]];
 }
+// Level 6's bricks on a side (Vadim). `only` u: the side is just that term
+// (its own factor c), nothing beside it
+const only = (s, u) => s[u] && ![s.p4, s.p3, s.q, s.a, s.b, s.m, s.root, s.pa, s.pn, s.fd, s.bin, s.fac, s.rec, s.ex, s.lg, s.cr]
+  .some((v, i) => v && ["p4", "p3", "q", "a", "b", "m", "root", "pa", "pn", "fd", "bin", "fac", "rec", "ex", "lg", "cr"][i] !== u);
+const cubeRoot = v => { const r = Math.round(Math.cbrt(v)); return r**3 === v ? r : null; };
+// ∛ always works (negatives too, Vadim): a cube number its root, k·x³ (k a
+// cube) → ∛k·x, anything else gets ∛ around it
+function cbrtSide(s){
+  if(plain(s)){ const r = cubeRoot(s.b); return r != null ? {a:0, b:r} : {a:0, b:0, cr:{a:0, b:s.b}, cc:1}; }
+  if(only(s, "p3")){ const r = cubeRoot(s.p3); if(r != null) return {a:r, b:0}; }
+  return {a:0, b:0, cr:{...s}, cc:1};
+}
+// □² and □³: both sides to a power. √(…) → …, ∛(…) → …, a number, kx,
+// x + k → (x + k)², 2^(…) → 2^(2·…); null where it can't be written (the brick is wasted)
+function powerSide(s, n){
+  const u = n === 2 ? "root" : "cr", c = n === 2 ? (s.rc ?? 1) : s.cc;
+  if(only(s, u) && Math.abs(c) === 1) return c > 0 || n === 2 ? {...s[u]} : timesSide(s[u], -1);   // (−∛u)³ = −u
+  if(plain(s)) return {a:0, b:s.b**n};
+  if(only(s, "a")) return n === 2 ? {q:s.a**2, a:0, b:0} : {p3:s.a**3, a:0, b:0};
+  if(only(s, "ex")) return {a:0, b:0, ex:scale(s.ex, n), ec:s.ec**n};
+  if(n === 2 && !(s.p4 || s.p3 || s.q || s.m || s.root || s.pa || s.pn || s.fd || s.bin || s.fac || s.rec || s.ex || s.lg || s.cr)) return {a:0, b:0, bin:{a:s.a, b:s.b}};
+  return null;
+}
+// 2^□: log₂(…) → …, a number its power (2^−2 = 1/4), anything else 2^(…)
+function exp2Side(s){
+  if(only(s, "lg") && s.lc === 1) return {...s.lg};
+  if(plain(s) && Number.isInteger(s.b) && Math.abs(s.b) <= 8) return s.b >= 0 ? {a:0, b:2**s.b} : {a:0, b:0, f:{a:0, b:1}, fd:2**-s.b};
+  return {a:0, b:0, ex:{...s}, ec:1};
+}
+// log₂: 2^(…) → … (2·2^u → u + 1), a power of 2 its exponent, anything else
+// log₂(…); null for a number ≤ 0 (refused, like √ of a negative number)
+function log2Side(s){
+  if(only(s, "ex") && s.ec > 0 && Number.isInteger(Math.log2(s.ec))) return addSides(s.ex, {a:0, b:Math.log2(s.ec)});
+  if(plain(s)){ if(s.b <= 0) return null; const e = Math.log2(s.b); return Number.isInteger(e) ? {a:0, b:e} : {a:0, b:0, lg:{a:0, b:s.b}, lc:1}; }
+  if(s.fd && plain(s.f) && s.f.b === 1 && Number.isInteger(Math.log2(s.fd))) return {a:0, b:-Math.log2(s.fd)};   // 1/4 → −2
+  return {a:0, b:0, lg:{...s}, lc:1};
+}
+// an equation's true answers (as built), [] for a contradiction
+const truthOf = e => e.contra ? [] : e.answers || e.zp || (e.bin ? (e.n ? [e.n - e.k, -e.n - e.k] : [-e.k]) : e.deg ? [e.n, -e.n] : [e.n]);
 // what an equation's bombs pay back (the positive answers)
 const payback = f => f.pay != null ? f.pay : f.bin ? (f.n ? Math.max(f.n - f.k, 0) + Math.max(-f.n - f.k, 0) : Math.max(-f.k, 0)) : f.deg ? f.n : Math.max(f.n, 0);
 // x⁴ may come on equation i (the level's `fourth`: early, Vadim)
@@ -926,7 +1064,7 @@ const keyOf = f => f.sig || [f.n, f.kq, f.kb, f.k, f.div, f.deg, f.mul, f.bin].j
 function makeEquation(recent, c, i){
   const C = lv().contra;
   if(C && i >= C.from && contras < C.max && c.N > 0 && Math.random() < C.p){
-    contras++; return C.mult ? multContradiction() : C.brackets ? bracketContradiction() : contradiction(C.square);
+    contras++; return C.mult ? multContradiction() : C.brackets ? bracketContradiction() : C.pow ? powContradiction() : contradiction(C.square);
   }
   const total = sum(c) - c.N - c["*-1"];
   // now and then (short) this one may need more ±x² than are left, as long
@@ -945,6 +1083,7 @@ function makeEquation(recent, c, i){
   // of the level can be afforded, a big one if the player has :2
   let e = lv().mult ? find(() => multEquation(i), 200) || multLifeline(c)
        : lv().brackets ? find(() => bracketEquation(i), 200) || find(() => multEquation(i, true), 100) || multLifeline(c)
+       : lv().pow ? find(() => powEquation(i), 300) || find(() => powEquation(i, true), 300) || powLifeline(c)
        : (lv().big && Math.random() < bigChance(c) && find(bigEquation, 50))
        || (lv().frac && Math.random() < FRAC_P && find(() => fracEquation(i), 50))
        || (lv().bin && Math.random() < BIN_P && find(binEquation, 50))
@@ -969,8 +1108,8 @@ function makeEquation(recent, c, i){
   if(Math.random() < .5) [L, R] = [R, L];
   return {...e, L, R};
 }
-const plain = s => !s.p4 && !s.p3 && !s.q && !s.a && !s.m && !s.root && !s.pa && !s.fd && !s.bin && !s.pn && !s.rec && !s.fac;   // a side that is just a number
-const bare = (s, key) => s[key] === 1 && ["p4", "p3", "q", "a", "b", "m"].every(j => j === key || !s[j]) && !s.root && !s.pa && !s.fd && !s.bin && !s.pn && !s.rec && !s.fac;   // just x⁴ / x² / x
+const plain = s => !s.p4 && !s.p3 && !s.q && !s.a && !s.m && !s.root && !s.pa && !s.fd && !s.bin && !s.pn && !s.rec && !s.fac && !s.ex && !s.lg && !s.cr;   // a side that is just a number
+const bare = (s, key) => s[key] === 1 && ["p4", "p3", "q", "a", "b", "m"].every(j => j === key || !s[j]) && !s.root && !s.pa && !s.fd && !s.bin && !s.pn && !s.rec && !s.fac && !s.ex && !s.lg && !s.cr;   // just x⁴ / x² / x
 // rows an equation takes: a fraction makes it two rows tall (Vadim), also under a root
 const hasFrac = s => !!s && (!!s.fd || !!s.m || !!s.rec || hasFrac(s.root));
 const ht = p => hasFrac(p.L) || hasFrac(p.R) ? 2 : 1;
@@ -984,12 +1123,13 @@ const ht = p => hasFrac(p.L) || hasFrac(p.R) ? 2 : 1;
 // it join the top first); ·(−1) changes its top's sign
 function timesSide(s, t){
   const k = Math.round(Math.abs(t) < 1 ? 1/Math.abs(t) : Math.abs(t)), fits = v => !v || Number.isInteger(v/k);
-  const terms = x => [x.p4, x.p3, x.q, x.a, x.b, x.m, x.pa, x.pn, x.root && (x.rc ?? 1), x.bin && (x.bc ?? 1), x.rec && x.rk, x.fac && (x.fc ?? 1)];
+  const terms = x => [x.p4, x.p3, x.q, x.a, x.b, x.m, x.pa, x.pn, x.root && (x.rc ?? 1), x.bin && (x.bc ?? 1), x.rec && x.rk, x.fac && (x.fc ?? 1),
+                       x.ex && x.ec, x.lg && x.lc, x.cr && x.cc];
   if(Math.abs(t) < 1){
-    if(s.rec && !fits(s.rk) && ![s.p4, s.p3, s.q, s.a, s.b, s.m, s.root, s.pa, s.pn, s.bin, s.fac, s.fd].some(Boolean))
+    if(s.rec && !fits(s.rk) && ![s.p4, s.p3, s.q, s.a, s.b, s.m, s.root, s.pa, s.pn, s.bin, s.fac, s.fd, s.ex, s.lg, s.cr].some(Boolean))
       return {...s, rec:scale(s.rec, k)};   // 3/(x + 1) : 2 = 3/(2x + 2)
     if(!s.fd) return terms(s).every(fits) ? scale(s, t) : {a:0, b:0, f:{...s}, fd:k};
-    if([s.p4, s.p3, s.q, s.a, s.b, s.m, s.pa, s.pn, s.root, s.bin, s.rec, s.fac].some(Boolean))
+    if([s.p4, s.p3, s.q, s.a, s.b, s.m, s.pa, s.pn, s.root, s.bin, s.rec, s.fac, s.ex, s.lg, s.cr].some(Boolean))
       s = {a:0, b:0, f:addSides(timesSide(outerOf(s), s.fd), s.f), fd:s.fd};   // (x + 1)/2 + 1 → (x + 3)/2
     return terms(s.f).every(fits) ? {...s, f:scale(s.f, t)} : {...s, fd:s.fd*k};
   }
@@ -1002,6 +1142,7 @@ function timesSide(s, t){
 // every term of a side (not a fraction's top) times t
 const scale = (s, t) => ({...s, p4:(s.p4 || 0)*t, p3:(s.p3 || 0)*t, q:(s.q || 0)*t, a:(s.a || 0)*t, b:(s.b || 0)*t, m:(s.m || 0)*t,
   ...(s.root && {rc:(s.rc ?? 1)*t}), ...(s.bin && {bc:(s.bc ?? 1)*t}), ...(s.rec && {rk:s.rk*t}), ...(s.fac && {fc:(s.fc ?? 1)*t}),
+  ...(s.ex && {ec:s.ec*t}), ...(s.lg && {lc:s.lc*t}), ...(s.cr && {cc:s.cc*t}),
   ...(s.pa && {pa:Math.abs(s.pa*t)}), ...(s.pn && {pn:Math.abs(s.pn*t)})});   // −(±2) = ±2
 const outerOf = s => { const o = {...s}; delete o.f; delete o.fd; return o; };   // a side without its fraction
 // two sides' terms together (a fraction's top joining its side), no fraction left
@@ -1015,13 +1156,14 @@ function addSides(x, y){
   if(y.bin && !x.bin){ z.bin = y.bin; z.bc = y.bc; }
   if(y.rec && !x.rec){ z.rec = y.rec; z.rk = y.rk; }
   if(y.fac && !x.fac){ z.fac = y.fac; z.fc = y.fc; }
+  for(const [u, c] of [["ex", "ec"], ["lg", "lc"], ["cr", "cc"]]) if(y[u] && !x[u]){ z[u] = y[u]; z[c] = y[c]; }
   const pn = (x.pn || 0) + (y.pn || 0);
   if(pn) z.pn = pn; else delete z.pn;
   return z;
 }
 // the answer if the equation is x = n or n = x (n may be ±), else null
 function solvedValue(L, R){
-  if([L, R].some(s => s.p4 || s.p3 || s.q || s.m || s.root || s.pa || s.fd || s.bin || s.pn || s.rec || s.fac)) return null;
+  if([L, R].some(s => s.p4 || s.p3 || s.q || s.m || s.root || s.pa || s.fd || s.bin || s.pn || s.rec || s.fac || s.ex || s.lg || s.cr)) return null;
   if(L.a === 1 && L.b === 0 && R.a === 0) return R.b;
   if(R.a === 1 && R.b === 0 && L.a === 0) return L.b;
   return null;
@@ -1050,6 +1192,9 @@ function sideHTML(s){
   if(s.rec) terms.push(["rec", s.rk]);
   if(s.bin) terms.push(["bin", s.bc ?? 1]);
   if(s.fac) terms.push(["fac", s.fc ?? 1]);
+  if(s.ex) terms.push(["ex", s.ec]);
+  if(s.lg) terms.push(["lg", s.lc]);
+  if(s.cr) terms.push(["cr", s.cc]);
   if(s.p4) terms.push(["p4", s.p4]);
   if(s.p3) terms.push(["p3", s.p3]);
   if(s.q) terms.push(["q", s.q]);
@@ -1065,6 +1210,12 @@ function sideHTML(s){
     // a fraction (Vadim): its top over a bar over its bottom; it comes first
     if(t === "frac") return `<span class="frac"><span class="num">${sideHTML({a:0, b:0, ...s.f})}</span>`
                             + `<span class="den">${cHTML(s.fd)}</span></span>`;
+    if(t === "ex" || t === "lg" || t === "cr"){   // 2^(x + 1), log₂(x − 1), ∛(x − 2), a factor before
+      const u = s[t], inside = bare(u, "a") ? sideHTML(u) : `<span class="paren">(</span>${sideHTML(u)}<span class="paren">)</span>`;
+      const body = (Math.abs(v) === 1 ? "" : numText(Math.abs(v))) + (t === "ex" ? `<span class="cterm">2</span><sup class="ex">${sideHTML(u)}</sup>`
+        : t === "lg" ? `<span class="fn">log<sub>2</sub></span>${inside}` : `${CBRT}<span class="radicand">${sideHTML(u)}</span>`);
+      return i === 0 ? (v < 0 ? `<span class="root">${minus}</span>` : "") + body : `<span class="op">${v < 0 ? minus : "+"}</span>${body}`;
+    }
     if(t === "rec" || t === "fac"){   // 3 over x + 1; x(x − 3), (x − 2)(x + 1)
       const body = t === "rec"
         ? `<span class="frac"><span class="num">${cHTML(Math.abs(v))}</span><span class="den">${sideHTML(s.rec)}</span></span>`
@@ -1216,7 +1367,7 @@ function spawn(){
   board.appendChild(el);
   const p = {L:e.L, R:e.R, n:e.n, par:e.par, contra:e.contra, deg:e.deg, ops:0, steps:0, used:{}, avail:null,
              make:{kb:e.kb, kq:e.kq, k:e.k, div:e.div, deg:e.deg, mul:e.mul, bin:e.bin, mult:e.mult, need:e.recipe ? e.need : undefined},
-             fewest:e.fewest ?? null, zp:e.zp || null, el, y:1, x0:0, w:3, bomb:null};
+             fewest:e.fewest ?? null, zp:e.zp || null, truth:truthOf(e), el, y:1, x0:0, w:3, bomb:null};
   p.y = ht(p);
   measure(p);
   p.x0 = freeColumn(p.w);
@@ -1327,6 +1478,18 @@ function applyOp(key, p, x){
     p.make = {kb:0, kq:0, k:0, div:0, deg:0};   // what is left: a plain equation (toGo)
     if(parts[1]) split = [parts[1], root(parts[1])];
   }
+  else if(o.cbrt){ p.L = cbrtSide(p.L); p.R = cbrtSide(p.R); }   // ∛ (level 6) always works
+  else if(o.power){   // □², □³ (level 6); where a side can't be written that way the brick is wasted
+    const A = powerSide(p.L, o.power), B = powerSide(p.R, o.power);
+    if(!A || !B){ p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit"); return true; }
+    p.L = A; p.R = B;
+  }
+  else if(o.exp2){ p.L = exp2Side(p.L); p.R = exp2Side(p.R); }   // 2^□ always works
+  else if(o.log2){   // log₂: a number ≤ 0 is refused like √ of a negative number
+    const A = log2Side(p.L), B = log2Side(p.R);
+    if(!A || !B){ fizzle(p, A ? 1 : 0); return true; }
+    p.L = A; p.R = B;
+  }
   else if(o.timesX){   // ·x (level 4); where a side can't take it the brick is wasted
     const A = timesX(p.L), B = timesX(p.R);
     if(!A || !B){ p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit"); return true; }
@@ -1342,7 +1505,7 @@ function applyOp(key, p, x){
   note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - ht(p)));
   if(split) spawnChild(p, split[0], split[1]);
   const two = pnAnswers(p), v = two ? null : solvedValue(p.L, p.R);
-  if(two || v != null) solvedNow(p, v, x, two);
+  if(!p.contra && (two || v != null)) solvedNow(p, v, x, two);   // a contradiction never (√x = −3 → □² → x = 9 is false)
   return true;
 }
 // the joker's way (and a zero bomb's shot, and √ with its root r): x on the
@@ -1364,7 +1527,7 @@ function binRoot(p){
 }
 // x = ±n + c (x + 1 = ±2 after −1: x = ±2 − 1): its two answers, else null
 function pnAnswers(p){
-  const pnOnly = s => s.pn && !s.a && !s.q && !s.p4 && !s.p3 && !s.m && !s.root && !s.pa && !s.fd && !s.bin && !s.rec && !s.fac;
+  const pnOnly = s => s.pn && !s.a && !s.q && !s.p4 && !s.p3 && !s.m && !s.root && !s.pa && !s.fd && !s.bin && !s.rec && !s.fac && !s.ex && !s.lg && !s.cr;
   const [U, V] = pnOnly(p.L) ? [p.R, p.L] : [p.L, p.R];
   return pnOnly(V) && bare(U, "a") ? [V.b + V.pn, V.b - V.pn] : null;
 }
@@ -1377,7 +1540,7 @@ function rootOf(p){
 }
 // one side exactly ±x and the other a number (4 = ±x): that number's size, else null
 function pmAnswer(p){
-  const pmx = s => s.pa === 1 && !s.pr && !s.p4 && !s.p3 && !s.q && !s.a && !s.b && !s.m && !s.root && !s.fd && !s.bin && !s.pn && !s.rec && !s.fac;
+  const pmx = s => s.pa === 1 && !s.pr && !s.p4 && !s.p3 && !s.q && !s.a && !s.b && !s.m && !s.root && !s.fd && !s.bin && !s.pn && !s.rec && !s.fac && !s.ex && !s.lg && !s.cr;
   const [U, V] = pmx(p.L) ? [p.L, p.R] : [p.R, p.L];
   return pmx(U) && plain(V) ? Math.abs(V.b) : null;
 }
@@ -1633,6 +1796,11 @@ function toBombs(p){
 // the bomb starts at the equation's middle, falling as the equation fell; the
 // solving operation knocks it sideways, away from where it was dropped (from)
 function toBomb(p, v, from){
+  if(p.truth && !p.truth.includes(v)){   // a false answer (x + 1 = 4 → □² → x = ±4 − 1: −5): red sparks, nothing else
+    sparks(X(Math.max(BOMB_R, Math.min(COLS - BOMB_R, p.x0 + p.w/2))), Y(p.y - ht(p)/2), "no");
+    p.el.remove(); if(pieces.includes(p)) pieces.splice(pieces.indexOf(p), 1);
+    return;
+  }
   p.bomb = v; p.glow = null;
   p.bx = Math.max(BOMB_R, Math.min(COLS - BOMB_R, p.x0 + p.w/2)); p.by = p.y - ht(p)/2;
   const away = p.bx - from, dir = Math.abs(away) < .5 ? (Math.random() < .5 ? -1 : 1) : Math.sign(away);
@@ -1826,7 +1994,7 @@ function splitReward(n, c, keys){
 // on equation i: the level's first, then from NEXT_FROM on (or with soon) the
 // next level's
 const firstGroups = (i, soon) => {
-  const next = LEVELS[level], same = next && (next.chapter || 1) === (lv().chapter || 1);   // not across chapters
+  const next = LEVELS[level], same = next && (next.chapter || 1) === (lv().chapter || 1) && !next.keep;   // not across chapters, nor into a new set
   return [...(lv().first || []), ...(same && (i >= NEXT_FROM || soon) ? next.first || [] : [])];
 };
 const firstMissing = i => firstGroups(i).flat().some(j => !promised.has(j));
@@ -2143,6 +2311,10 @@ function startLevel(){
     promised = new Set(Object.keys(lv().start));
     for(const [key, n] of Object.entries(lv().start)){ counts[key] = n; own(key); drawCount(key); }
   }
+  if(lv().keep){   // a new set (Vadim, level 6): the others go (their uses were paid as points, showLevel)
+    for(const key of [...owned]) if(!lv().keep.includes(key)){ counts[key] = 0; owned.delete(key); opEls[key].hidden = true; drawCount(key); }
+    promised = new Set(owned);
+  }
   for(const [key, n] of Object.entries(lv().add || {})){ counts[key] += n; promised.add(key); own(key); drawCount(key); }   // the others stay
   document.body.classList.toggle("metal", lv().chapter === 2);   // chapter 2's look (theme.css)
   layout();
@@ -2209,7 +2381,7 @@ function showLevel(){
   const next = LEVELS[level], fresh = next.fresh, left = fresh ? bricks.length : 0;
   if(left){ pts.left += left; score -= CLEAR_POINTS*left*speed.mult; $("score").textContent = num(score); }
   // a new chapter takes every brick away: their uses become points (Vadim)
-  const dropped = next.start ? [...owned].reduce((n, key) => n + counts[key], 0) : 0;
+  const dropped = next.start || next.keep ? [...owned].filter(key => !(next.keep || []).includes(key)).reduce((n, key) => n + counts[key], 0) : 0;
   if(dropped) points("dropped", SPARE_POINTS*dropped, null, 0, 0);
   $("ovTitle").textContent = `Taso ${level} läpi!`;
   $("ovResult").textContent = `${solved}/${EQUATIONS} ratkaistu`;
@@ -2284,7 +2456,7 @@ $("skipLevel").addEventListener("click", () => {
   // +3 for every brick the player could have by the end of this level (Vadim):
   // the basic ones, its gifts, the next level's first ones, ⚡
   const G = lv().gifts || GIFTS;
-  const base = LEVELS.slice(0, level).reduce((b, l) => l.start ? Object.keys(l.start) : [...b, ...Object.keys(l.add || {})], BASE);   // the chapter's own
+  const base = LEVELS.slice(0, level).reduce((b, l) => l.start ? Object.keys(l.start) : l.keep ? l.keep : [...b, ...Object.keys(l.add || {})], BASE);   // the chapter's own
   const all = [...base, ...Object.keys(G).filter(j => (GIFT_FROM[j] || 1) <= level),
                ...firstGroups(EQUATIONS, true).flat(), ...(lv().contra ? ["N"] : [])];
   for(const key of new Set(all)){
