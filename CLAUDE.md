@@ -10,6 +10,9 @@ framework, no npm: plain HTML/CSS/JS. Every game is one self-contained
   Otherwise always stay in brainstorm mode: answer, propose, discuss, but
   don't change files. If unsure whether something is a request to
   implement, ask.
+- Even after an explicit request to implement: if questions had to be asked
+  first, confirm once more after the answers ("Shall I build it now?")
+  before changing any file.
 
 ## Layout
 
@@ -243,7 +246,8 @@ games/<category>/<course>/<game>/index.html
   level; they come on a timetable (see Levels), in columns that don't
   overlap one still falling, so usually two to four fall at once. The player throws an operation brick from
   the floor (+x, −x, +1, −1 at the start) at it: it's done to both sides and
-  the brick's count goes down (start 4/4/4/4, at most 9). The fall never slows,
+  the brick's count goes down (start 4/4/4/4, at most 99, `CAP`; Vadim, it
+  was 9). The fall never slows,
   not even while dragging (Vadim).
 - Levels (Vadim, `LEVELS`): the next level goes on with the counts and the
   operations left by the previous one (the well keeps its rows). Each level
@@ -259,8 +263,8 @@ games/<category>/<course>/<game>/index.html
   shorter desktop well), positive answers 80 % → 30 % over the level (more
   negative bombs, which clear trash, towards the end), the zero bomb's shot
   0 → 0.5. Level 1 is the old levels 1 and 2 merged (Vadim). Level 2 (the
-  old level 3) starts with the well emptied of trash (counts kept) and brings
-  `:2` with count 3 (see below). Everything else starts over per level: the
+  old level 3) starts with the well emptied of trash (counts kept); its new
+  bricks come from zero bombs (see New bricks). Everything else starts over per level: the
   difficulty ramp, the early zeros, the equation count.
   Between levels a dialog shows the level's points ("Taso 1 läpi!", "Seuraava
   taso"). Trash
@@ -278,20 +282,47 @@ games/<category>/<course>/<game>/index.html
   (3/16 beyond eighths, `numText`), and ±1 can never take them away, so the
   equation is lost unless ·2 or a joker saves it. Dividing first is fine when
   everything is even (4x + 2 = 2x + 8). par counts :2 too; the difficulty
-  ramp's PAR counts only +x −x +1 −1 (Vadim's measure). Positive bombs refill
-  :2 like any brick; zero bombs don't give it.
-- `·2` multiplies both sides by 2 (the key is `"*2"`). From level 2 on it is a
-  sixth zero-bomb gift (`GIFT_FROM`, Vadim), so a zero bomb on level 2
-  brings it if the player has all five others. Nothing needs it yet (it
+  ramp's PAR counts only +x −x +1 −1 (Vadim's measure). It comes from a zero
+  bomb with 3 uses (see New bricks); positive bombs refill it like any brick.
+- Big equations (Vadim, levels 2 and 3, `big`, `bigEquation`; not "jackpot":
+  that name is kept for x = 100 later): x = 8, or x = 10 in 4 of 10
+  (`BIG_TEN`), built from 2x = 2n or 4x = 4n (equal chance; 4x needs :2
+  twice, 4x = 32 → 2x = 16 → x = 8) with a constant −4 … 4 on both sides
+  (4x + 4 = 44, 2x − 3 = 17), sides swapped half the time. Cheap, and they
+  fill the arsenal. Chance 5 % an equation, up to 25 % as the ±1 and ±x left
+  after what the falling equations need go from 8 to 0 (`BIG_P`, `BIG_LOW`);
+  only if the player can afford one (:2 included), no repeats. When no
+  equation of the level can be afforded (200 tries), a big one comes if
+  possible; only then the old last resort: one throw of the fullest brick,
+  x = 8. Simulated (500 games, perfect / 80 % / 50 % play): 2.2–3.2 big
+  equations a level, about 40 % of them x = 10 and half 4x; the last resort
+  fell from 0.6 / 1.1 to 0.2 a level on levels 2 / 3 (perfect play; 2.4 /
+  4.0 → 0.8 / 1.2 at 50 %), equations that can't be solved on level 3 from
+  0.15 to 0.07 (3.5 → 2.2 at 50 %).
+- `·2` multiplies both sides by 2 (the key is `"*2"`). It is one of level 2's
+  new bricks (a zero bomb, 3 uses, see New bricks); from level 2 on zero
+  bombs may also add single uses (`GIFT_FROM`). Nothing needs it yet (it
   undoes a :2 that gave fractions; Vadim: later levels may need it). Its
   dot is drawn bigger (`.mul`), the font's · is tiny.
+- `·(−1)` (Vadim, key `"*-1"`) multiplies every term on both sides by −1: a
+  rescue, e.g. with many +x and no −x (2x + 1 = x + 4 → −2x − 1 = −x − 4,
+  then +x and +1), and the school step −x = −3 → x = 3 (−x = −3 is not
+  solved). A zero-bomb gift on all three levels, half as often as ±2 (like
+  the joker), with 3 uses (Vadim: like :2 and ·2; the first throw is often
+  an experiment); bombs refill it. The generator never counts on it
+  (`plan` ignores it, and its count is left out of the total that must stay
+  ≥ 4), so nothing needs it; a solve with it rarely gets a bonus (one more
+  step). Its brackets are in IBM Plex Sans (`.paren`, loaded for them; the
+  notes' brackets too), its label a bit smaller so that it fits.
 - Slots (Vadim, `OP_AT`): the floor is 8 bricks of 1.5 × 2 cells, as big as
   an operation brick (the corners under the walls too), and holds the ±
   operations: −2x −x +x +2x | −2 −1 +1 +2 (x on the left, numbers on the
   right, number-line order). A slot whose operation the player doesn't have
-  yet is a plain floor brick. The rest go in the walls near the floor: the
-  joker on the left, :2 and above it ·2 on the right (later levels, with more
-  than 8 operations, will need the walls more). Bricks are dragged up from
+  yet is a plain floor brick. The rest go in the walls near the floor, from
+  the bottom up: the joker, ⚡, −x², +x² on the left; :2, ·2, ·(−1), √ on
+  the right. Every brick keeps its place on every level (Vadim: nothing
+  moves when a level starts; √ and ±x² may come on level 2, while ±2 and
+  ±2x still hold the floor). Bricks are dragged up from
   the floor so that Android's back gesture (sideways from the edge) doesn't
   catch them; the wall bricks still can be caught.
 - Throwing (Vadim), the same for every brick, by the direction of the swipe
@@ -326,7 +357,7 @@ games/<category>/<course>/<game>/index.html
   area (only a real tap counts as the first half) or ↓ / space (the lowest
   equation) drops it at once. No "this can't be solved" hint (Vadim).
 - Each count is shown as a number and a battery bar: green > 2, yellow 2,
-  red 1, grey 0.
+  red 1, grey 0. The bar is full from 9 up (`BAT`); two digits fit on a phone.
 - Equations are built backwards from x = n with kb boxes (−2 … 2, so +x is
   needed too) and a constant k (−3 … 3) added to both sides, at most 5
   basic operations (Vadim; it was 3). Negative answers cost the same as positive (Vadim: flip the
@@ -362,9 +393,29 @@ games/<category>/<course>/<game>/index.html
   solves any equation at once. As long as one of the five is missing, a zero
   bomb always brings a missing one (Vadim); only when all five are there does
   it add one use to one of them (one with room). Picked at random, the joker
-  half as often as each of the others (`GIFTS`). A new brick appears in its
+  half as often as each of the others (`GIFTS`; ·(−1) is a sixth gift, see
+  above, so on level 1 there are six to collect). A new brick appears in its
   slot (see Slots); after that positive bombs can refill it too, the joker
-  included (Vadim). From level 2 ·2 is a sixth gift (below).
+  included (Vadim). Near the end of a level they bring the next level's new
+  bricks first (below).
+- New bricks (Vadim): a brick never just appears when a level starts; every
+  new one comes from a zero bomb. Each level lists its new bricks in groups
+  (`first`): level 2 :2, ·2 and the joker, then ⚡ (no use before the
+  contradictions); level 3 √, then ±x² (every square needs √). A zero bomb
+  brings a random missing one of the first group that still has one, before
+  any other missing gift: from the previous level's 20th equation on
+  (`NEXT_FROM`), or earlier once none of that level's own gifts is missing;
+  those that haven't come by its end come at the start of their own level.
+  Meanwhile x = 0 has a 30 % chance (`ZERO_NEW`; else 10 %, 17 % in the
+  first 5). A new brick comes with :2 3, ·2 3, ·(−1) 3, ⚡ 2, √ 4, ±x² 3 uses
+  (`FIRST_COUNT`; the others 1, later gifts 1). It works at once, even where
+  it is no use yet (Vadim chose: ⚡ on level 1 is always wasted, :2 gives
+  fractions there, √ makes a linear equation trash). Estimated from the zero
+  rules alone (20 000 runs): :2 and ·2 arrive on level 1 in 89 % of games
+  (median: its 23rd equation), ⚡ in 55 %, the rest early on level 2
+  (median its 4th equation, 90 % by the 12th); √ arrives on level 2 in 98.5 %
+  (before its 20th equation in a third of games, by the early rule), ±x² in
+  85 %.
 - Zero bomb's shot (Vadim, every level): besides its gift,
   a zero bomb shoots down the lowest equation in the air with a chance that
   grows over the level's equations from 0 to 0.5 (`shoot` in `LEVELS`). A
@@ -377,8 +428,9 @@ games/<category>/<course>/<game>/index.html
   level, 1.5 on average (chance 0.18 each, `contra`; measured 1.51, mostly
   around the 24th), and only while the player has a ⚡ left. The ⚡ brick
   ("no solution", key `"N"`, a drawn red lightning bolt, as in maths for a
-  contradiction) sits in the left wall above the joker; it starts with 2 on
-  level 2 and bombs never refill it (`NO_REFILL`). The ⚡ on a contradiction:
+  contradiction) sits in the left wall above the joker; it comes from a zero
+  bomb with 2 uses (see New bricks), bombs never refill it (`NO_REFILL`), and
+  what is left goes on to level 3 (it used to be set to 2 on each level). The ⚡ on a contradiction:
   it glows red 0.5 s, then blows up at once: every equation still falling
   unsolved goes without becoming a bomb, 100 points each ("Räjäytetyt
   yhtälöt n × 100" in the result). The contradiction itself counts as a
@@ -421,28 +473,28 @@ games/<category>/<course>/<game>/index.html
   Only √ of a negative number is refused: the brick is wasted, the negative
   side flashes red and the root bursts in red sparks (`fizzle`). x = ±n glows
   gold and magenta and becomes two bombs, n and −n, knocked apart (one
-  equation: 100 points). par counts each √. Sides are {p4, q, a, b, root}.
+  equation: 100 points). par counts each √. Sides are {p4, q, a, b, root,
+  rc}: a root has a factor rc, so ·(−1), ·2 and :2 give −√(x² + 1),
+  2√(x² + 1), ½√(x² + 1) (·2 used to leave a root unchanged), and √ of a
+  side that is clearly negative (−√2 − 1) is refused like a negative number.
 - Level 3's contradictions: x² = a negative number in any dress (x² + 5 = 1,
   x² = −2, 2x² + 5 = x² + 1).
-- Level 3's bricks (Vadim): ±1, ±x, ±x², √, :2, ·2, the joker and ⚡. When
-  it starts (`drop`), ±2 and ±2x go away and their uses become points (10
-  each, "Poistuneet operaatiot" in the dialog before it); :2 and ·2 stay
-  with their counts (Vadim); √ starts with 4 (bombs refill it), ⚡ with 2,
-  and the well is emptied. ±x² come from zero bombs (the gifts there: the
-  joker, −x², +x², :2, ·2, `gifts`; a missing ±x² first (`first`), then the
-  other missing ones). x = 0 has a 30 % chance while −x² or +x² is still
-  missing (`zero`; else 10 %), so they come early (Vadim): both by the 6th
-  equation in half the levels, by the 12th in 90 % (it was the 13th in half,
-  never in 15 %). The generator never gives an equation that needs a ±x²
+- Level 3's bricks (Vadim): ±1, ±x, ±x², √, :2, ·2, ·(−1), the joker, ⚡
+  and what is left of ±2 and ±2x. From the moment the first of √ and ±x²
+  comes (usually near the end of level 2), no bomb refills ±2 and ±2x and no
+  zero bomb brings them new (`QUIET`, `quiet`, Vadim): they run out, and stay
+  grey at 0 (they used to become points when level 3 started, then for a
+  while uses of √ and ±x²). Every brick keeps its count (Vadim), and the
+  well is emptied. √ and ±x² also
+  come from zero bombs (see New bricks; the gifts there after them: the
+  joker, −x², +x², :2, ·2, ·(−1), `gifts`); bombs refill √. The generator never gives an equation that needs a ±x²
   (or √, :2) the player hasn't got (Vadim: no bad luck), and once they have
   one, squares that need it come 3 times as often (`X2_MORE`; measured: 73 %
   of the squares need ±x² then, it was 51 %). Running out sometimes is fine
   (Vadim): with chance 0.2 (`short`) an equation may need more ±x² than are
-  left, if the player has that brick (measured 0.4 a level). Slots there
-  (`slots`, `slotOf`): ±x and ±1 where they were, the joker and √ in the
-  floor corners, −x² and +x² in the middle of the floor, ⚡ low in the left
-  wall, :2 and ·2 in the right wall as on level 2. Checked with a perfect
-  player over levels 1–3 (3 000 games): stuck 0.01 times a level, a joker
+  left, if the player has that brick (measured 0.4 a level). Checked with a perfect
+  player over levels 1–3 (3 000 games, before the New bricks rules, the
+  quiet ±2 and ±2x and the cap 99): stuck 0.01 times a level, a joker
   needed 3.3 times a level (11 %, it was 0.9): mostly ±1 runs short (more
   zero bombs, which pay nothing back; more x⁴, which need two √; rewards
   spread over more bricks).
@@ -453,7 +505,13 @@ games/<category>/<course>/<game>/index.html
   positive, magenta if negative) in a flickering ring of flames of its own
   colour, bigger for a bigger |n| (`fireSize`). A positive bomb gives n back:
   n splits at random (fair shuffle) into 1 … 4 parts that fly to different
-  bricks; a part that would take a brick past 9 goes on to a random brick
+  bricks. Empty bricks come first (Vadim): each part goes to an empty one
+  (count 0, not the joker; ⚡ never) with the chance max(1/3, empty/all)
+  (`EMPTY_MIN`), half the time to one this bomb hasn't refilled yet, else to
+  any empty one; the other parts go to their random brick as before, which
+  may be empty too. Measured share of a bomb that lands on empty bricks
+  (it was about empty/all): 1 of 4 empty 50 % (25), 1 of 10 40 % (10), 2 of
+  10 47 % (20), half of them empty 75 % (50). A part that would take a brick past 99 goes on to a random brick
   with room (Vadim), and only when all are full is the rest lost. A negative
   bomb clears trash within a radius growing with |n|. Then (Vadim) only the
   columns whose middle is within that radius across collapse, the whole
@@ -521,6 +579,9 @@ games/<category>/<course>/<game>/index.html
 - Division (e.g. 3x = 12 with ÷2/÷3/÷4 tokens that split a cup into equal
   piles): as extra levels in this game, or a separate game "Yhtälövaaka 2"?
 - Yhtälösade: what comes after level 3 (x²) is not designed yet.
+- Yhtälösade: ⚡ is no longer reset to 2 on level 3 and nothing refills it,
+  so a player who used both on level 2 gets no level 3 contradictions
+  (x² = a negative number). Should zero bombs on level 3 be able to give ⚡?
 - Unlockable visual skins (e.g. a "Metalli" skin for finishing the game):
   liked as an idea, not decided.
 
