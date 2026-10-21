@@ -307,7 +307,8 @@ const EQUATIONS = 30;           // equations per level
 // most max (Vadim: 1.5 on average, near the end where the well is crowded),
 // with x² if square; squares: the share of equations with x², [first,
 // last] (div: that share of the x² ones too, from 2x² = 2n²); fourth: from
-// the equation `from` on, that share of those has x⁴ instead (√ twice);
+// the equation `from` to `to`, that share of those has x⁴ instead (√ twice;
+// Vadim: early, while the fall is slow, and always the long kind, X4_PAR);
 // short: the chance that an equation may need more ±x² than the player has
 // (if they have that brick; Vadim: running out sometimes is fine); first:
 // the level's new bricks, which zero bombs bring before any other missing
@@ -333,7 +334,7 @@ const LEVELS = [
   // (kept from level 2: x² = −x² + 8), ·(−1), the joker, ⚡ and what is left
   // of ±2 and ±2x (quiet); √ before ±x², as every square needs it
   {fresh:true, first:[["sq"], ["-x2", "+x2"]],
-   squares:[.3, .8], div:.25, big:true, frac:true, fourth:{from:10, p:.5}, contra:{from:20, max:2, p:.18, square:true},
+   squares:[.3, .8], div:.25, big:true, frac:true, fourth:{from:4, to:20, p:.6}, contra:{from:20, max:2, p:.18, square:true},
    short:.2, gifts:{"J":1, "-x2":2, "+x2":2, ":2":2, "*2":2, "*-1":1}},
 ].map(l => ({...LEVEL, ...l}));
 const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0, "*-1":0, "N":0, "sq":0, "+x2":0, "-x2":0};
@@ -353,6 +354,8 @@ const NEXT_FROM = 20, ZERO_NEW = .3;
 // a new brick comes with this many uses (else 1; later gifts give 1)
 const FIRST_COUNT = {":2":3, "*2":3, "*-1":3, "N":2, "sq":4, "+x2":3, "-x2":3};
 const CAP = 99;                 // no brick holds more (a reward part that doesn't fit goes on to another brick)
+const JOKER_CAP = 4;            // …and the joker no more than this (Vadim: too many at the end of level 3)
+const capOf = key => key === "J" ? JOKER_CAP : CAP;
 const BAT = 9;                  // the battery bar is full from this count up
 const EMPTY_MIN = 1/3;          // a positive bomb's part goes to an empty brick at least this often (splitReward)
 const PARTS = [.15, .3, .3, .25];   // a positive bomb splits into 1 … 4 parts this often (Vadim; scaled if fewer are possible)
@@ -370,7 +373,8 @@ const SIZE = [2, 7], SIZE_SPREAD = 1.5;   // |x|
 const SQ_SIZE = [2, 7];                    // n of a square x² = n² (0 … 9; Vadim: small ones early)
 const KQ = [-2, -1, -1, 0, 0, 0, 1, 1, 2]; // x² added to both sides of a square…
 const X2_MORE = 3;                          // …this many times as often when it needs a ±x² the player has (Vadim)
-const PAR = [1, 4], PAR_SPREAD = .7;      // basic operations needed (+x −x +1 −1)
+const PAR = [1, 4], PAR_SPREAD = .7;
+const X4_PAR = 3;               // an x⁴ needs about this many basic operations besides its two √, at least 2 (Vadim: the fun long ones)      // basic operations needed (+x −x +1 −1)
 const ZERO = .1;                // share of x = 0 (a zero bomb: a new operation)…
 const ZERO_START = .17, ZERO_FIRST = 5;   // …but more in the first 5: at least one x = 0 there in 60 % of games (Vadim)
 const GLOW = .5;                // s: a solved equation glows before it turns into a bomb
@@ -553,10 +557,11 @@ function drawEquation(i){
   const ops = (...v) => v.reduce((s, x) => s + Math.abs(x), 0);
   const zero = Math.random() < (firstMissing(i) ? ZERO_NEW : i <= ZERO_FIRST ? ZERO_START : ZERO);
   if(lv().squares && Math.random() < at(lv().squares)){   // x² = n² (or x⁴ = n⁴), n ≥ 0
-    const F = lv().fourth, deg = F && i >= F.from && Math.random() < F.p ? 4 : 2;
+    const deg = fourthNow(i) && Math.random() < lv().fourth.p ? 4 : 2;
     const n = zero ? 0 : deg === 4 ? pick([1, 2, 2, 3, 3]) : weighted([1, 2, 3, 4, 5, 6, 7, 8, 9], v => bell(v, at(SQ_SIZE), SIZE_SPREAD));
     const x2 = kq => !kq ? 1 : promised.has(kq > 0 ? "-x2" : "+x2") ? X2_MORE : 0;
-    const [kq, kb, k] = weighted(SHAPES2, s => bell(ops(...s), at(PAR), PAR_SPREAD)*x2(s[0]));
+    const size = s => deg === 4 ? (ops(...s) >= 2 ? bell(ops(...s), X4_PAR, PAR_SPREAD) : 0) : bell(ops(...s), at(PAR), PAR_SPREAD);
+    const [kq, kb, k] = weighted(SHAPES2, s => size(s)*x2(s[0]));
     const div = +(deg === 2 && Math.random() < (lv().div || 0));   // 2x² = 2n²
     return {n, kq, kb, k, div, deg, par:ops(kq, kb, k) + div + deg/2};
   }
@@ -574,13 +579,20 @@ function bigEquation(){
   const n = Math.random() < BIG_TEN ? 10 : 8, div = rnd(1, 2), k = rnd(-BIG_K, BIG_K);
   return {n, kq:0, kb:0, k, div, deg:0, par:Math.abs(k) + div};
 }
+// x⁴ may come on equation i (the level's `fourth`: early, Vadim)
+const fourthNow = i => !!lv().fourth && i >= lv().fourth.from && i <= lv().fourth.to;
 // A fraction equation (Vadim, levels with `frac`, only while the player has
 // ·2): (x + k)/2 = m, k = 0 for an even x, ±1 for an odd one, and on a
 // level with squares, as often as its squares, x²/2 = m (x = ±2 … ±8): ·2
-// and at most one more throw (−1, √).
+// and at most one more throw (−1, √); where x⁴ may come, also x⁴/2 = 8 or
+// 128 (·2, √, √).
 function fracEquation(i){
   const t = Math.min(1, (i - 1)/(EQUATIONS - 1)), at = ([a, b]) => a + (b - a)*t;
   if(lv().squares && Math.random() < at(lv().squares)){
+    if(fourthNow(i) && Math.random() < lv().fourth.p){   // x⁴/2 = 8 or 128 (Vadim): ·2, √, √
+      const n = pick([2, 2, 4]);
+      return {n, kq:0, kb:0, k:0, div:0, deg:4, mul:1, frac:true, par:3};
+    }
     const n = weighted([2, 4, 6, 8], v => bell(v, at(SQ_SIZE), SIZE_SPREAD));
     return {n, kq:0, kb:0, k:0, div:0, deg:2, mul:1, frac:true, par:2};
   }
@@ -648,7 +660,7 @@ function makeEquation(recent, c, i){
   let L = {a:m + e.kb, b:e.k}, R = {a:e.kb, b:m*e.n + e.k};
   if(e.deg === 2){ L = {q:m + e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:m*e.n**2 + e.k}; }
   if(e.deg === 4){ L = {p4:1, q:e.kq, a:e.kb, b:e.k}; R = {q:e.kq, a:e.kb, b:e.n**4 + e.k}; }
-  if(e.frac){ L = {a:0, b:0, f:e.deg ? {q:1} : {a:1, b:e.k}, fd:2}; R = {a:0, b:e.deg ? e.n**2/2 : (e.n + e.k)/2}; }
+  if(e.frac){ L = {a:0, b:0, f:e.deg === 4 ? {p4:1} : e.deg ? {q:1} : {a:1, b:e.k}, fd:2}; R = {a:0, b:e.deg ? e.n**e.deg/2 : (e.n + e.k)/2}; }
   if(Math.random() < .5) [L, R] = [R, L];
   return {...e, L, R};
 }
@@ -658,17 +670,31 @@ const bare = (s, key) => s[key] === 1 && ["p4", "q", "a", "b"].every(j => j === 
 const hasFrac = s => !!s && (!!s.fd || hasFrac(s.root));
 const ht = p => hasFrac(p.L) || hasFrac(p.R) ? 2 : 1;
 // a side times t (·2, :2, ·(−1)): a root keeps its own factor, ±x stays ±
-// (−(±2x) = ±2x); a fraction (f over fd, Vadim) halves its bottom for ·2 and
-// is gone at 1, its top joining the side ((x + 1)/2 = 4 → x + 1 = 8), doubles
-// it for :2 (x/2 → x/4), and its top changes sign for ·(−1)
+// (−(±2x) = ±2x). :2 halves a side whose terms are all even (2x + 2 → x + 1);
+// any other side becomes a fraction (Vadim: x + 1 = 2 → (x + 1)/2 = 1, 5 →
+// 5/2). A fraction (its top f, a side itself, over fd) halves its bottom for
+// ·2 and is gone at 1, its top joining the side ((x + 1)/2 = 4 → x + 1 = 8),
+// doubles it for :2 (x/2 → x/4; terms beside it join the top first), and
+// its top changes sign for ·(−1)
 function timesSide(s, t){
+  const even = v => !v || Number.isInteger(v/2);
+  if(t === .5 && !s.fd && ![s.p4, s.q, s.a, s.b, s.pa, s.root && (s.rc ?? 1)].every(even)) return {a:0, b:0, f:{...s}, fd:2};
+  if(t === .5 && s.fd && [s.p4, s.q, s.a, s.b, s.pa, s.root].some(Boolean))
+    s = {a:0, b:0, f:addSides(timesSide(outerOf(s), s.fd), s.f), fd:s.fd};   // (x + 1)/2 + 1 → (x + 3)/2
   const r = {...s, p4:(s.p4 || 0)*t, q:(s.q || 0)*t, a:s.a*t, b:s.b*t, ...(s.root && {rc:(s.rc ?? 1)*t}), ...(s.pa && {pa:Math.abs(s.pa*t)})};
   if(!s.fd) return r;
-  const f = t < 0 ? {q:-(s.f.q || 0), a:-(s.f.a || 0), b:-(s.f.b || 0), pa:s.f.pa, pr:s.f.pr} : s.f, fd = s.fd/Math.abs(t);
-  if(fd > 1) return {...r, f, fd};
-  delete r.f; delete r.fd;
-  return {...r, q:r.q + (f.q || 0), a:r.a + (f.a || 0), b:r.b + (f.b || 0),
-          ...((r.pa || f.pa) && {pa:(r.pa || 0) + (f.pa || 0)}), ...(f.pr && {pr:f.pr})};
+  const f = t < 0 ? timesSide(s.f, -1) : s.f, fd = s.fd/Math.abs(t);
+  return fd > 1 ? {...r, f, fd} : addSides(r, f);
+}
+const outerOf = s => { const o = {...s}; delete o.f; delete o.fd; return o; };   // a side without its fraction
+// two sides' terms together (a fraction's top joining its side), no fraction left
+function addSides(x, y){
+  const z = {...outerOf(x), p4:(x.p4 || 0) + (y.p4 || 0), q:(x.q || 0) + (y.q || 0), a:(x.a || 0) + (y.a || 0), b:(x.b || 0) + (y.b || 0)};
+  const pa = (x.pa || 0) + (y.pa || 0);
+  if(pa) z.pa = pa; else delete z.pa;
+  if(y.pr) z.pr = y.pr;
+  if(y.root && !x.root){ z.root = y.root; z.rc = y.rc; }
+  return z;
 }
 // the answer if the equation is x = n or n = x (n may be ±), else null
 function solvedValue(L, R){
@@ -969,9 +995,11 @@ function pmAnswer(p){
 // for a negative number, or a side with ±x (it may be negative)
 function sqrtSide(s){
   if(s.pa || s.f && s.f.pa) return null;
-  if(s.fd){   // x² alone over a square (Vadim): x²/4 → ±x/2, then ·2; any other fraction gets √ around it
+  if(s.fd){   // x² or x⁴ alone over a square (Vadim): x²/4 → ±x/2, x⁴/4 → x²/2, then ·2; any other fraction gets √ around it
     const f = s.f, d = Math.sqrt(s.fd);
-    if(!(f.q > 0 && !f.a && !f.b && !s.p4 && !s.q && !s.a && !s.b && !s.root && Number.isInteger(d))) return {a:0, b:0, root:s};
+    if(f.p4 > 0 && !f.q && !f.a && !f.b && !f.root && !s.p4 && !s.q && !s.a && !s.b && !s.root && Number.isInteger(d) && Number.isInteger(Math.sqrt(f.p4)*1024))
+      return {a:0, b:0, f:{q:Math.sqrt(f.p4)}, fd:d};   // x⁴/4 → x²/2 (no ±: x² ≥ 0)
+    if(!(f.q > 0 && !f.p4 && !f.a && !f.b && !f.root && !s.p4 && !s.q && !s.a && !s.b && !s.root && Number.isInteger(d))) return {a:0, b:0, root:s};
     const r = Math.sqrt(f.q);
     return {a:0, b:0, f:Number.isInteger(r*1024) ? {pa:r} : {pa:1, pr:f.q}, fd:d};
   }
@@ -985,7 +1013,10 @@ function sqrtSide(s){
     const r = Math.sqrt(s.b);
     return Number.isInteger(r) ? {a:0, b:r} : {a:0, b:0, root:{a:0, b:s.b}};
   }
-  if(bare(s, "p4")) return {q:1, a:0, b:0};
+  if(s.p4 > 0 && !s.q && !s.a && !s.b && !s.root){   // √(k·x⁴) = √k·x², no ± (x² ≥ 0): x⁴ → x², 4x⁴ → 2x²
+    const r = Math.sqrt(s.p4);
+    if(Number.isInteger(r*1024)) return {q:r, a:0, b:0};
+  }
   return {a:0, b:0, root:s};
 }
 // After √ on x⁴ = 16 (Vadim): x² = ±4 at first, then the minus of ± gets
@@ -1378,7 +1409,7 @@ function splitReward(n, c, keys){
   const parts = Array(k).fill(1);
   for(let i = k; i < n; i++) parts[rnd(0, k - 1)]++;
   const empty = keys.filter(j => j !== "J" && c[j] <= 0), toEmpty = Math.max(EMPTY_MIN, empty.length/keys.length);
-  const give = {}, room = j => CAP - c[j] - (give[j] || 0);
+  const give = {}, room = j => capOf(j) - c[j] - (give[j] || 0);
   shuffle([...keys]).slice(0, k).forEach((key, i) => {
     let left = parts[i], to = key;
     if(empty.length && Math.random() < toEmpty){
@@ -1413,10 +1444,10 @@ function giftFor(have){
   return missing.length ? weighted(missing, j => G[j]) : null;
 }
 // a zero bomb with nothing new to bring (Vadim): +1 for every brick the
-// player has, ⚡ and the joker too, but not ±2 and ±2x when they run out
+// player has, ⚡ and the joker too (up to JOKER_CAP), but not ±2 and ±2x when they run out
 function coinBurst(x, y){
   const no = runOut();
-  for(const key of owned) if(!no.includes(key)) fly(key, "+1", 1, x, y);
+  for(const key of owned) if(!no.includes(key) && counts[key] < capOf(key)) fly(key, "+1", 1, x, y);   // a full joker gets none
 }
 // ±2 and ±2x that have run out for good go (Vadim): their slot becomes floor
 function retire(){
@@ -1447,7 +1478,7 @@ function fly(key, html, a, x, y){
     el.remove();
     if(game !== gameNo) return;
     busy--;
-    const fit = Math.min(a, CAP - counts[key]);
+    const fit = Math.min(a, capOf(key) - counts[key]);
     if(fit < a) points("spare", SPARE_POINTS*(a - fit), null, 0, 0);
     counts[key] += fit; own(key); drawCount(key);
     const b = opEls[key];
@@ -1850,7 +1881,7 @@ $("skipLevel").addEventListener("click", () => {
   const all = [...BASE, ...Object.keys(G).filter(j => (GIFT_FROM[j] || 1) <= level),
                ...firstGroups(EQUATIONS, true).flat(), ...(lv().contra ? ["N"] : [])];
   for(const key of new Set(all)) if(!no.includes(key)){
-    counts[key] = Math.min(CAP, counts[key] + 3); promised.add(key); own(key); drawCount(key);
+    counts[key] = Math.min(capOf(key), counts[key] + 3); promised.add(key); own(key); drawCount(key);
   }
   retire();
   for(const p of pieces) p.el.remove();

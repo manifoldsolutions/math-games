@@ -281,10 +281,12 @@ games/<category>/<course>/<game>/index.html
   the same boxes and constant (x + 1 = 9 − x, 3x − 1 = x − 5), so they end
   with :2; the generator offers them only while the player has :2 (or a
   joker), so in practice about 30 %. :2 always works (Vadim: refusing it
-  could teach that one may not divide when a term isn't divisible): odd
-  numbers give fractions, 2x + 1 = 5 → x + ½ = 2½, written with ½ ¼ ⅛ …
-  (3/16 beyond eighths, `numText`), and ±1 can never take them away, so the
-  equation is lost unless ·2 or a joker saves it. Dividing first is fine when
+  could teach that one may not divide when a term isn't divisible): a side
+  whose terms are all even is halved (2x + 2 → x + 1); any other side
+  becomes a fraction over 2 (Vadim, `timesSide`: x + 1 = 2 → (x + 1)/2 = 1,
+  x + 1 = 5 → (x + 1)/2 = 5/2; it used to be ½x + ½ = 2½). ±1 can't take
+  a fraction away, so the equation is lost unless ·2 (or a joker) saves it.
+  Dividing first is fine when
   everything is even (4x + 2 = 2x + 8). par counts :2 too; the difficulty
   ramp's PAR counts only +x −x +1 −1 (Vadim's measure). It comes from a zero
   bomb with 3 uses (see New bricks); positive bombs refill it like any brick.
@@ -313,7 +315,8 @@ games/<category>/<course>/<game>/index.html
   the player has ·2 (the generator reserves the ·2 a falling one still
   needs, `toGo`): x/2 = 4 (an even x), (x ± 1)/2 = m (an odd x; no brackets
   on screen, the top over a bar over 2), and on level 3, as often as its
-  squares, x²/2 = 8 (x = ±2 … ±8). ·2 and at most one more throw (−1, √);
+  squares, x²/2 = 8 (x = ±2 … ±8), and where x⁴ may come x⁴/2 = 8 or 128
+  (·2, √, √; Vadim; about 0.5 a level). Otherwise ·2 and at most one more throw (−1, √);
   ·2 counts in "Täydellinen" (`mul`). A side is then {…, f, fd}: its top
   f over fd, the side's other terms beside it. The equation (and its trash,
   `ht`, `hasFrac`, the text faded on it) is two rows tall, one again once
@@ -322,7 +325,7 @@ games/<category>/<course>/<game>/index.html
   = 10; ·2 halves the bottom (gone at 1), :2 doubles it (x/2 → x/4),
   ·(−1) changes the top's sign. √ goes around a fraction side (lost),
   except x² alone over a square (Vadim): x²/2 = 8 → :2 → x²/4 = 4 → √ →
-  ±x/2 = 2 → ·2 → x = ±4. Simulated (500 games): perfect play needs fewer
+  ±x/2 = 2 → ·2 → x = ±4; and x⁴/4 → x²/2 (no ±: x² ≥ 0). Simulated (500 games): perfect play needs fewer
   jokers (level 3: 4.3 → 3.6), and at 50 % play fewer equations can't be
   solved (level 3: 2.0 → 1.2 a level).
 - `·(−1)` (Vadim, key `"*-1"`) multiplies every term on both sides by −1: a
@@ -425,7 +428,7 @@ games/<category>/<course>/<game>/index.html
   solves any equation at once. As long as one of the five is missing, a zero
   bomb always brings a missing one (Vadim). With nothing new to bring it
   bursts (`coinBurst`, Vadim; it used to add one use to one brick): +1 for
-  every brick the player has, ⚡ and the joker too, but not ±2 and ±2x when
+  every brick the player has, ⚡ and the joker (up to 4) too, but not ±2 and ±2x when
   they run out; a gold "+1" flies to each. In practice only on level 3,
   where the next level's bricks no longer keep coming: simulated 2.3 / 1.9
   / 1.2 bursts there (perfect / 80 % / 50 % play), and with them level 3
@@ -435,7 +438,10 @@ games/<category>/<course>/<game>/index.html
   half as often as each of the others (`GIFTS`; ·(−1) is a sixth gift, see
   above, so on level 1 there are six to collect). A new brick appears in its
   slot (see Slots); after that positive bombs can refill it too, the joker
-  included (Vadim). Near the end of a level they bring the next level's new
+  included (Vadim), but the joker never holds more than 4 (`JOKER_CAP`,
+  Vadim: too many at the end of level 3; bombs and bursts pass it by when it
+  is full; simulated, perfect play ends level 3 with 2.7 jokers instead of
+  8.7, at most 4 instead of 34). Near the end of a level they bring the next level's new
   bricks first (below).
 - New bricks (Vadim): a brick never just appears when a level starts; every
   new one comes from a zero bomb. Each level lists its new bricks in groups
@@ -501,14 +507,17 @@ games/<category>/<course>/<game>/index.html
   equation (x² + x = x² + 2x + 1); the generator makes only the first kind.
   A quarter of the x² ones (`div`, as many as the linear ones) are built
   from 2x² = 2n² and need :2 before the √ (x² = −x² + 8; only while the
-  player has :2). From the 10th equation half of them are x⁴ = n⁴ instead
-  (n ≤ 3: 0, 1, 16, 81; `fourth`; measured 3.7 a level, it was 1): √ gives
+  player has :2). From the 4th equation to the 20th (Vadim: early, while the
+  fall is slow; none in the last 10) 60 % of them are x⁴ = n⁴ instead (n ≤
+  3: 0, 1, 16, 81; `fourth`, `fourthNow`), always the long kind: 2–4 basic
+  operations besides the two √ (`X4_PAR`; x⁴ + 2x² = 2x² + 16), measured 3.6
+  a level for perfect play (it was 3.9, from the 10th on), 4.8 throws each: √ gives
   x² = ±n² at first, then the minus of ± gets small red brackets and bursts
   away (x² can't be negative), leaving x² = n² (`dropMinus`, `.pmgo`,
   `PM_T`, about 1.4 s; the equation works normally meanwhile). A second √
   gives x = ±n. x⁴ is only on one side.
 - √ (level 3) always works on both sides, like :2 (Vadim): exactly x² = n²
-  gives x = ±n (x² = 0: x = 0), √(x⁴) = x², a square number its root,
+  gives x = ±n (x² = 0: x = 0), √(k·x⁴) = √k·x² (x⁴ → x², 4x⁴ → 2x²; no ±), a square number its root,
   k·x² alone on a side ±√k·x (Vadim; `pa`, `pr`: 64 = 4x² → 8 = ±2x, then
   :2 → 4 = ±x, solved as x = ±4 with two bombs; 128 = 4x² → √128 = ±2x and
   128 = 2x² → √128 = ±√2x can't be finished; x² = 2 → ±x = √2), and
