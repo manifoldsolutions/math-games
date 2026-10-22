@@ -609,15 +609,24 @@ const OP_AT = {"-2x":["F",0], "-x":["F",1], "+x":["F",2], "+2x":["F",3],
                "-2":["F",4], "-1":["F",5], "+1":["F",6], "+2":["F",7],
                "J":["L",2], "N":["L",4], "-x2":["L",6], "+x2":["L",8],
                ":2":["R",2], "*2":["R",4], "*-1":["R",6], "sq":["R",8]};
-// chapter 2 (levels 4–, Vadim): a fresh set of bricks with its own places
-const OP_AT2 = {":3":["F",0], ":2":["F",1], "*2":["F",2], "*3":["F",3], "*x":["F",4], "*-1":["F",5], "sq":["F",6], "J":["F",7], "N":["L",4],
-                // level 4: :4 and ·4 in the right wall, where ±1 come on level 5 (they leave then)
-                ":4":["R",2], "*4":["R",4],
-                // level 5: rewriting a side on the left, ±1 and ±x² on the right
-                "open":["L",2], "sqr":["L",6], "zp":["L",8], "rec":["L",10], "-1":["R",2], "+1":["R",4], "-x2":["R",6], "+x2":["R",8], "xf":["R",10],
-                // level 6: in the floor slots level 5's bricks left (they never meet: firstGroups)
-                "cbrt":["F",0], "pw2":["F",2], "pw3":["F",3], "exp2":["F",4], "log2":["F",5]};
-const slotOf = key => (lv() && lv().chapter === 2 ? OP_AT2 : OP_AT)[key];
+// chapter 2 (Vadim): as close to level 3's places as can be, each level its
+// own. The joker, ⚡, ±x², ·(−1) and √ where they were on level 3; level 4's
+// floor :4 :3 :2 ·2 ·3 ·4, and on level 5 ·x where ·4 was, −1 and +1 after
+// it; the other new ones in the places left. Level 5's new bricks may come
+// at level 4's end (zero bombs, firstGroups): there they wait in their level
+// 5 places (1/□ at the floor's end until :4 goes), so level 4 fills all 18.
+// Level 6 keeps the joker, ⚡, √, :2 and ±1 where they were on level 5, ∛
+// above √.
+const OP_AT4 = {":4":["F",0], ":3":["F",1], ":2":["F",2], "*2":["F",3], "*3":["F",4], "*4":["F",5], "*x":["F",6], "rec":["F",7],
+                "J":["L",2], "N":["L",4], "-x2":["L",6], "+x2":["L",8], "zp":["L",10],
+                "open":["R",2], "sqr":["R",4], "*-1":["R",6], "sq":["R",8], "xf":["R",10]};
+const OP_AT5 = {"rec":["F",0], ":3":["F",1], ":2":["F",2], "*2":["F",3], "*3":["F",4], "*x":["F",5], "-1":["F",6], "+1":["F",7],
+                "J":["L",2], "N":["L",4], "-x2":["L",6], "+x2":["L",8], "zp":["L",10],
+                "open":["R",2], "sqr":["R",4], "*-1":["R",6], "sq":["R",8], "xf":["R",10]};
+const OP_AT6 = {"pw2":["F",0], "pw3":["F",1], ":2":["F",2], "exp2":["F",3], "log2":["F",4], "-1":["F",6], "+1":["F",7],
+                "J":["L",2], "N":["L",4], "sq":["R",8], "cbrt":["R",10]};
+// a step of the Esittely may have its own places (at: chapter 2's level 5 bricks)
+const slotOf = key => ((intro && intro.step && intro.step.at) || (!lv() || lv().chapter !== 2 ? OP_AT : level === 4 ? OP_AT4 : level === 5 ? OP_AT5 : OP_AT6))[key];
 const FLOOR = 2;                // floor height in cells (as tall as an operation brick)
 const OP_NOTE = {"+x":"+ x", "-x":"− x", "+1":"+ 1", "-1":"− 1", "+2":"+ 2", "-2":"− 2",
                  "+2x":"+ 2x", "-2x":"− 2x", "J":"jokeri", ":2":": 2", "*2":"· 2", "*-1":"· (−1)", ":3":": 3", "*3":"· 3", ":4":": 4", "*4":"· 4", "*x":"· x", "open":"avaa sulut", "sqr":"neliöksi", "zp":"nollasääntö", "xf":"x yhteiseksi tekijäksi", "rec":"1/□", "cbrt":"∛", "pw2":"( )²", "pw3":"( )³", "exp2":"2^( )", "log2":"log₂", "N":"ristiriita", "sq":"√", "+x2":"+ x²", "-x2":"− x²"};
@@ -2945,22 +2954,22 @@ const INTRO_STEPS = {
      prompt:"Heitä :2.",
      ok:"Negatiivinen murtoluku pirstoutuu: sen palat lohkaisevat korkeimpia jätepinoja."},
     {bricks:L4, counts:each(L4, 4), table:TABLE2, prompt:"Tason 4 palikat:"},
-    {bricks:[...L4, "open"], counts:{...each(L4, 4), open:1}, setup(){ introEq({a:0, b:0, bin:{a:1, b:1}}, {q:1, a:0, b:7}, null, 6); },
+    {at:OP_AT5, bricks:[...L4, "open"], counts:{...each(L4, 4), open:1}, setup(){ introEq({a:0, b:0, bin:{a:1, b:1}}, {q:1, a:0, b:7}, null, 6); },
      demo:[["throw", "open", 0]],
      prompt:"Tasolla 5 tulee uusia palikoita. avaa kirjoittaa sulut auki.",
      ok:"Sitten −x², −1 ja :2 ratkaisevat sen."},
-    {bricks:[...L4, "sqr", "sq", "-1"], counts:{...each(L4, 4), sqr:1, sq:1, "-1":2},
+    {at:OP_AT5, bricks:[...L4, "sqr", "sq", "-1"], counts:{...each(L4, 4), sqr:1, sq:1, "-1":2},
      setup(){ introEq({q:1, a:2, b:1}, {a:0, b:9}, null, 6, {n:3, deg:2}); },
      check:() => { const p = intro.eq[0]; return (p.two || p.answer != null) && !pieces.length; },
      prompt:"neliö kirjoittaa summan neliöksi. Heitä neliö, sitten √ ja lopuksi −1.",
      ok:"√ antoi kaksi vastausta: x = 2 ja x = −4."},
-    {bricks:[...L4, "xf", "zp"], counts:{...each(L4, 4), xf:1, zp:1},
+    {at:OP_AT5, bricks:[...L4, "xf", "zp"], counts:{...each(L4, 4), xf:1, zp:1},
      setup(){ introEq({q:1, a:-3, b:0}, {a:0, b:0}, null, 6, {zp:[0, 3], n:0}); },
      demo:[["throw", "xf", 0]], check:() => pieces.some(q => q.child),
      prompt:"x(□) ottaa x:n yhteiseksi tekijäksi.",
      after:"Tulo on nolla, kun jokin sen tekijöistä on nolla. Heitä ab=0.",
      ok:"Yhtälö jakautui kahdeksi: x = 0 ja x − 3 = 0. ab=0 käy vain tuloon."},
-    {bricks:L4, counts:each(L4, 4), table:TABLE3, prompt:"Tasojen 5–6 palikat:"},
+    {at:OP_AT5, bricks:L4, counts:each(L4, 4), table:TABLE3, prompt:"Tasojen 5–6 palikat:"},
   ],
 };
 // the game as it was is put away (stash) and comes back when the intro ends

@@ -744,7 +744,7 @@ games/<category>/<course>/<game>/index.html
 - Chapter 2 (Vadim): a fresh start after level 3. The dialog after level 3
   pays every brick left 10 points ("Poistuneet operaatiot") and says
   "Seuraavaksi: Luku 2 · Taso 4"; level 4 starts with an empty well, its own
-  bricks (`start`) and its own places (`OP_AT2`, `slotOf`). A zero bomb never
+  bricks (`start`) and its own places (`OP_AT4`–`OP_AT6`, `slotOf`). A zero bomb never
   brings the next chapter's bricks (`firstGroups`). Tag `luku1-valmis` is the
   game just before chapter 2.
 - Look (Vadim chose, from mockups in `temp/`): the "Metalli" skin,
@@ -753,9 +753,13 @@ games/<category>/<course>/<game>/index.html
   colours, cyan, ⚡ orange and the red line stay. Not a lighter page: lighter
   means Esittely.
 - Level 4 (Vadim): only multiplying and dividing, no ±1. Bricks ·2 :2 ·3 :3
-  ·x ·4 :4, 4 each at the start (floor: :3 :2 ·2 ·3 ·x, then ·(−1) √ joker;
-  :4 and above it ·4 in the right wall, where ±1 come on level 5; ⚡ in the
-  left wall); zero bombs bring ·(−1), √, the joker, then ⚡ (`first`).
+  ·x ·4 :4, 4 each at the start; zero bombs bring ·(−1), √, the joker, then
+  ⚡ (`first`). Places (Vadim, `OP_AT4`, as close to level 3's as can be):
+  the floor :4 :3 :2 ·2 ·3 ·4 ·x, then 1/□; the joker, ⚡, −x², +x² up the
+  left wall and avaa, neliö, ·(−1), √ up the right as on level 3 (avaa and
+  neliö where :2 and ·2 were), ab=0 and x(□) at the top. Level 5's new
+  bricks may come at level 4's end, so they wait in their level 5 places
+  (1/□ at the floor's end until :4 goes): level 4 fills all 18.
   Equations (`multEquation`, `multBuild`): x = n, or x² = n² (about 42 %,
   `MULT_SQ`, once √ is there), with both sides divided by ±2^a·3^b·x^c, so
   each side stays one term: 3x = 12, x/2 = 4, 2x/3 = 4, 12/x = 3, 4 = 12/x,
@@ -833,8 +837,9 @@ games/<category>/<course>/<game>/index.html
   (Vadim), except ·4 and :4 (`drop`: their uses become 10 points each, as
   in "Poistuneet operaatiot"), +1 and −1 come at the start (`add`, 4 each), and from zero bombs
   (from level 4's 20th equation on) ab=0, 1/□ and x(□), then neliö and
-  avaa, then ±x² (3 each): 18 bricks. New ones in the walls (`OP_AT2`):
-  left avaa, ⚡, neliö, ab=0, 1/□; right −1, +1, −x², +x², x(□). Labels are
+  avaa, then ±x² (3 each): 18 bricks. Places (`OP_AT5`): the floor 1/□ :3
+  :2 ·2 ·3 ·x −1 +1 (·x where ·4 was, Vadim), the walls as on level 4.
+  Labels are
   words ("avaa", "neliö", "ab=0") and 1/□ and x(□) with a drawn box
   (`.word`, `.box`).
   Equations (`bracketEquation`, about equally often): avaa sulut ((x + 1)² =
@@ -880,9 +885,10 @@ games/<category>/<course>/<game>/index.html
   little ±1). Zero bombs bring the new ones in three groups (`first`):
   log₂ and ∛, then □² and 2^□, then □³, 3 each. After that a zero bomb
   gives one of them or √, never the joker (`gifts`; Vadim: too much
-  joker), and once all are there, +1 to every brick (the joker too). The new ones go in the floor slots that
-  level 5's bricks left: ∛ :2 □² □³ 2^□ log₂ √ joker. ±1 stay in the
-  right wall and ⚡ in the left. ∛ is drawn as √ with a small 3 (`CBRT`):
+  joker), and once all are there, +1 to every brick (the joker too).
+  Places (`OP_AT6`, Vadim: as on level 5): the joker, ⚡, √, :2, −1, +1
+  where they were, ∛ above √, the floor □² □³ :2 2^□ log₂ · −1 +1. The
+  Esittely's level 5 steps use level 5's places (a step's `at`). ∛ is drawn as √ with a small 3 (`CBRT`):
   the font's ∛ is cramped.
 - Equations (`powEquation`) come in five families, about equally often,
   with 1–3 throws mixed (measured 22 / 46 / 32 %):
