@@ -706,7 +706,8 @@ games/<category>/<course>/<game>/index.html
   in the well's place (`table`, `introTable`: the bricks as they look,
   what they do, the level they come on; the empty hint and a one-line
   question make room, so they fit a 390 × 844 phone, a 375 × 667 one
-  scrolls a little). Words (Vadim): "palikka" for a brick, "jäte" for the
+  scrolls a little; the tables have since left the Esittely, see below).
+  Words (Vadim): "palikka" for a brick, "jäte" for the
   trash, also in the game ("Jätettä", "Siivottu jäte", "Jätettä jäi");
   "puolittain" for both sides.
 - Perusteet (7 steps, Vadim): x + 1 = 4, the player throws at once ("Ota
@@ -721,21 +722,27 @@ games/<category>/<course>/<game>/index.html
   halua ratkaista sitä, voit vetää yhtälön alas.") and it lands as jäte
   (the red line); a gold 3 and a magenta −2 bomb ("Positiivinen pommi
   antaa palikoita. Negatiivinen raivaa jätettä ja antaa pisteitä."); a
-  zero bomb ("0 on erikoispommi, joka tuo bonuksen."); x + 3 = x + 5 with
+  zero bomb (Vadim: all it does: "0 on erikoispommi. Se tuo uuden palikan,
+  tai jos kaikki palikat on jo saatu, +1 jokaiseen palikkaan. Lisäksi se
+  voi ampua alimman putoavan yhtälön, joka ratkeaa saman tien."); x + 3 = x + 5 with
   another equation beside it: the ghost throws −x ("Tässä x supistuu pois"), 3 = 5, the player
   throws ⚡ and both go ("Jos yrität heittää salaman yhtälöön, jolla on
   ratkaisu, salama menee hukkaan."); the joker glowing ("…ristiriitaan se
-  ei käy: siihen se menee hukkaan."); the table of levels 1–3's bricks
-  (`TABLE1`, Vadim's texts).
+  ei käy: siihen se menee hukkaan.").
 - Luku 2 (8 steps, Vadim): 12/x = 3 (the ghost throws ·x, the player :3);
   4x = 6 → :4 → x = 3/2 into the five pies (+2 for every brick when all are
-  full); 2x = −1 → x = −1/2 shatters into the tallest trash; the table of
-  level 4's bricks (`TABLE2`); avaa on (x +
+  full); 2x = −1 → x = −1/2 shatters into the tallest trash; avaa on (x +
   1)² = x² + 7 (the ghost); x² + 2x + 1 = 9 with neliö, √, −1 (the player:
   two bombs); x² − 3x = 0, the ghost throws x(□), the player ab=0 and it
-  splits ("ab=0 käy vain tuloon"); the table of levels 5–6's bricks
-  (`TABLE3`; one table of 18 rows didn't fit on a phone). Level 5's bricks
-  are shown here because there is no Esittely before level 5.
+  splits ("ab=0 käy vain tuloon"). Level 5's bricks are shown here because
+  there is no Esittely before level 5.
+- Before every level (Vadim; they were the Esittely's last steps for a
+  while): a dialog "Tason n uudet palikat" with a table of the level's new
+  bricks, as they look, and what they do (`NEW_BRICKS`, `showBricks`; no
+  level column); Aloita starts the level. Level 1: ±1, ±x, ±2, ±2x, ·(−1),
+  the joker; 2: :2 ·2, ⚡; 3: ±x², √; 4: :3 ·3, :4 ·4, ·x; 5: avaa, neliö,
+  x(□), ab=0, 1/□; 6: ∛, □² □³, 2^□, log₂. Before levels 1 and 4 it comes
+  after the Esittely ("Valmista!" → Jatka).
 - The ⚡ and the joker come only on level 2, but the basics show them
   (Vadim); they go again when the Esittely ends.
 
@@ -852,8 +859,11 @@ games/<category>/<course>/<game>/index.html
   once the player has it), 1/□ (1/(x + 2) = 1/5,
   3/(x + 1) = 1, 2/(x − 1) = 2/3: 1/□, ·k, ∓a) and levels 3–4's ((x + 1)² =
   9, −(x + 1)² = −9, level 4 recipes with at most one scaling; they keep
-  ·x and ·(−1) in use). Each needs at most one of ·2, :2, ·3, :3 (Vadim:
-  never two in a row; measured 0 in 1 500). A zero is a level 4 one, half
+  ·x and ·(−1) in use). Each needs at most one of ·2, :2, ·3, :3, ·4, :4
+  (Vadim: never two in a row; measured 0 in 1 500). ·4 and :4 are used
+  too (Vadim: they stay): half of the avaa ones are (x ± 2)² = x² + c
+  (avaa, −x², :4, −1, and ·(−1) for x − 2), 1/□ may need ·4 (4/(x + 1) =
+  2), level 4's recipes may scale by 4; measured 20 % of the equations. A zero is a level 4 one, half
   as often as on other levels (the x = 0 parts of the rule are zero bombs
   too). "No solution": 1/(x + a) = 0 (1/□ refuses 1/0, red as √ of a
   negative), (x + a)² = −4 and x² + 2x + 1 = −4 (√ refuses).
@@ -946,6 +956,12 @@ games/<category>/<course>/<game>/index.html
   way.
 - "No solution" (⚡, from the 20th equation, at most 2): √x = −3,
   √(x + 1) = −2, 2^x = −4, 2^(x + 1) = 0 (`powContradiction`).
+- Fractions on level 6 too (Vadim, `FRAC6`: a quarter of the answers,
+  measured 25 %), in kinds with no ±1 after them (½ − 1 isn't worked out
+  yet): x³ = 1/8 or −8/27 (∛ takes number fractions: ½, −2/3), √x = ½ or
+  3/2 (□² takes them: ¼, 9/4; no ninths, the pies count twelfths), ∛x =
+  ±½ or ±3/2 (□³: ±1/8, ±27/8), 2^(2x) = 2, 8, 32 or ½ (log₂, :2: ½, 3/2,
+  5/2, −½); besides log₂ x = −1 or −2.
 - Simulated (500 games; perfect / 80 % / 50 % play):
   - level 6 starts with 26 / 24 / 18 kept bricks (±1 about 2–3 each,
     then +4);
