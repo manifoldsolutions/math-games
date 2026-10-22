@@ -673,14 +673,18 @@ games/<category>/<course>/<game>/index.html
   ·x ·4 :4, 4 each at the start (floor: :3 :2 ·2 ·3 ·x, then ·(−1) √ joker;
   :4 and above it ·4 in the right wall, where ±1 come on level 5; ⚡ in the
   left wall); zero bombs bring ·(−1), √, the joker, then ⚡ (`first`).
-  Equations (`multEquation`, `multBuild`): x = n, or x² = n² (about 39 %,
+  Equations (`multEquation`, `multBuild`): x = n, or x² = n² (about 42 %,
   `MULT_SQ`, once √ is there), with both sides divided by ±2^a·3^b·x^c, so
   each side stays one term: 3x = 12, x/2 = 4, 2x/3 = 4, 12/x = 3, 4 = 12/x,
   x²/2 = 8, x/6 = 6/x. 1–4 throws, each as likely, mixed over the whole
   level (Vadim: the speed already makes it harder). At most one of ·2, :2,
   ·4, :4 and one of ·3, :3 (Vadim: else it is prime factoring, 24x = k, and
   those bricks run out; no 9, so no 9x or x/9), so 4 is as common as 2 and 3
-  (measured: ·4 or :4 in 41 % of the equations); ·(−1) less often. The
+  (measured: ·4 or :4 in 40 % of the equations). Both the same way (6x =
+  18, x/6 = 2, 12 = 18/x: a 6 or 12 to split into 2·3 or 4·3, beside the
+  point, Vadim) only once or twice a level (`MULT_SIX`; measured 6.5 % of
+  the equations, it was 26 %); 2x/3 = 4 and 3x/4 = 6, where both factors
+  are written, stay at a quarter (`MULT_MIX`); ·(−1) less often. The
   recipe is drawn first, then an answer that keeps the number side whole
   (near the level's size). Its "no solution" (⚡, from the 20th equation):
   k/x = 0 and x/k = −j/x (`multContradiction`). "Täydellinen": the bricks
@@ -751,8 +755,12 @@ games/<category>/<course>/<game>/index.html
   square, 1/□ (`recSide`) turns a side over (k/(x + 1) → (x + 1)/k,
   numbers, x/4 → 4/x, anything else 1/(…)); a brick that changes no side
   is wasted (a bump). ab=0 (`zpParts`): one side 0, the other a product,
-  (x + k)² or x² + px + q with whole roots; the factor with the smaller
-  root stays (x = 0 is solved at once), the other falls beside it as an
+  (x + k)² or x² + px + q with whole roots. A side written out first shows
+  its factors for 0.6 s (`factored`, `ZP_T`, `zpNow`; Vadim: in Finland one
+  doesn't factor without solving, and the game has solved it): x² + 3x + 2
+  = 0 → (x + 1)(x + 2) = 0, x² + 2x + 1 = 0 → (x + 1)² = 0; bricks thrown
+  meanwhile fly back unused, a zero bomb's shot answers both. Then the
+  factor with the smaller root stays (x = 0 is solved at once), the other falls beside it as an
   equation of its own (`spawnChild`): it gives its bomb and 100 points
   ("Nollasäännön osat"), isn't counted as an equation, no bonus. The joker
   (and a zero bomb's shot) on one gives both answers that way
