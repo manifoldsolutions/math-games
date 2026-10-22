@@ -606,9 +606,10 @@ games/<category>/<course>/<game>/index.html
   Esittely (below) explains. The notes on the equations themselves
   (`| + 1`) and the flying rewards stay.
 - Hints (Vadim, every level, not in the Esittely): when a falling
-  equation's middle reaches half of the well, each brick it still needs (as
-  the game plans it: `toGo`, `plan`; ⚡ for a contradiction, the joker where
-  the game counts on one) that has been thrown at most once on this level
+  equation's middle reaches a third of the well (it was half), each brick it
+  still needs (as the game plans it: `needed`, from `toGo` and `plan`; ⚡ for
+  a contradiction, the joker where the game counts on one) that has been
+  thrown at most twice on this level (`HINT_USED`; it was once)
   (`levelUsed`, any throw, counted from the level's start) glows slowly
   brighter and dimmer (0.6 s each way, `hintGlow`; Vadim: a 400 ms flicker
   was too fast) until it is thrown, anywhere, or the equation is gone
@@ -616,6 +617,13 @@ games/<category>/<course>/<game>/index.html
   its bricks does (Vadim: with several on the screen, which one). On level
   1, while no brick has been dragged in this game (`dragged`), the ghost
   hand also touches the brick and lifts it a little twice (`ghostNudge`).
+  The first 5 equations of every level get more (Vadim, `HELP_FIRST`): after
+  1 s with nothing thrown at one (since it came, or since the last throw at
+  it: `p.idle`), the brick it needs next glows with it, however often it has
+  been used, until it is thrown. "Next" (`nextBrick`): the first brick of an
+  order of its bricks that solves a copy of it (x³ + 1 = 9: −1 before ∛;
+  2x + 1 = 7: −1, then :2), tried with a dry `applyOp` (`p.dry`: nothing
+  else changes), the plan's own order first.
 - Unsolved on landing → trash: single grey bricks, the equation's text faded
   on them while the block is whole. Trash above the red line → Game Over.
 - Points (Vadim): 100 per solved equation, and without a joker two kinds of
@@ -661,9 +669,9 @@ games/<category>/<course>/<game>/index.html
   Nopea / Kreisi (the labels can be tapped; "Pisteet ×1,25" under them), in
   the start dialog and the end dialog (not between levels); Keskinopea at
   first, kept for "↺ Alusta" and "Pelaa uudestaan", nothing saved. The fall
-  over each level: 0.25 → 0.5, 0.4 → 0.65, 0.6 → 0.85, 0.7 → 1 rows/s (Kreisi was 0.7 → 0.95 for a while)
+  over each level: 0.25 → 0.5, 0.4 → 0.65, 0.6 → 0.85, 1.25 → 1.5 rows/s (Vadim; Kreisi was 0.7 → 0.95, then 0.7 → 1)
   (it was 0.55 → 0.8 for everyone, then briefly 0.75); the gaps scale with
-  it (35 → 9, 22 → 7, 15 → 5.3, 12.6 → 4.5 s), so a well holds about as
+  it (35 → 9, 22 → 7, 15 → 5.3, 7 → 3 s), so a well holds about as
   many equations at every speed. Every point ×1, ×1,25, ×1,5, ×2 (Vadim; it
   was ×1, ×1,5, ×2 with three stops) as it is earned, the trash left at the end too;
   the result rows show the points as earned, then "Nopeus: Keskinopea ×1,25"

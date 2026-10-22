@@ -432,7 +432,7 @@ const LEVEL = {gap:[16, 5.6], pos:[.8, .3], posBy:EQUATIONS, shoot:[0, .5]};
 // mult. The gaps (LEVEL.gap, set for REF_FALL) scale with the fall, so a
 // well holds about as many equations at every speed.
 const SPEEDS = [{name:"Hidas", fall:[.25, .5], mult:1}, {name:"Keskinopea", fall:[.4, .65], mult:1.25},
-                {name:"Nopea", fall:[.6, .85], mult:1.5}, {name:"Kreisi", fall:[.7, 1], mult:2}];
+                {name:"Nopea", fall:[.6, .85], mult:1.5}, {name:"Kreisi", fall:[1.25, 1.5], mult:2}];
 const REF_FALL = [.55, .8];
 let speed = SPEEDS[1];
 const LEVELS = [
@@ -1498,6 +1498,7 @@ function spawn(){
   const p = {L:e.L, R:e.R, n:e.n, par:e.par, contra:e.contra, deg:e.deg, ops:0, steps:0, used:{}, avail:null,
              make:{kb:e.kb, kq:e.kq, k:e.k, div:e.div, deg:e.deg, mul:e.mul, bin:e.bin, mult:e.mult, need:e.recipe ? e.need : undefined, four:e.four},
              fewest:e.fewest ?? null, zp:e.zp || null, truth:truthOf(e), el, y:1, x0:0, w:3, bomb:null};
+  p.no = eqNo;   // its number on the level (hints: the first ones get more help)
   p.y = ht(p);
   measure(p);
   p.x0 = freeColumn(p.w);
@@ -1564,10 +1565,10 @@ function surface(c0, c1){
 // operation key on equation p, dropped at x (cells from the left wall); the
 // joker writes the answer straight away (x on the side that had more x)
 function applyOp(key, p, x){
-  if(!p || p.bomb != null || p.glow != null || over || paused || counts[key] <= 0) return false;
+  if(!p || p.bomb != null || p.glow != null || over || paused || !p.dry && counts[key] <= 0) return false;   // dry: a copy (nextBrick)
   const o = OPS[key];
   if(!p.avail) p.avail = {...counts};   // what the player had when they started on it
-  counts[key]--; drawCount(key); levelUsed[key] = (levelUsed[key] || 0) + 1;
+  if(!p.dry){ counts[key]--; drawCount(key); levelUsed[key] = (levelUsed[key] || 0) + 1; p.idle = 0; }
   p.ops++; p.steps += STEPS[key] || 1; p.used[key] = (p.used[key] || 0) + 1;
   if(o.joker) p.joker = true;
   // the ⚡ works only on a contradiction and the joker only on an equation
@@ -1578,8 +1579,8 @@ function applyOp(key, p, x){
   const r = o.sqrt ? rootOf(p) : null, bq = o.sqrt && r == null ? binRoot(p) : null;
   const rooted = o.sqrt && r == null && !bq && [sqrtSide(p.L), sqrtSide(p.R)];
   if(o.contra || o.joker && p.contra || rooted && !(rooted[0] && rooted[1])){
-    if(o.contra && p.contra) contraNow(p, x);
-    else if(o.sqrt) fizzle(p, rooted[0] ? 1 : 0);
+    if(o.contra && p.contra){ if(!p.dry) contraNow(p, x); }
+    else if(o.sqrt){ if(!p.dry) fizzle(p, rooted[0] ? 1 : 0); }
     else{ p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit"); }
     return true;
   }
@@ -1597,7 +1598,7 @@ function applyOp(key, p, x){
   }
   else if(o.rec){   // 1/□ (level 5); 1/0 is refused like √ of a negative number
     const A = recSide(p.L), B = recSide(p.R);
-    if(!A || !B){ fizzle(p, A ? 1 : 0); return true; }
+    if(!A || !B){ if(!p.dry) fizzle(p, A ? 1 : 0); return true; }
     p.L = A; p.R = B;
   }
   else if(o.zp){   // ab = 0 (level 5): the first part stays, the second falls beside it
@@ -1622,7 +1623,7 @@ function applyOp(key, p, x){
   else if(o.exp2){ p.L = exp2Side(p.L); p.R = exp2Side(p.R); }   // 2^□ always works
   else if(o.log2){   // log₂: a number ≤ 0 is refused like √ of a negative number
     const A = log2Side(p.L), B = log2Side(p.R);
-    if(!A || !B){ fizzle(p, A ? 1 : 0); return true; }
+    if(!A || !B){ if(!p.dry) fizzle(p, A ? 1 : 0); return true; }
     p.L = A; p.R = B;
   }
   else if(o.timesX){   // ·x (level 4); where a side can't take it the brick is wasted
@@ -1636,6 +1637,11 @@ function applyOp(key, p, x){
   }
   const pm = pmAnswer(p);   // 4 = ±x: x = ±4
   if(pm != null){ const xs = {a:1, b:0}, ns = {...numSide(pm), pm:pm !== 0}; [p.L, p.R] = p.L.pa ? [xs, ns] : [ns, xs]; }
+  if(p.dry){   // only: is it solved, and with which answers?
+    const two = pnAnswers(p), v = two ? null : solvedValue(p.L, p.R);
+    if(!p.contra && (two || v != null)) p.solved = two || [v];
+    return true;
+  }
   const mid = redraw(p);
   note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - ht(p)));
   if(split) spawnChild(p, split[0], split[1]);
@@ -2535,7 +2541,7 @@ function frame(t){
       else drawPiece(p);
     }
     if(intro) introTick();
-    else{ hints(); if(wantSpawn(dt)) spawn(); }
+    else{ hints(dt); if(wantSpawn(dt)) spawn(); }
     if(!over && !intro && eqNo >= EQUATIONS && !pieces.length && !busy) finish();
   }
   if(!paused) stepFlights(dt);
@@ -2546,19 +2552,31 @@ function frame(t){
 /* Hints (Vadim, every level, not in the Esittely): when a falling equation's
    middle reaches half of the well, each brick it still needs (as the game
    plans it: toGo and plan; ⚡ for a contradiction, the joker where the game
-   counts on one) that has been thrown at most once on this level blinks as
-   in the Esittely until it is thrown (anywhere) or the equation is gone, and
-   the equation with it while any of its bricks does (Vadim: with several on
-   the screen, which one). On level 1, if no brick has been dragged yet in
-   this game, the ghost hand also lifts the brick a little (ghostNudge). */
+   counts on one) that has been thrown at most HINT_USED times on this level
+   glows when the equation's middle reaches a third of the well, until it is
+   thrown (anywhere) or the equation is gone, and the equation with it while
+   any of its bricks does (Vadim: with several on the screen, which one). On
+   level 1, if no brick has been dragged yet in this game, the ghost hand
+   also lifts the brick a little then (ghostNudge). The first HELP_FIRST
+   equations of a level get more (Vadim): after HELP_IDLE s with nothing
+   thrown at it, the brick it needs next glows, however often it has been
+   used (nextBrick). */
+const HINT_USED = 2, HELP_FIRST = 5, HELP_IDLE = 1;
 let dragged = false;            // a brick dragged in this game (level 1's ghost hand)
-function hints(){
+function hints(dt){
   for(const p of inAir()){
-    if(p.hint || p.y - ht(p)/2 < ROWS/2) continue;
-    const g = p.contra ? null : toGo(p), need = p.contra ? {N:1} : g && plan(g, counts);
-    const keys = Object.entries(need || {}).filter(([key, n]) => n > 0 && (levelUsed[key] || 0) <= 1 && owned.has(key)).map(([key]) => key);   // (a plan lists the others with 0)
-    p.hint = Object.fromEntries(keys.map(key => [key, levelUsed[key] || 0]));   // the throws so far: one more, and it is thrown
-    if(keys.length && level === 1 && !dragged) ghostNudge(keys[0]);
+    if(!p.hint) p.hint = {};    // brick: its throws on the level when it began to glow (one more, and it is thrown)
+    if(!p.crossed && p.y - ht(p)/2 >= ROWS/3){
+      p.crossed = true;
+      const keys = needed(p).filter(key => (levelUsed[key] || 0) <= HINT_USED);
+      for(const key of keys) p.hint[key] = levelUsed[key] || 0;
+      if(keys.length && level === 1 && !dragged) ghostNudge(keys[0]);
+    }
+    if(p.no <= HELP_FIRST && (p.idle = (p.idle || 0) + dt) >= HELP_IDLE){   // nothing thrown at it for a second
+      p.idle = 0;
+      const key = nextBrick(p);
+      if(key && (levelUsed[key] || 0) !== p.hint[key]) p.hint[key] = levelUsed[key] || 0;
+    }
   }
   // what blinks now: a hinted brick not thrown since, of an equation still in the air
   const on = new Set();
@@ -2569,6 +2587,36 @@ function hints(){
     for(const key of left) on.add(key);
   }
   for(const key of Object.keys(opEls)) opEls[key].classList.toggle("hintflash", on.has(key));
+}
+// the bricks p still needs, as the game plans it (⚡ for a contradiction; the joker where it counts on one)
+function needed(p){
+  const g = p.contra ? null : toGo(p), need = p.contra ? {N:1} : g && plan(g, counts);
+  return Object.entries(need || {}).filter(([key, n]) => n > 0 && owned.has(key)).map(([key]) => key);   // (a plan lists the others with 0)
+}
+// the brick p needs next: the first of an order of its bricks that solves a
+// copy of it (x³ + 1 = 9: −1 before ∛), the plan's own order tried first
+const FAKE_EL = {classList:{add(){}, remove(){}, toggle(){}, contains:() => false}, offsetWidth:0};
+function nextBrick(p){
+  if(p.contra) return owned.has("N") && counts.N > 0 ? "N" : null;
+  const g = toGo(p), need = g && plan(g, counts);
+  const keys = Object.entries(need || {}).filter(([key, n]) => n > 0 && owned.has(key)).flatMap(([key, n]) => Array(n).fill(key));
+  if(keys.length < 2) return keys[0] || null;
+  const solves = order => {
+    const q = {...p, L:structuredClone(p.L), R:structuredClone(p.R), used:{...p.used}, make:p.make && structuredClone(p.make), el:FAKE_EL, dry:true, solved:null};
+    for(const key of order){ if(q.solved) break; applyOp(key, q, 0); }
+    return !!q.solved && (!p.truth || q.solved.every(v => p.truth.some(t => same(t, v))));
+  };
+  if(solves(keys)) return keys[0];
+  const seen = new Set(), go = (rest, acc) => {   // every other order, each once
+    if(!rest.length){ const k = acc.join(); if(seen.has(k)) return null; seen.add(k); return solves(acc) ? acc[0] : null; }
+    for(let i = 0; i < rest.length; i++){
+      if(i && rest[i] === rest[i - 1]) continue;
+      const r = go([...rest.slice(0, i), ...rest.slice(i + 1)], [...acc, rest[i]]);
+      if(r) return r;
+    }
+    return null;
+  };
+  return go([...keys].sort(), []) || keys[0];
 }
 // level 1 (Vadim): the ghost hand touches the brick and lifts it a little, then lets it settle
 let nudgeTok = 0;
