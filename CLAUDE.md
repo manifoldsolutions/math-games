@@ -610,7 +610,8 @@ games/<category>/<course>/<game>/index.html
   the game plans it: `toGo`, `plan`; ⚡ for a contradiction, the joker where
   the game counts on one) that has been thrown at most once on this level
   (`levelUsed`, any throw, counted from the level's start) flickers for 400
-  ms (`hints`, `HINT_T`, `.hintflash`). Once per equation.
+  ms (`hints`, `HINT_T`, `.hintflash`), and the equation with it (Vadim:
+  with several on the screen, which one). Once per equation.
 - Unsolved on landing → trash: single grey bricks, the equation's text faded
   on them while the block is whole. Trash above the red line → Game Over.
 - Points (Vadim): 100 per solved equation, and without a joker two kinds of
