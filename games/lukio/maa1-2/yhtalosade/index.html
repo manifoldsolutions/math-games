@@ -32,7 +32,7 @@
      quarter of the answers fractions (4x = 6 → x = 3/2). A positive fraction
      bomb fills a pie in the status row (a whole: +1 for every brick), a
      negative one shatters onto the tallest trash. Level 5 keeps
-     them (not ·4 and :4) and adds ±1, ±x² and four bricks that rewrite a side: avaa,
+     them and adds ±1, ±x² and four bricks that rewrite a side: avaa,
      neliö, ab=0 (an equation splits in two) and 1/□. Level 6 keeps only
      ±1, :2, √, the joker and ⚡ and brings ∛, □², □³, 2^□ and log₂: x³ = −8,
      √x = 3, 2^(x + 1) = 8, log₂(x − 1) = 2. An Esittely (guided intro, on
@@ -465,10 +465,10 @@ const LEVELS = [
   // :4 (Vadim: 4x = 12 in one throw) only here
   {fresh:true, chapter:2, mult:true, start:{":3":4, ":2":4, "*2":4, "*3":4, "*x":4, ":4":4, "*4":4},
    first:[["*-1"], ["sq"], ["J"], ["N"]], gifts:{"*-1":1, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, mult:true}},
-  // Level 5 (Vadim): brackets and reciprocals; level 4's bricks stay except
-  // ·4 and :4, ±1 come back at the start, the new ones from zero bombs (from
-  // level 4's end on)
-  {fresh:true, chapter:2, brackets:true, add:{"+1":4, "-1":4}, drop:["*4", ":4"],
+  // Level 5 (Vadim): brackets and reciprocals; level 4's bricks stay (·4 and
+  // :4 too, Vadim), ±1 come back at the start, the new ones from zero bombs
+  // (from level 4's end on)
+  {fresh:true, chapter:2, brackets:true, add:{"+1":4, "-1":4},
    first:[["zp", "rec", "xf"], ["sqr", "open"], ["-x2", "+x2"]],
    gifts:{"zp":2, "rec":2, "xf":2, "sqr":2, "open":2, "-x2":2, "+x2":2, "*-1":1, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, brackets:true}},
   // Level 6 (Vadim): roots, powers and logarithms, with a lean set of bricks;
@@ -610,21 +610,20 @@ const OP_AT = {"-2x":["F",0], "-x":["F",1], "+x":["F",2], "+2x":["F",3],
                "J":["L",2], "N":["L",4], "-x2":["L",6], "+x2":["L",8],
                ":2":["R",2], "*2":["R",4], "*-1":["R",6], "sq":["R",8]};
 // chapter 2 (Vadim): as close to level 3's places as can be, each level its
-// own. The joker, ⚡, ±x², ·(−1) and √ where they were on level 3; level 4's
-// floor :4 :3 :2 ·2 ·3 ·4, and on level 5 ·x where ·4 was, −1 and +1 after
-// it; the other new ones in the places left. Level 5's new bricks may come
-// at level 4's end (zero bombs, firstGroups): there they wait in their level
-// 5 places (1/□ at the floor's end until :4 goes), so level 4 fills all 18.
-// Level 6 keeps the joker, ⚡, √, :2 and ±1 where they were on level 5, ∛
-// above √.
-const OP_AT4 = {":4":["F",0], ":3":["F",1], ":2":["F",2], "*2":["F",3], "*3":["F",4], "*4":["F",5], "*x":["F",6], "rec":["F",7],
-                "J":["L",2], "N":["L",4], "-x2":["L",6], "+x2":["L",8], "zp":["L",10],
-                "open":["R",2], "sqr":["R",4], "*-1":["R",6], "sq":["R",8], "xf":["R",10]};
-const OP_AT5 = {"rec":["F",0], ":3":["F",1], ":2":["F",2], "*2":["F",3], "*3":["F",4], "*x":["F",5], "-1":["F",6], "+1":["F",7],
-                "J":["L",2], "N":["L",4], "-x2":["L",6], "+x2":["L",8], "zp":["L",10],
-                "open":["R",2], "sqr":["R",4], "*-1":["R",6], "sq":["R",8], "xf":["R",10]};
+// own. The joker, ⚡, ±x², ·(−1) and √ where they were on level 3; the floor
+// :4 :3 :2 ·2 ·3 ·4, then −1 and +1 (level 5); avaa and neliö where :2 and
+// ·2 were, ab=0 and x(□) above, 1/□ and ·x at the very top (a sixth place:
+// level 5 has 20 bricks, so the well has at least 12 rows, chooseRows).
+// Level 5's new bricks may come at level 4's end (zero bombs, firstGroups):
+// they are in their level 5 places already, so nothing moves from 4 to 5.
+// Level 6 keeps the joker, ⚡, :2 and ±1 where they were on level 5; √ and
+// ∛ low in the right wall, just above +1 (Vadim).
+const OP_AT5 = {":4":["F",0], ":3":["F",1], ":2":["F",2], "*2":["F",3], "*3":["F",4], "*4":["F",5], "-1":["F",6], "+1":["F",7],
+                "J":["L",2], "N":["L",4], "-x2":["L",6], "+x2":["L",8], "zp":["L",10], "rec":["L",12],
+                "open":["R",2], "sqr":["R",4], "*-1":["R",6], "sq":["R",8], "xf":["R",10], "*x":["R",12]};
+const OP_AT4 = OP_AT5;          // the same (−1 and +1 come on level 5)
 const OP_AT6 = {"pw2":["F",0], "pw3":["F",1], ":2":["F",2], "exp2":["F",3], "log2":["F",4], "-1":["F",6], "+1":["F",7],
-                "J":["L",2], "N":["L",4], "sq":["R",8], "cbrt":["R",10]};
+                "J":["L",2], "N":["L",4], "sq":["R",2], "cbrt":["R",4]};   // √ and ∛ at the right wall's foot (Vadim: no gap under them)
 // a step of the Esittely may have its own places (at: chapter 2's level 5 bricks)
 const slotOf = key => ((intro && intro.step && intro.step.at) || (!lv() || lv().chapter !== 2 ? OP_AT : level === 4 ? OP_AT4 : level === 5 ? OP_AT5 : OP_AT6))[key];
 const FLOOR = 2;                // floor height in cells (as tall as an operation brick)
@@ -1109,6 +1108,13 @@ function jokerAnswer(p){
 // Level 6's bricks on a side (Vadim). `only` u: the side is just that term
 // (its own factor c), nothing beside it
 const supNum = n => String(n).replace(/\d/g, d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);   // a power as superscript digits
+// c·x^n as a side: x, x², x³, x⁴ in their own places, a higher power as a
+// bracket of x alone with its power (bin, bp; drawn x⁹); xNorm takes a
+// bracket of x alone back to them when its power is 4 or less
+const X_AT = {1:"a", 2:"q", 3:"p3", 4:"p4"};
+const xPower = (n, c) => n <= 4 ? {a:0, b:0, [X_AT[n]]:c} : {a:0, b:0, bin:{a:1, b:0}, bp:n, bc:c};
+const xNorm = s => only(s, "bin") && s.bin.a === 1 && !s.bin.b && (s.bp ?? 2) <= 4 ? xPower(s.bp ?? 2, s.bc ?? 1)
+                 : only(s, "bin") && s.bp === 1 ? {a:(s.bc ?? 1)*s.bin.a, b:(s.bc ?? 1)*s.bin.b} : s;   // (x + 1)¹ → x + 1
 const only = (s, u) => s[u] && ![s.p4, s.p3, s.q, s.a, s.b, s.m, s.root, s.pa, s.pn, s.fd, s.bin, s.fac, s.rec, s.ex, s.lg, s.cr]
   .some((v, i) => v && ["p4", "p3", "q", "a", "b", "m", "root", "pa", "pn", "fd", "bin", "fac", "rec", "ex", "lg", "cr"][i] !== u);
 const cubeRoot = v => { const r = Math.round(Math.cbrt(v)); return r**3 === v ? r : null; };
@@ -1117,7 +1123,7 @@ const cubeRoot = v => { const r = Math.round(Math.cbrt(v)); return r**3 === v ? 
 function cbrtSide(s){
   if(plain(s)){ const r = cubeRoot(s.b); return r != null ? {a:0, b:r} : {a:0, b:0, cr:{a:0, b:s.b}, cc:1}; }
   if(only(s, "p3")){ const r = cubeRoot(s.p3); if(r != null) return {a:r, b:0}; }
-  if(only(s, "bin") && (s.bp ?? 2) % 3 === 0){ const r = cubeRoot(s.bc ?? 1); if(r != null) return {...s, bp:s.bp/3, bc:r}; }   // (x + 1)⁶ → (x + 1)²
+  if(only(s, "bin") && (s.bp ?? 2) % 3 === 0){ const r = cubeRoot(s.bc ?? 1); if(r != null) return xNorm({...s, bp:s.bp/3, bc:r}); }   // (x + 1)⁶ → (x + 1)², x⁹ → x³
   return {a:0, b:0, cr:{...s}, cc:1};
 }
 // □² and □³: both sides to a power. √(…) → …, ∛(…) → …, a number, kx,
@@ -1128,10 +1134,10 @@ function powerSide(s, n){
   const u = n === 2 ? "root" : "cr", c = n === 2 ? (s.rc ?? 1) : s.cc;
   if(only(s, u) && Math.abs(c) === 1) return c > 0 || n === 2 ? {...s[u]} : timesSide(s[u], -1);   // (−∛u)³ = −u
   if(plain(s)) return {a:0, b:s.b**n};
-  if(only(s, "a")) return n === 2 ? {q:s.a**2, a:0, b:0} : {p3:s.a**3, a:0, b:0};
+  const d = {a:1, q:2, p3:3, p4:4}, k = Object.keys(d).find(j => only(s, j));
+  if(k) return xPower(d[k]*n, s[k]**n);   // 2x → 4x², x² → x⁴, x³ → x⁹ (Vadim)
   if(only(s, "ex")) return {a:0, b:0, ex:scale(s.ex, n), ec:s.ec**n};
   if(only(s, "bin")) return {...s, bp:(s.bp ?? 2)*n, bc:(s.bc ?? 1)**n};   // (x + 1)² → (x + 1)⁴ (Vadim)
-  if(only(s, "q") && n === 2) return {p4:s.q**2, a:0, b:0};               // x² → x⁴
   if(n === 2 && !(s.p4 || s.p3 || s.q || s.m || s.root || s.pa || s.pn || s.fd || s.bin || s.fac || s.rec || s.ex || s.lg || s.cr)) return {a:0, b:0, bin:{a:s.a, b:s.b}};
   return null;
 }
@@ -1380,7 +1386,8 @@ function sideHTML(s){
     // x + 1 = ±2 (after √ of (x + 1)² = 4): the ± with its number
     if(t === "pn") return `<span class="op">±</span>${cHTML(v)}`;
     if(t === "bin"){   // (x + 1)², its brackets in IBM Plex Sans; a factor before them after ·2 or ·(−1)
-      const body = (Math.abs(v) === 1 ? "" : numText(Math.abs(v))) + `<span class="paren">(</span>${sideHTML(s.bin)}<span class="paren">)</span>${supNum(s.bp ?? 2)}`;
+      const body = bare(s.bin, "a") ? xHTML(Math.abs(v), supNum(s.bp ?? 2))   // x⁹: x alone needs no brackets
+        : (Math.abs(v) === 1 ? "" : numText(Math.abs(v))) + `<span class="paren">(</span>${sideHTML(s.bin)}<span class="paren">)</span>${supNum(s.bp ?? 2)}`;
       return i === 0 ? (v < 0 ? `<span class="xterm">${minus}</span>` : "") + body : `<span class="op">${v < 0 ? minus : "+"}</span>${body}`;
     }
     // ±2x, ±√2x (after √ of 4x², 2x²): its own sign, whatever its place
@@ -1424,7 +1431,7 @@ function space(){
 function chooseRows(){
   const {w, h} = space();
   const c = Math.min(w/(COLS + 2*WALL), 44);
-  ROWS = Math.max(11, Math.min(22, Math.floor(h/c) - FLOOR));
+  ROWS = Math.max(12, Math.min(22, Math.floor(h/c) - FLOOR));   // 12: a wall's sixth place (OP_AT5) fits
 }
 const X = c => (WALL + c)*cell;         // field column → px
 const Y = r => r*cell;                  // row → px
@@ -1720,7 +1727,7 @@ function sqrtSide(s){
     return v < 0 ? null : Number.isInteger(a) && Number.isInteger(b) ? numSide(a/b) : {a:0, b:0, root:s};
   }
   if(only(s, "bin") && (s.bp ?? 2) % 4 === 0 && (s.bc ?? 1) > 0 && Number.isInteger(Math.sqrt(s.bc ?? 1)))
-    return {...s, bp:s.bp/2, bc:Math.sqrt(s.bc ?? 1)};   // (x + 1)⁴ → (x + 1)² (Vadim; no ±: it is ≥ 0)
+    return xNorm({...s, bp:s.bp/2, bc:Math.sqrt(s.bc ?? 1)});   // (x + 1)⁴ → (x + 1)² (Vadim; no ±: it is ≥ 0), x⁸ → x⁴
   if(s.fd){   // x² or x⁴ alone over a square (Vadim): x²/4 → ±x/2, x⁴/4 → x²/2, then ·2; any other fraction gets √ around it
     const f = s.f, d = Math.sqrt(s.fd);
     if(f.p4 > 0 && !f.q && !f.a && !f.b && !f.root && !s.p4 && !s.q && !s.a && !s.b && !s.root && Number.isInteger(d) && Number.isInteger(Math.sqrt(f.p4)*1024))
@@ -2893,7 +2900,7 @@ const TABLE1 = [
 const TABLE2 = [
   [[":2", "*2"], "jakaa tai kertoo puolittain 2:lla", 4],
   [[":3", "*3"], "jakaa tai kertoo puolittain 3:lla", 4],
-  [[":4", "*4"], "jakaa tai kertoo puolittain 4:llä (vain tasolla 4)", 4],
+  [[":4", "*4"], "jakaa tai kertoo puolittain 4:llä", 4],
   [["*x"], "kertoo puolittain x:llä", 4],
   [["*-1"], "kertoo puolittain −1:llä", 4],
   [["sq"], "ottaa puolittain neliöjuuren", 4],

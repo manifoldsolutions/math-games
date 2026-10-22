@@ -754,12 +754,14 @@ games/<category>/<course>/<game>/index.html
   means Esittely.
 - Level 4 (Vadim): only multiplying and dividing, no ±1. Bricks ·2 :2 ·3 :3
   ·x ·4 :4, 4 each at the start; zero bombs bring ·(−1), √, the joker, then
-  ⚡ (`first`). Places (Vadim, `OP_AT4`, as close to level 3's as can be):
-  the floor :4 :3 :2 ·2 ·3 ·4 ·x, then 1/□; the joker, ⚡, −x², +x² up the
-  left wall and avaa, neliö, ·(−1), √ up the right as on level 3 (avaa and
-  neliö where :2 and ·2 were), ab=0 and x(□) at the top. Level 5's new
-  bricks may come at level 4's end, so they wait in their level 5 places
-  (1/□ at the floor's end until :4 goes): level 4 fills all 18.
+  ⚡ (`first`). Places (Vadim, `OP_AT4` = `OP_AT5`, as close to level 3's
+  as can be): the floor :4 :3 :2 ·2 ·3 ·4 (then −1 +1 on level 5); the
+  joker, ⚡, −x², +x² up the left wall and avaa, neliö, ·(−1), √ up the
+  right as on level 3 (avaa and neliö where :2 and ·2 were), then ab=0 and
+  x(□), and at the very top 1/□ and ·x (a sixth place in each wall: the
+  well has at least 12 rows, `chooseRows`). Level 5's new bricks may come
+  at level 4's end; they are in their level 5 places already, so nothing
+  moves from level 4 to 5.
   Equations (`multEquation`, `multBuild`): x = n, or x² = n² (about 42 %,
   `MULT_SQ`, once √ is there), with both sides divided by ±2^a·3^b·x^c, so
   each side stays one term: 3x = 12, x/2 = 4, 2x/3 = 4, 12/x = 3, 4 = 12/x,
@@ -834,12 +836,11 @@ games/<category>/<course>/<game>/index.html
   0.08 / 1.0 (it was 0.3 at 50 % play: level 4 no longer pays a burst at
   every whole).
 - Level 5 (Vadim): brackets and reciprocals. Level 4's bricks stay
-  (Vadim), except ·4 and :4 (`drop`: their uses become 10 points each, as
-  in "Poistuneet operaatiot"), +1 and −1 come at the start (`add`, 4 each), and from zero bombs
+  (Vadim), ·4 and :4 too (Vadim; for a while they went at level 5's start,
+  `drop`, still in the code), +1 and −1 come at the start (`add`, 4 each), and from zero bombs
   (from level 4's 20th equation on) ab=0, 1/□ and x(□), then neliö and
-  avaa, then ±x² (3 each): 18 bricks. Places (`OP_AT5`): the floor 1/□ :3
-  :2 ·2 ·3 ·x −1 +1 (·x where ·4 was, Vadim), the walls as on level 4.
-  Labels are
+  avaa, then ±x² (3 each): 20 bricks. Places (`OP_AT5`): as on level 4,
+  with −1 and +1 at the floor's end. Labels are
   words ("avaa", "neliö", "ab=0") and 1/□ and x(□) with a drawn box
   (`.word`, `.box`).
   Equations (`bracketEquation`, about equally often): avaa sulut ((x + 1)² =
@@ -886,8 +887,9 @@ games/<category>/<course>/<game>/index.html
   log₂ and ∛, then □² and 2^□, then □³, 3 each. After that a zero bomb
   gives one of them or √, never the joker (`gifts`; Vadim: too much
   joker), and once all are there, +1 to every brick (the joker too).
-  Places (`OP_AT6`, Vadim: as on level 5): the joker, ⚡, √, :2, −1, +1
-  where they were, ∛ above √, the floor □² □³ :2 2^□ log₂ · −1 +1. The
+  Places (`OP_AT6`, Vadim: as on level 5): the joker, ⚡, :2, −1, +1 where
+  they were, √ and above it ∛ at the foot of the right wall (Vadim: not
+  high up with a gap under them), the floor □² □³ :2 2^□ log₂ · −1 +1. The
   Esittely's level 5 steps use level 5's places (a step's `at`). ∛ is drawn as √ with a small 3 (`CBRT`):
   the font's ∛ is cramped.
 - Equations (`powEquation`) come in five families, about equally often,
@@ -921,6 +923,11 @@ games/<category>/<course>/<game>/index.html
     2^x, 2^x + 2 → 2^(x − 1) + 1, 3·2^x → 3·2^(x − 1). So 2^(x + 1) = 8
     → :2 → 2^x = 4 → log₂ is as short as log₂, −1. (It used to give
     2^x/2, which nothing could finish.)
+  - Any power of x (Vadim): □³ on x³ = 2 gives x⁹ = 8, ∛ gives x³ = 2
+    again, then x = ∛2; x² □³ → x⁶, x⁴ □² → x⁸ (√ → x⁴). Powers up to 4
+    have their places (a, q, p3, p4); a higher one is a bracket of x alone
+    with its power (`xPower`; drawn x⁹, no brackets), and `xNorm` takes it
+    back when its power is 4 or less.
   - A squared bracket has a power (`bp`, 2 if not given; Vadim): □² on
     1 = (x + 1)² gives 1 = (x + 1)⁴ and □³ (x + 1)⁶ (drawn with `supNum`);
     √ halves a power divisible by 4 ((x + 1)⁴ → (x + 1)², no ±: it is ≥
