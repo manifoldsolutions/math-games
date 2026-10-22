@@ -756,9 +756,9 @@ games/<category>/<course>/<game>/index.html
   ·x ·4 :4, 4 each at the start; zero bombs bring ·(−1), √, the joker, then
   ⚡ (`first`). Places (Vadim, `OP_AT4` = `OP_AT5`, as close to level 3's
   as can be): the floor :4 :3 :2 ·2 ·3 ·4 (then −1 +1 on level 5); the
-  joker, ⚡, −x², +x² up the left wall and avaa, neliö, ·(−1), √ up the
-  right as on level 3 (avaa and neliö where :2 and ·2 were), then ab=0 and
-  x(□), and at the very top 1/□ and ·x (a sixth place in each wall: the
+  joker, ⚡, −x², +x² up the left wall and ·x, neliö, ·(−1), √ up the
+  right as on level 3 (·x and neliö where :2 and ·2 were), then ab=0 and
+  x(□), and at the very top 1/□ and avaa (Vadim swapped ·x and avaa; a sixth place in each wall: the
   well has at least 12 rows, `chooseRows`). Level 5's new bricks may come
   at level 4's end; they are in their level 5 places already, so nothing
   moves from level 4 to 5.

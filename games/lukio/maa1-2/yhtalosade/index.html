@@ -611,8 +611,8 @@ const OP_AT = {"-2x":["F",0], "-x":["F",1], "+x":["F",2], "+2x":["F",3],
                ":2":["R",2], "*2":["R",4], "*-1":["R",6], "sq":["R",8]};
 // chapter 2 (Vadim): as close to level 3's places as can be, each level its
 // own. The joker, ⚡, ±x², ·(−1) and √ where they were on level 3; the floor
-// :4 :3 :2 ·2 ·3 ·4, then −1 and +1 (level 5); avaa and neliö where :2 and
-// ·2 were, ab=0 and x(□) above, 1/□ and ·x at the very top (a sixth place:
+// :4 :3 :2 ·2 ·3 ·4, then −1 and +1 (level 5); ·x and neliö where :2 and
+// ·2 were, ab=0 and x(□) above, 1/□ and avaa at the very top (a sixth place:
 // level 5 has 20 bricks, so the well has at least 12 rows, chooseRows).
 // Level 5's new bricks may come at level 4's end (zero bombs, firstGroups):
 // they are in their level 5 places already, so nothing moves from 4 to 5.
@@ -620,7 +620,7 @@ const OP_AT = {"-2x":["F",0], "-x":["F",1], "+x":["F",2], "+2x":["F",3],
 // ∛ low in the right wall, just above +1 (Vadim).
 const OP_AT5 = {":4":["F",0], ":3":["F",1], ":2":["F",2], "*2":["F",3], "*3":["F",4], "*4":["F",5], "-1":["F",6], "+1":["F",7],
                 "J":["L",2], "N":["L",4], "-x2":["L",6], "+x2":["L",8], "zp":["L",10], "rec":["L",12],
-                "open":["R",2], "sqr":["R",4], "*-1":["R",6], "sq":["R",8], "xf":["R",10], "*x":["R",12]};
+                "*x":["R",2], "sqr":["R",4], "*-1":["R",6], "sq":["R",8], "xf":["R",10], "open":["R",12]};   // ·x low, avaa at the top (Vadim)
 const OP_AT4 = OP_AT5;          // the same (−1 and +1 come on level 5)
 const OP_AT6 = {"pw2":["F",0], "pw3":["F",1], ":2":["F",2], "exp2":["F",3], "log2":["F",4], "-1":["F",6], "+1":["F",7],
                 "J":["L",2], "N":["L",4], "sq":["R",2], "cbrt":["R",4]};   // √ and ∛ at the right wall's foot (Vadim: no gap under them)
