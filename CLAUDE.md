@@ -605,6 +605,12 @@ games/<category>/<course>/<game>/index.html
   ended, the start dialog's how-to), no notes on new operations. The
   Esittely (below) explains. The notes on the equations themselves
   (`| + 1`) and the flying rewards stay.
+- Hints (Vadim, every level, not in the Esittely): when a falling
+  equation's middle reaches half of the well, each brick it still needs (as
+  the game plans it: `toGo`, `plan`; ⚡ for a contradiction, the joker where
+  the game counts on one) that has been thrown at most once on this level
+  (`levelUsed`, any throw, counted from the level's start) flickers for 400
+  ms (`hints`, `HINT_T`, `.hintflash`). Once per equation.
 - Unsolved on landing → trash: single grey bricks, the equation's text faded
   on them while the block is whole. Trash above the red line → Game Over.
 - Points (Vadim): 100 per solved equation, and without a joker two kinds of
@@ -646,15 +652,16 @@ games/<category>/<course>/<game>/index.html
   that lets the pause catch back from the first swipe on (without it, a
   first drag caught by the gesture left the page). Aloita, "Pelaa
   uudestaan" and "↺ Alusta" go to the Esittely's basics first (below).
-- Speed (Vadim, `SPEEDS`): a slider with three stops, Hidas / Keskinopea /
-  Nopea (the labels can be tapped; "Pisteet ×1,5" under them), in the start
-  dialog and the end dialog (not between levels); Keskinopea at first, kept
-  for "↺ Alusta" and "Pelaa uudestaan", nothing saved. The fall over each
-  level: 0.25 → 0.5, 0.4 → 0.65, 0.6 → 0.85 rows/s (it was 0.55 → 0.8 for
-  everyone, then briefly 0.75); the gaps scale with it (35 → 9, 22 → 7,
-  15 → 5.3 s), so a well holds about as many equations at every speed.
-  Every point ×1, ×1,5, ×2 as it is earned, the trash left at the end too;
-  the result rows show the points as earned, then "Nopeus: Keskinopea ×1,5"
+- Speed (Vadim, `SPEEDS`): a slider with four stops, Hidas / Keskinopea /
+  Nopea / Kreisi (the labels can be tapped; "Pisteet ×1,25" under them), in
+  the start dialog and the end dialog (not between levels); Keskinopea at
+  first, kept for "↺ Alusta" and "Pelaa uudestaan", nothing saved. The fall
+  over each level: 0.25 → 0.5, 0.4 → 0.65, 0.6 → 0.85, 0.7 → 0.95 rows/s
+  (it was 0.55 → 0.8 for everyone, then briefly 0.75); the gaps scale with
+  it (35 → 9, 22 → 7, 15 → 5.3, 12.6 → 4.7 s), so a well holds about as
+  many equations at every speed. Every point ×1, ×1,25, ×1,5, ×2 (Vadim; it
+  was ×1, ×1,5, ×2 with three stops) as it is earned, the trash left at the end too;
+  the result rows show the points as earned, then "Nopeus: Keskinopea ×1,25"
   and the total (whole points).
 
 ## Yhtälösade Esittely (built)
