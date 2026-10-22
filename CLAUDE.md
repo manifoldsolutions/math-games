@@ -848,8 +848,8 @@ games/<category>/<course>/<game>/index.html
   (from level 4's 20th equation on) ab=0, 1/□ and x(□), then neliö and
   avaa, then ±x² (3 each): 20 bricks. Places (`OP_AT5`): as on level 4,
   with −1 and +1 at the floor's end. Labels are
-  words ("avaa", "neliö", "ab=0") and 1/□ and x(□) with a drawn box
-  (`.word`, `.box`).
+  words ("neliö", "ab=0"; avaa on two lines, "avaa" over "( )", Vadim,
+  `.word.two`) and 1/□ and x(□) with a drawn box (`.word`, `.box`).
   Equations (`bracketEquation`, about equally often): avaa sulut ((x + 1)² =
   x² + 7: avaa, −x², −1, :2; for (x − 1)² also ·(−1)), neliöksi (x² + 2x +
   1 = 9: neliö, √, −1; two bombs, ±m − k), the zero-product rule (x(x − 3)

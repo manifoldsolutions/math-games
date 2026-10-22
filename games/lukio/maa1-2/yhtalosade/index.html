@@ -89,6 +89,9 @@
   .paren{ font-family:"IBM Plex Sans", sans-serif; }   /* Chakra Petch's "(" looks like "[" */
   /* level 5's bricks: a word (avaa, neliö, ab=0), and 1/□ with a drawn box */
   .opb .word{ font-family:var(--ui); font-size:.6em; font-weight:700; color:var(--ink); }
+  .word.two{ display:inline-flex; flex-direction:column; align-items:center; line-height:1.05; }   /* avaa over ( ) */
+  .word.two .paren{ font-size:1.15em; letter-spacing:.08em; }
+  .tb .word.two{ flex-direction:row; gap:.3em; }   /* one line in a table's small brick */
   .opb .box{ display:inline-block; width:.55em; height:.7em; border:.09em solid var(--ink); vertical-align:-.06em; margin-left:.04em; }
   /* level 6: 2 to a power (a real superscript), log with its 2 below */
   sup.ex{ font-size:.62em; vertical-align:.75em; line-height:0; margin-left:.03em; }
@@ -214,6 +217,7 @@
   .bricktable{ border-collapse:collapse; width:100%; font-family:var(--ui); font-size:14px; line-height:1.3; color:var(--ink); text-align:left; margin:2px 0 6px; }
   .bricktable td{ padding:5px 6px; border-bottom:1px solid color-mix(in srgb, var(--line) 55%, transparent); vertical-align:middle; }
   .bricktable td:first-child{ white-space:nowrap; }
+  .bricktable .nowrap{ white-space:nowrap; font-family:var(--math); }
   .tb{ display:inline-flex; align-items:center; justify-content:center; min-width:2em; height:1.8em; margin:1px 4px 1px 0; padding:0 .3em;
     border:1px solid var(--accent); border-radius:6px; background:var(--surface); font-family:var(--math); font-weight:700; font-size:15px; }
   .tb .xterm, .tb .cterm, .tb .pterm{ font-weight:700; }
@@ -577,7 +581,7 @@ const OPS = {
   "*4": {times:4, html:`<span class="op mul">·</span><span class="cterm">4</span>`},
   "*x": {timesX:true, html:`<span class="op mul">·</span><span class="xterm">x</span>`},   // x out of a denominator
   // level 5 (Vadim): avaa sulut, neliöksi, the zero-product rule, 1/□ (both sides upside down)
-  "open":{open:true, html:`<span class="word">avaa</span>`},
+  "open":{open:true, html:`<span class="word two"><span>avaa</span><span class="paren">( )</span></span>`},   // two lines (Vadim)
   "sqr": {sqr:true, html:`<span class="word">neliö</span>`},
   "zp":  {zp:true, html:`<span class="word">ab=0</span>`},
   "rec": {rec:true, html:`<span class="cterm">1</span><span class="op">/</span><span class="box"></span>`},
@@ -2742,8 +2746,9 @@ const NEW_BRICKS = {
   2:[[[":2", "*2"], "jakaa tai kertoo puolittain 2:lla"], [["N"], "sovella tätä yhtälöön, jolla ei ole ratkaisua"]],
   3:[[["+x2", "-x2"], "lisää/vähentää puolittain termin x²"], [["sq"], "ottaa puolittain neliöjuuren"]],
   4:[[[":3", "*3"], "jakaa tai kertoo puolittain 3:lla"], [[":4", "*4"], "jakaa tai kertoo puolittain 4:llä"], [["*x"], "kertoo puolittain x:llä"]],
-  5:[[["open"], "avaa sulut"], [["sqr"], "kirjoittaa summan neliöksi"], [["xf"], "ottaa x:n yhteiseksi tekijäksi"],
-     [["zp"], "tulo on nolla, kun jokin tekijöistä on nolla"], [["rec"], "ottaa puolittain käänteisluvun"]],
+  5:[[["open"], "avaa sulut"],
+     [["sqr"], `kirjoittaa summan neliöksi <span class="nowrap">a² + 2ab + b² ⇒ <span class="paren">(</span>a + b<span class="paren">)</span>²</span>`],
+     [["xf"], "ottaa x:n yhteiseksi tekijäksi"], [["zp"], "soveltaa tulon nollasääntöä"], [["rec"], "ottaa puolittain käänteisluvun"]],
   6:[[["cbrt"], "ottaa puolittain kuutiojuuren"], [["pw2", "pw3"], "korottaa puolittain toiseen tai kolmanteen potenssiin"],
      [["exp2"], "korottaa luvun 2 puolittain potenssiin"], [["log2"], "ottaa puolittain 2-kantaisen logaritmin"]],
 };
