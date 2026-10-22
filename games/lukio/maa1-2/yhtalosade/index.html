@@ -415,10 +415,11 @@ const LEVELS = [
   {fresh:true, chapter:2, brackets:true, add:{"+1":4, "-1":4}, drop:["*4", ":4"],
    first:[["zp", "rec", "xf"], ["sqr", "open"], ["-x2", "+x2"]],
    gifts:{"zp":2, "rec":2, "xf":2, "sqr":2, "open":2, "-x2":2, "+x2":2, "*-1":1, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, brackets:true}},
-  // Level 6 (Vadim): roots, powers and logarithms, with a lean set of bricks
-  {fresh:true, chapter:2, pow:true, keep:["+1", "-1", ":2", "sq", "J", "N"],
+  // Level 6 (Vadim): roots, powers and logarithms, with a lean set of bricks;
+  // +4 of each ±1 at the start, and no joker from zero bombs (Vadim: too much joker, too little ±1)
+  {fresh:true, chapter:2, pow:true, keep:["+1", "-1", ":2", "sq", "J", "N"], add:{"+1":4, "-1":4},
    first:[["log2", "cbrt"], ["pw2", "exp2"], ["pw3"]],
-   gifts:{"log2":2, "cbrt":2, "pw2":2, "exp2":2, "pw3":2, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, pow:true}},
+   gifts:{"log2":2, "cbrt":2, "pw2":2, "exp2":2, "pw3":2, "sq":2}, contra:{from:20, max:2, p:.18, pow:true}},
 ].map(l => ({...LEVEL, ...l}));
 const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0, "*-1":0, "N":0, "sq":0, "+x2":0, "-x2":0,
                ":3":0, "*3":0, ":4":0, "*4":0, "*x":0, "open":0, "sqr":0, "zp":0, "rec":0, "xf":0, "cbrt":0, "pw2":0, "pw3":0, "exp2":0, "log2":0};
@@ -1146,12 +1147,14 @@ function makeEquation(recent, c, i){
     const need = [f.deg && "sq", f.kq > 0 && "-x2", f.kq < 0 && "+x2", f.div && ":2", f.mul && "*2", ...Object.keys(f.need || {})].filter(Boolean);
     return !need.some(j => !(cc[j] > 0) && !(FOUR[j] && cc[FOUR[j]] >= 2)) && !recent.includes(keyOf(f));
   };
-  const find = (draw, n) => { for(let t = 0; t < n; t++){ const f = draw(); if(f && ok(f)) return f; } return null; };   // a draw may be null (level 4)
+  // a draw may be null (level 4); hand: only one the player can solve without a joker
+  const find = (draw, n, hand) => { for(let t = 0; t < n; t++){ const f = draw(); if(f && ok(f) && !(hand && plan(f, cc).J)) return f; } return null; };
   // a big one now and then (bigChance), else the level's own; when no equation
   // of the level can be afforded, a big one if the player has :2
   let e = lv().mult ? find(() => multEquation(i), 200) || multLifeline(c)
        : lv().brackets ? find(() => bracketEquation(i), 200) || find(() => multEquation(i, true), 100) || multLifeline(c)
-       : lv().pow ? find(() => powEquation(i), 300) || find(() => powEquation(i, true), 300) || powLifeline(c)
+       : lv().pow ? find(() => powEquation(i), 300, true) || find(() => powEquation(i, true), 300, true)   // by hand first (Vadim: too much joker)
+                    || find(() => powEquation(i), 300) || powLifeline(c)
        : (lv().big && Math.random() < bigChance(c) && find(bigEquation, 50))
        || (lv().frac && Math.random() < FRAC_P && find(() => fracEquation(i), 50))
        || (lv().bin && Math.random() < BIN_P && find(binEquation, 50))
@@ -1199,7 +1202,7 @@ const ht = p => hasFrac(p.L) || hasFrac(p.R) ? 2 : 1;
 function timesSide(s, t){
   const k = Math.round(Math.abs(t) < 1 ? 1/Math.abs(t) : Math.abs(t)), fits = v => !v || Number.isInteger(v/k);
   const terms = x => [x.p4, x.p3, x.q, x.a, x.b, x.m, x.pa, x.pn, x.root && (x.rc ?? 1), x.bin && (x.bc ?? 1), x.rec && x.rk, x.fac && (x.fc ?? 1),
-                       x.ex && x.ec, x.lg && x.lc, x.cr && x.cc];
+                       x.ex && (pow2(k) ? 0 : x.ec), x.lg && x.lc, x.cr && x.cc];   // 2^x always takes :2 (2^(x − 1))
   const low = r => {   // in lowest terms (Vadim: 4x = 6 → :4 → x = 3/2, not 6/4)
     const vs = terms(r.f).filter(Boolean), g = vs.every(Number.isInteger) ? vs.reduce((u, v) => gcd(u, Math.abs(v)), r.fd) : 1;
     return g < 2 ? r : r.fd > g ? {...r, f:scale(r.f, 1/g), fd:r.fd/g} : addSides(outerOf(r), scale(r.f, 1/g));
@@ -1221,8 +1224,10 @@ function timesSide(s, t){
 // every term of a side (not a fraction's top) times t
 const scale = (s, t) => ({...s, p4:(s.p4 || 0)*t, p3:(s.p3 || 0)*t, q:(s.q || 0)*t, a:(s.a || 0)*t, b:(s.b || 0)*t, m:(s.m || 0)*t,
   ...(s.root && {rc:(s.rc ?? 1)*t}), ...(s.bin && {bc:(s.bc ?? 1)*t}), ...(s.rec && {rk:s.rk*t}), ...(s.fac && {fc:(s.fc ?? 1)*t}),
-  ...(s.ex && {ec:s.ec*t}), ...(s.lg && {lc:s.lc*t}), ...(s.cr && {cc:s.cc*t}),
+  ...(s.ex && (pow2(t) ? {ex:addSides(s.ex, {a:0, b:Math.log2(Math.abs(t))}), ec:s.ec*Math.sign(t)} : {ec:s.ec*t})),   // 2^x : 2 = 2^(x − 1) (Vadim)
+  ...(s.lg && {lc:s.lc*t}), ...(s.cr && {cc:s.cc*t}),
   ...(s.pa && {pa:Math.abs(s.pa*t)}), ...(s.pn && {pn:Math.abs(s.pn*t)})});   // −(±2) = ±2
+const pow2 = t => Math.abs(t) !== 1 && Number.isInteger(Math.log2(Math.abs(t)));   // ±2, ±½, ±4 …: 2^x takes them in its exponent
 const outerOf = s => { const o = {...s}; delete o.f; delete o.fd; return o; };   // a side without its fraction
 // two sides' terms together (a fraction's top joining its side), no fraction left
 function addSides(x, y){

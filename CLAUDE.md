@@ -778,10 +778,11 @@ games/<category>/<course>/<game>/index.html
 - Level 6 (Vadim): roots, powers and logarithms (base 2 only, no
   fractional powers for now) with lean bricks. Only +1, −1, :2, √, the
   joker and ⚡ stay (`keep`; the others are paid 10 points each, as at a
-  chapter's start). Zero bombs bring the new ones in three groups
-  (`first`): log₂ and ∛, then □² and 2^□, then □³, 3 each. After that a
-  zero bomb gives one of them, √ or the joker (`gifts`), and once all
-  are there, +1 to every brick. The new ones go in the floor slots that
+  chapter's start), and ±1 get +4 each at the start (`add`; Vadim: too
+  little ±1). Zero bombs bring the new ones in three groups (`first`):
+  log₂ and ∛, then □² and 2^□, then □³, 3 each. After that a zero bomb
+  gives one of them or √, never the joker (`gifts`; Vadim: too much
+  joker), and once all are there, +1 to every brick (the joker too). The new ones go in the floor slots that
   level 5's bricks left: ∛ :2 □² □³ 2^□ log₂ √ joker. ±1 stay in the
   right wall and ⚡ in the left. ∛ is drawn as √ with a small 3 (`CBRT`):
   the font's ∛ is cramped.
@@ -796,7 +797,9 @@ games/<category>/<course>/<game>/index.html
     x = 1/2, a pie bomb (about one a level; not log₂(x − 1) = −1, which
     would need 1/2 + 1);
   - level 3's (x + a)² = m².
-  Answers −9 … 10. Its zeros use the new bricks or the kept ones
+  Answers −9 … 10. The generator first looks for one the player can solve
+  by hand, and only then takes one that needs a joker (`find` with
+  `hand`). Its zeros use the new bricks or the kept ones
   (x + 1 = 1, 2x = 0, x² = 0), so a player without the new bricks can
   still earn them. When nothing else can be afforded: x ± 1 = 8 ± 1
   (`powLifeline`).
@@ -809,6 +812,11 @@ games/<category>/<course>/<game>/index.html
     side they can't write (x² + 1, log₂ x) wastes the brick.
   - 2^□ (`exp2Side`) undoes log₂, turns a number into its power
     (2^−2 = 1/4), and anything else into 2^(…).
+  - :2 (and ·2, both ways; level 6 has no ·2) moves a power of 2's
+    exponent (`pow2` in `scale`; Vadim): 2^x → 2^(x − 1), 2^(x + 1) →
+    2^x, 2^x + 2 → 2^(x − 1) + 1, 3·2^x → 3·2^(x − 1). So 2^(x + 1) = 8
+    → :2 → 2^x = 4 → log₂ is as short as log₂, −1. (It used to give
+    2^x/2, which nothing could finish.)
   - log₂ (`log2Side`) undoes 2^, turns a power of 2 into its exponent
     (1/4 → −2), and anything else into log₂(…). A number ≤ 0 is refused,
     like √ of a negative number.
@@ -821,9 +829,11 @@ games/<category>/<course>/<game>/index.html
 - "No solution" (⚡, from the 20th equation, at most 2): √x = −3,
   √(x + 1) = −2, 2^x = −4, 2^(x + 1) = 0 (`powContradiction`).
 - Simulated (500 games; perfect / 80 % / 50 % play):
-  - level 6 starts with 26 / 24 / 18 kept bricks (±1 about 2–3 each);
-  - jokers 1.3 / 2.1 / 2.6 a level;
-  - unsolvable 0 / 0.04 / 0.5, no fallback;
+  - level 6 starts with 26 / 24 / 18 kept bricks (±1 about 2–3 each,
+    then +4);
+  - jokers 0 / 0.4 / 1.2 a level (1.4 / 2.1 / 2.8 before the ±1 at the
+    start, by hand first and no joker gifts);
+  - unsolvable 0 / 0.01 / 0.05 (it was 0 / 0.05 / 0.55), no fallback;
   - about 7 zeros, since the new bricks come through them (medians:
     log₂ and ∛ by the 4th equation, □² and 2^□ by the 8th, □³ by the
     11th);
