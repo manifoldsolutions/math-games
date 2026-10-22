@@ -314,7 +314,8 @@ games/<category>/<course>/<game>/index.html
   of the equations (`FRAC_P`; measured 14.5 %, about 4 a level), only while
   the player has ·2 (the generator reserves the ·2 a falling one still
   needs, `toGo`): x/2 = 4 (an even x), (x ± 1)/2 = m (an odd x; no brackets
-  on screen, the top over a bar over 2), and on level 3, as often as its
+  on screen, the top over a bar over 2; the bar always spans the wider of
+  top and bottom, Vadim: 1/(x − 2)), and on level 3, as often as its
   squares, x²/2 = 8 (x = ±2 … ±8), and where x⁴ may come x⁴/2 = 8 or 128
   (·2, √, √; Vadim; about 0.5 a level). Otherwise ·2 and at most one more throw (−1, √);
   ·2 counts in "Täydellinen" (`mul`). A side is then {…, f, fd}: its top
@@ -733,14 +734,18 @@ games/<category>/<course>/<game>/index.html
 - Level 5 (Vadim): brackets and reciprocals. Level 4's bricks stay
   (Vadim), except ·4 and :4 (`drop`: their uses become 10 points each, as
   in "Poistuneet operaatiot"), +1 and −1 come at the start (`add`, 4 each), and from zero bombs
-  (from level 4's 20th equation on) ab=0 and 1/□, then neliö and avaa, then
-  ±x² (3 each): 17 bricks. New ones in the walls (`OP_AT2`): left avaa, ⚡,
-  neliö, ab=0, 1/□; right −1, +1, −x², +x². Labels are words ("avaa",
-  "neliö", "ab=0") and 1/□ with a drawn box (`.word`, `.box`).
+  (from level 4's 20th equation on) ab=0, 1/□ and x(□), then neliö and
+  avaa, then ±x² (3 each): 18 bricks. New ones in the walls (`OP_AT2`):
+  left avaa, ⚡, neliö, ab=0, 1/□; right −1, +1, −x², +x², x(□). Labels are
+  words ("avaa", "neliö", "ab=0") and 1/□ and x(□) with a drawn box
+  (`.word`, `.box`).
   Equations (`bracketEquation`, about equally often): avaa sulut ((x + 1)² =
   x² + 7: avaa, −x², −1, :2; for (x − 1)² also ·(−1)), neliöksi (x² + 2x +
   1 = 9: neliö, √, −1; two bombs, ±m − k), the zero-product rule (x(x − 3)
-  = 0, x² − 3x = 0, (x − 1)(x + 2) = 0, expanded too), 1/□ (1/(x + 2) = 1/5,
+  = 0, (x + 2)(x + 1) = 0, always as products, never x² + 3x + 2 = 0
+  (Vadim: in Finland one doesn't factor without solving, and one can't);
+  half of the x(x − 3) kind is x² − 3x = 0, which needs x(□) first, only
+  once the player has it), 1/□ (1/(x + 2) = 1/5,
   3/(x + 1) = 1, 2/(x − 1) = 2/3: 1/□, ·k, ∓a) and levels 3–4's ((x + 1)² =
   9, −(x + 1)² = −9, level 4 recipes with at most one scaling; they keep
   ·x and ·(−1) in use). Each needs at most one of ·2, :2, ·3, :3 (Vadim:
@@ -754,18 +759,18 @@ games/<category>/<course>/<game>/index.html
   out (x + k)² and products, neliö (`squareSide`) makes x² + 2kx + k² a
   square, 1/□ (`recSide`) turns a side over (k/(x + 1) → (x + 1)/k,
   numbers, x/4 → 4/x, anything else 1/(…)); a brick that changes no side
-  is wasted (a bump). ab=0 (`zpParts`): one side 0, the other a product,
-  (x + k)² or x² + px + q with whole roots. A side written out first shows
-  its factors for 0.6 s (`factored`, `ZP_T`, `zpNow`; Vadim: in Finland one
-  doesn't factor without solving, and the game has solved it): x² + 3x + 2
-  = 0 → (x + 1)(x + 2) = 0, x² + 2x + 1 = 0 → (x + 1)² = 0; bricks thrown
-  meanwhile fly back unused, a zero bomb's shot answers both. Then the
+  is wasted (a bump). x(□) ("x yhteiseksi tekijäksi", `xOut`) takes x out
+  of a side qx² + ax: x² − 3x → x(x − 3), 2x² + 6x → x(2x + 6). ab=0
+  (`zpParts`) works only on a product (Vadim): one side 0, the other a
+  product or (x + k)²; on x² + 3x + 2 = 0 (made with avaa, say) it is
+  wasted. (For a while it factored a written-out side itself and showed
+  the factors for 0.6 s; Vadim dropped that with the products only.) The
   factor with the smaller root stays (x = 0 is solved at once), the other falls beside it as an
   equation of its own (`spawnChild`): it gives its bomb and 100 points
   ("Nollasäännön osat"), isn't counted as an equation, no bonus. The joker
   (and a zero bomb's shot) on one gives both answers that way
   (`jokerAnswer`). "Täydellinen" from the recipe (`p.fewest`; for the rule:
-  ab=0 and the first part's throws); the generator plans from the recipe
+  x(□) if needed, ab=0 and the first part's throws); the generator plans from the recipe
   less what was thrown (`toGo`).
 - Simulated (400 games; perfect / 80 % / 50 % play): jokers 2.5 / 2.5 /
   2.8 a level, unsolvable 0 / 0.04 / 0.4, no fallback, about 3 throws an

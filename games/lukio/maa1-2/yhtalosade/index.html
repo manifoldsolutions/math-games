@@ -95,8 +95,9 @@
   .fn sub{ font-size:.62em; vertical-align:-.3em; line-height:0; }
   /* a fraction (Vadim): the top over a bar over the bottom, the equation two rows tall */
   .frac{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; line-height:1.05; margin:0 .08em; }
-  .frac .num{ padding:0 .12em .06em; border-bottom:.08em solid currentColor; }
-  .frac .den{ padding-top:.06em; }
+  /* the bar (the top's bottom border) spans the wider of top and bottom (Vadim: 1/(x − 2)) */
+  .frac .num{ align-self:stretch; text-align:center; padding:0 .12em .06em; border-bottom:.08em solid currentColor; }
+  .frac .den{ padding:.06em .12em 0; }
   /* solved: it glows in the colour of the bomb it becomes, with a burst of sparks */
   .piece.pos, .sparks.pos{ --fc:var(--gold); }
   .piece.neg, .sparks.neg{ --fc:var(--magenta); }
@@ -412,15 +413,15 @@ const LEVELS = [
   // ·4 and :4, ±1 come back at the start, the new ones from zero bombs (from
   // level 4's end on)
   {fresh:true, chapter:2, brackets:true, add:{"+1":4, "-1":4}, drop:["*4", ":4"],
-   first:[["zp", "rec"], ["sqr", "open"], ["-x2", "+x2"]],
-   gifts:{"zp":2, "rec":2, "sqr":2, "open":2, "-x2":2, "+x2":2, "*-1":1, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, brackets:true}},
+   first:[["zp", "rec", "xf"], ["sqr", "open"], ["-x2", "+x2"]],
+   gifts:{"zp":2, "rec":2, "xf":2, "sqr":2, "open":2, "-x2":2, "+x2":2, "*-1":1, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, brackets:true}},
   // Level 6 (Vadim): roots, powers and logarithms, with a lean set of bricks
   {fresh:true, chapter:2, pow:true, keep:["+1", "-1", ":2", "sq", "J", "N"],
    first:[["log2", "cbrt"], ["pw2", "exp2"], ["pw3"]],
    gifts:{"log2":2, "cbrt":2, "pw2":2, "exp2":2, "pw3":2, "sq":2, "J":1}, contra:{from:20, max:2, p:.18, pow:true}},
 ].map(l => ({...LEVEL, ...l}));
 const START = {"+x":4, "-x":4, "+1":4, "-1":4, "+2":0, "-2":0, "+2x":0, "-2x":0, "J":0, ":2":0, "*2":0, "*-1":0, "N":0, "sq":0, "+x2":0, "-x2":0,
-               ":3":0, "*3":0, ":4":0, "*4":0, "*x":0, "open":0, "sqr":0, "zp":0, "rec":0, "cbrt":0, "pw2":0, "pw3":0, "exp2":0, "log2":0};
+               ":3":0, "*3":0, ":4":0, "*4":0, "*x":0, "open":0, "sqr":0, "zp":0, "rec":0, "xf":0, "cbrt":0, "pw2":0, "pw3":0, "exp2":0, "log2":0};
 const BASE = ["+x", "-x", "+1", "-1"];                 // always there; the others come from zero bombs
 // A zero bomb brings a new operation as long as one of these is missing, then
 // +1 for every brick (coinBurst, Vadim). Weights: the joker and ·(−1) come half as often.
@@ -435,7 +436,7 @@ const GIFT_FROM = {"*2":2};
 // at the start of their level.
 const NEXT_FROM = 20, ZERO_NEW = .3;
 // a new brick comes with this many uses (else 1; later gifts give 1)
-const FIRST_COUNT = {":2":3, "*2":3, "*-1":3, "N":2, "sq":4, "+x2":3, "-x2":3, "open":3, "sqr":3, "zp":3, "rec":3, "cbrt":3, "pw2":3, "pw3":3, "exp2":3, "log2":3};
+const FIRST_COUNT = {":2":3, "*2":3, "*-1":3, "N":2, "sq":4, "+x2":3, "-x2":3, "open":3, "sqr":3, "zp":3, "rec":3, "xf":3, "cbrt":3, "pw2":3, "pw3":3, "exp2":3, "log2":3};
 const CAP = 99;                 // no brick holds more (a reward part that doesn't fit goes on to another brick)
 const JOKER_CAP = 4;            // …and the joker no more than this (Vadim: too many at the end of level 3)
 const capOf = key => key === "J" ? JOKER_CAP : CAP;
@@ -452,7 +453,6 @@ const FRAC_P = .15;             // fraction equations (Vadim, fracEquation): thi
 const BIN_P = .12;              // (x + k)² = n² (Vadim, binEquation): this share of level 3's equations
 const MULT_SIX = .1;            // level 4: ·2 or ·4 with ·3 (6x = 18, x/6 = 2: 6 or 12 to split) this much less likely (Vadim: once or twice a level)…
 const MULT_MIX = .55;           // …and ·2 or ·4 with :3 (2x/3 = 4) this, so that they stay as common as before (a quarter)
-const ZP_T = .6;                // s: ab = 0 on x² + 3x + 2 = 0 shows (x + 1)(x + 2) = 0 this long before it splits (Vadim)
 const MULT_SQ = .3;             // level 4: x² = n² recipes (√ at the end) this likely beside the others, once the player has √
 const FRAC_ANS = .25;           // level 4: this share of the answers is a fraction (Vadim: 2x = 1 → x = ½)…
 const FRACS = [1/2, 3/2, 5/2, 1/3, 2/3, 4/3, 5/3, 1/4, 3/4, 5/4];   // …one of these (or its negative) that the recipe takes
@@ -529,6 +529,7 @@ const OPS = {
   "sqr": {sqr:true, html:`<span class="word">neliö</span>`},
   "zp":  {zp:true, html:`<span class="word">ab=0</span>`},
   "rec": {rec:true, html:`<span class="cterm">1</span><span class="op">/</span><span class="box"></span>`},
+  "xf":  {xfac:true, html:`<span class="xterm">x</span><span class="paren">(</span><span class="box"></span><span class="paren">)</span>`},   // x yhteiseksi tekijäksi
   // level 6 (Vadim): ∛, both sides to the power 2 or 3, 2 to the power of a side, log₂ of a side
   "cbrt":{cbrt:true, html:CBRT},
   "pw2": {power:2, html:`<span class="box"></span><span class="op">²</span>`},
@@ -556,13 +557,13 @@ const OP_AT2 = {":3":["F",0], ":2":["F",1], "*2":["F",2], "*3":["F",3], "*x":["F
                 // level 4: :4 and ·4 in the right wall, where ±1 come on level 5 (they leave then)
                 ":4":["R",2], "*4":["R",4],
                 // level 5: rewriting a side on the left, ±1 and ±x² on the right
-                "open":["L",2], "sqr":["L",6], "zp":["L",8], "rec":["L",10], "-1":["R",2], "+1":["R",4], "-x2":["R",6], "+x2":["R",8],
+                "open":["L",2], "sqr":["L",6], "zp":["L",8], "rec":["L",10], "-1":["R",2], "+1":["R",4], "-x2":["R",6], "+x2":["R",8], "xf":["R",10],
                 // level 6: in the floor slots level 5's bricks left (they never meet: firstGroups)
                 "cbrt":["F",0], "pw2":["F",2], "pw3":["F",3], "exp2":["F",4], "log2":["F",5]};
 const slotOf = key => (lv() && lv().chapter === 2 ? OP_AT2 : OP_AT)[key];
 const FLOOR = 2;                // floor height in cells (as tall as an operation brick)
 const OP_NOTE = {"+x":"+ x", "-x":"− x", "+1":"+ 1", "-1":"− 1", "+2":"+ 2", "-2":"− 2",
-                 "+2x":"+ 2x", "-2x":"− 2x", "J":"jokeri", ":2":": 2", "*2":"· 2", "*-1":"· (−1)", ":3":": 3", "*3":"· 3", ":4":": 4", "*4":"· 4", "*x":"· x", "open":"avaa sulut", "sqr":"neliöksi", "zp":"nollasääntö", "rec":"1/□", "cbrt":"∛", "pw2":"( )²", "pw3":"( )³", "exp2":"2^( )", "log2":"log₂", "N":"ristiriita", "sq":"√", "+x2":"+ x²", "-x2":"− x²"};
+                 "+2x":"+ 2x", "-2x":"− 2x", "J":"jokeri", ":2":": 2", "*2":"· 2", "*-1":"· (−1)", ":3":": 3", "*3":"· 3", ":4":": 4", "*4":"· 4", "*x":"· x", "open":"avaa sulut", "sqr":"neliöksi", "zp":"nollasääntö", "xf":"x yhteiseksi tekijäksi", "rec":"1/□", "cbrt":"∛", "pw2":"( )²", "pw3":"( )³", "exp2":"2^( )", "log2":"log₂", "N":"ristiriita", "sq":"√", "+x2":"+ x²", "-x2":"− x²"};
 
 const $ = id => document.getElementById(id);
 const board = $("board"), stage = $("stage");
@@ -783,7 +784,7 @@ function multEquation(i, once = false, zero = Math.random() < (firstMissing(i) ?
 // answer(s), each needing at most one of ·2, :2, ·3, :3 (Vadim: never two in
 // a row), about equally often: avaa sulut ((x + 1)² = x² + 7: avaa, −x², −1,
 // :2), neliöksi (x² + 2x + 1 = 9: neliö, √, −1; two bombs), the zero-product
-// rule (x(x − 3) = 0, x² − 3x = 0, (x − 1)(x + 2) = 0: ab = 0 splits it into
+// rule (x(x − 3) = 0, x² − 3x = 0 (x(□) first), (x − 1)(x + 2) = 0: ab = 0 splits it into
 // two falling equations), 1/□ (1/(x + 2) = 1/5, 3/(x + 1) = 1) and levels 3–4's
 // ((x + 1)² = 9, −(x + 1)² = −9, x = 9/x; this keeps ·x and ·(−1) in use).
 function bracketEquation(i){
@@ -808,12 +809,13 @@ function bracketEquation(i){
     return make({q:1, a:2*k, b:k*k}, {a:0, b:m*m}, ones(-k, {sqr:1, sq:1}), m ? [m - k, -m - k] : [-k], [kind, k, m],
                 {n:m, k, bin:true, deg:2});
   }
-  if(kind === "zp"){   // x(x − k) = 0 / x² − kx = 0, or (x − p)(x − q) = 0 / expanded: ab = 0, then each part
+  if(kind === "zp"){   // x(x − k) = 0 / x² − kx = 0 (x(□) first), or (x − p)(x − q) = 0: ab = 0, then each part
     let [p, q] = Math.random() < .5 ? [0, pick([1, -1, 2, -2, 3, -3])] : shuffle([1, -1, 2, -2]).slice(0, 2);
     if(Math.abs(q) < Math.abs(p)) [p, q] = [q, p];   // the smaller root is the first part (x = 0: solved at once)
-    const S = Math.random() < .5 ? {a:0, b:0, fac:[{a:1, b:-p}, {a:1, b:-q}]} : {q:1, a:-(p + q), b:p*q};
-    const e = make(S, {a:0, b:0}, ones(p, ones(q, {zp:1})), [p, q], [kind, p, q], {zp:[p, q]});
-    e.fewest = e.par = 1 + Math.abs(p);   // the first part's own throws (the second is an equation of its own)
+    // never x² + 3x + 2 = 0 (Vadim: one doesn't factor without solving), but x² − 3x = 0 half the time
+    const out = !p && Math.random() < .5, S = out ? {q:1, a:-q, b:0} : {a:0, b:0, fac:[{a:1, b:-p}, {a:1, b:-q}]};
+    const e = make(S, {a:0, b:0}, ones(p, ones(q, {zp:1, ...(out && {xf:1})})), [p, q], [kind, p, q, out], {zp:[p, q]});
+    e.fewest = e.par = 1 + out + Math.abs(p);   // the first part's own throws (the second is an equation of its own)
     return e;
   }
   if(kind === "rec"){   // k/(x + a) = k/m: 1/□, ·k, ∓a
@@ -998,8 +1000,8 @@ function recSide(s){
   return {a:0, b:0, rec:{...s}, rk:1};   // anything else: 1/(…)
 }
 // the zero-product rule (Vadim, level 5), ab = 0: when one side is 0, the
-// factors of the other (a product, (x + k)², or x² + px + q with whole
-// roots) each = 0, the one with the smaller root first; null if it doesn't apply
+// factors of the other (a product or (x + k)²; Vadim: only a product, x² + 3x
+// + 2 is not one) each = 0, the one with the smaller root first; null if it doesn't apply
 function zpParts(p){
   const zero = s => plain(s) && !s.b;
   const [Z, S] = zero(p.R) ? [p.R, p.L] : [p.L, p.R];
@@ -1007,41 +1009,15 @@ function zpParts(p){
   let fs = null;
   if(S.fac && !S.q && !S.a && !S.b && !S.bin) fs = S.fac;
   else if(S.bin && !S.q && !S.a && !S.b && !S.fac) fs = [S.bin];
-  else if(S.q && !S.bin && !S.fac){
-    const a = (S.a || 0)/S.q, b = (S.b || 0)/S.q, r = Math.sqrt(a*a - 4*b);
-    if(!Number.isInteger(r) || ![a, b, (r - a)/2].every(Number.isInteger)) return null;
-    fs = r ? [{a:1, b:(a + r)/2}, {a:1, b:(a - r)/2}] : [{a:1, b:a/2}];
-  }
   if(!fs) return null;
   fs = [...fs].sort((u, v) => Math.abs(u.b/u.a) - Math.abs(v.b/v.a));
   return fs.map(f => Z === p.R ? [{...f}, {a:0, b:0}] : [{a:0, b:0}, {...f}]);
 }
-// ab = 0 on a side written out (x² + 3x + 2 = 0): the sides with it as a
-// product, (x + 1)(x + 2) = 0, (x + 1)² = 0 for a double root; else null
-// (it is a product already). The game has solved it, so it shows the factors
-// (Vadim: in Finland one doesn't factor without solving).
-function factored(p){
-  const zero = s => plain(s) && !s.b, [Z, S] = zero(p.R) ? [p.R, p.L] : [p.L, p.R];
-  if(!S.q) return null;
-  const fs = zpParts(p).map(([L, R]) => zero(R) ? L : R), c = S.q;
-  const P = fs.length > 1 ? {a:0, b:0, fac:fs, ...(c !== 1 && {fc:c})} : {a:0, b:0, bin:fs[0], ...(c !== 1 && {bc:c})};
-  return Z === p.R ? [P, Z] : [Z, P];
-}
-// ab = 0 itself: the first part stays (p), the second's [sides, answer], or null
-function zpSplit(p, parts){
-  const root = ([L, R]) => { const u = R.a ? R : L; return -u.b/u.a; };
-  [p.L, p.R] = parts[0]; p.n = root(parts[0]); p.deg = 0; p.zp = null;
-  p.make = {kb:0, kq:0, k:0, div:0, deg:0};   // what is left: a plain equation (toGo)
-  return parts[1] ? [parts[1], root(parts[1])] : null;
-}
-// the factors have been shown: ab = 0 now (x = 0 is solved at once)
-function zpNow(p){
-  p.factor = null;
-  const split = zpSplit(p, zpParts(p));
-  redraw(p);
-  if(split) spawnChild(p, split[0], split[1]);
-  const v = solvedValue(p.L, p.R);
-  if(v != null) solvedNow(p, v, p.factorX);
+// x(□) (Vadim, level 5): x out as a common factor, x² − 3x → x(x − 3),
+// 2x² + 6x → x(2x + 6); null where the side isn't qx² + ax (both there)
+function xOut(s){
+  if(!s.q || !s.a || s.b || [s.p4, s.p3, s.m, s.root, s.pa, s.pn, s.fd, s.bin, s.fac, s.rec, s.ex, s.lg, s.cr].some(Boolean)) return null;
+  return {a:0, b:0, fac:[{a:1, b:0}, {a:s.q, b:s.a}]};
 }
 // The zero-product rule's second equation (Vadim): it falls beside the first,
 // on its own from then on; its bomb and points (not counted as an equation, no bonus)
@@ -1535,7 +1511,7 @@ function surface(c0, c1){
 // operation key on equation p, dropped at x (cells from the left wall); the
 // joker writes the answer straight away (x on the side that had more x)
 function applyOp(key, p, x){
-  if(!p || p.bomb != null || p.glow != null || p.factor != null || over || paused || counts[key] <= 0) return false;   // factor: ab = 0 showing its factors
+  if(!p || p.bomb != null || p.glow != null || over || paused || counts[key] <= 0) return false;
   const o = OPS[key];
   if(!p.avail) p.avail = {...counts};   // what the player had when they started on it
   counts[key]--; drawCount(key);
@@ -1574,14 +1550,15 @@ function applyOp(key, p, x){
   else if(o.zp){   // ab = 0 (level 5): the first part stays, the second falls beside it
     const parts = zpParts(p);
     if(!parts){ p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit"); return true; }
-    const f = factored(p);
-    if(f){   // x² + 3x + 2 = 0 (Vadim): (x + 1)(x + 2) = 0 first, for ZP_T s (zpNow); bricks meanwhile fly back
-      [p.L, p.R] = f; p.factor = 0; p.factorX = x;
-      const mid = redraw(p);
-      note(`| ${OP_NOTE[key]}`, X(mid), Y(p.y - ht(p)));
-      return true;
-    }
-    split = zpSplit(p, parts);
+    const root = ([L, R]) => { const u = R.a ? R : L; return -u.b/u.a; };
+    [p.L, p.R] = parts[0]; p.n = root(parts[0]); p.deg = 0; p.zp = null;
+    p.make = {kb:0, kq:0, k:0, div:0, deg:0};   // what is left: a plain equation (toGo)
+    if(parts[1]) split = [parts[1], root(parts[1])];
+  }
+  else if(o.xfac){   // x(□) (level 5); where no side changes the brick is wasted
+    const A = xOut(p.L), B = xOut(p.R);
+    if(!A && !B){ p.el.classList.remove("hit"); p.el.offsetWidth; p.el.classList.add("hit"); return true; }
+    p.L = A || p.L; p.R = B || p.R;
   }
   else if(o.cbrt){ p.L = cbrtSide(p.L); p.R = cbrtSide(p.R); }   // ∛ (level 6) always works
   else if(o.power){   // □², □³ (level 6); where a side can't be written that way the brick is wasted
@@ -1735,7 +1712,7 @@ function shootLowest(x, y, from){
 function shotDown(p, from){
   if(!pieces.includes(p) || p.bomb != null || p.glow != null || over) return;
   if(p.contra){ contraNow(p, from); return; }   // the blowup, as with the ⚡
-  p.joker = true; p.factor = null;   // (ab = 0 showing its factors: the shot answers both)
+  p.joker = true;
   const split = jokerAnswer(p); redraw(p);
   if(split) spawnChild(p, split[0], split[1]);
   const two = pnAnswers(p);
@@ -2485,7 +2462,6 @@ function frame(t){
       if(!pieces.includes(p)) continue;   // gone in a contradiction's blowup
       if(p.bomb != null){ stepBomb(p, dt); continue; }
       p.y += (p.fast ? DROP : ramp(speed.fall))*dt;
-      if(p.factor != null && (p.factor += dt) >= ZP_T) zpNow(p);   // ab = 0 has shown the factors
       const s = surface(p.x0, p.x0 + p.w - 1);
       if(p.glow != null){   // solved and glowing: it rests on the trash if it gets there
         p.y = Math.min(p.y, s); drawPiece(p);
