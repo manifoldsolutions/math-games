@@ -2751,7 +2751,7 @@ function showBricks(){
   const rows = NEW_BRICKS[level];
   if(!rows){ over = false; return; }
   over = true;
-  $("ovTitle").textContent = `Tason ${level} uudet palikat`;
+  $("ovTitle").textContent = level === 1 ? "Tason 1 operaatiot" : `Tason ${level} uudet operaatiot`;   // Vadim: "operaatiot", level 1 without "uudet"
   $("ovResult").textContent = "";
   $("ovScore").innerHTML = `<table class="bricktable"><tbody>` + rows.map(([keys, text]) =>
     `<tr><td>${keys.map(k => `<span class="tb">${OPS[k].html}</span>`).join("")}</td><td>${IntroKit.nb(text)}</td></tr>`).join("") + `</tbody></table>`;

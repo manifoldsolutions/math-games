@@ -737,7 +737,7 @@ games/<category>/<course>/<game>/index.html
   splits ("ab=0 käy vain tuloon"). Level 5's bricks are shown here because
   there is no Esittely before level 5.
 - Before every level (Vadim; they were the Esittely's last steps for a
-  while): a dialog "Tason n uudet palikat" with a table of the level's new
+  while): a dialog "Tason n uudet operaatiot" ("Tason 1 operaatiot" on level 1; Vadim) with a table of the level's new
   bricks, as they look, and what they do (`NEW_BRICKS`, `showBricks`; no
   level column); Aloita starts the level. Level 1: ±1, ±x, ±2, ±2x, ·(−1),
   the joker; 2: :2 ·2, ⚡; 3: ±x², √; 4: :3 ·3, :4 ·4, ·x; 5: avaa, neliö,
