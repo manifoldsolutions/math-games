@@ -605,25 +605,27 @@ games/<category>/<course>/<game>/index.html
   ended, the start dialog's how-to), no notes on new operations. The
   Esittely (below) explains. The notes on the equations themselves
   (`| + 1`) and the flying rewards stay.
-- Hints (Vadim, every level, not in the Esittely): when a falling
-  equation's middle reaches a third of the well (it was half), each brick it
-  still needs (as the game plans it: `needed`, from `toGo` and `plan`; ⚡ for
-  a contradiction, the joker where the game counts on one) that has been
-  thrown at most twice on this level (`HINT_USED`; it was once)
-  (`levelUsed`, any throw, counted from the level's start) glows slowly
-  brighter and dimmer (0.6 s each way, `hintGlow`; Vadim: a 400 ms flicker
-  was too fast) until it is thrown, anywhere, or the equation is gone
-  (`hints`, `p.hint`, `.hintflash`), and the equation with it while any of
-  its bricks does (Vadim: with several on the screen, which one). On level
-  1, while no brick has been dragged in this game (`dragged`), the ghost
-  hand also touches the brick and lifts it a little twice (`ghostNudge`).
-  The first 5 equations of every level get more (Vadim, `HELP_FIRST`): after
-  1 s with nothing thrown at one (since it came, or since the last throw at
-  it: `p.idle`), the brick it needs next glows with it, however often it has
-  been used, until it is thrown. "Next" (`nextBrick`): the first brick of an
-  order of its bricks that solves a copy of it (x³ + 1 = 9: −1 before ∛;
-  2x + 1 = 7: −1, then :2), tried with a dry `applyOp` (`p.dry`: nothing
-  else changes), the plan's own order first.
+- Hints (Vadim, every level, not in the Esittely; `hints`): when a falling
+  equation's middle reaches a third of the well, one brick it still needs
+  glows once, softly brighter and dimmer (1.2 s, `glowOnce`, `hintGlow`),
+  and the equation with it (Vadim: with several on the screen, which one).
+  The brick: the first in an order that solves the equation (`solveOrder`:
+  the game's plan, `toGo` and `plan`, tried on a copy with a dry `applyOp`,
+  `p.dry`, the plan's own order first; x³ + 1 = 9: −1 before ∛) among those
+  thrown at most twice on this level (`HINT_USED`, `levelUsed`), never the
+  joker, and not one that has already glowed twice on this level
+  (`glowed`). The first 3 equations of every level get more (`HELP_FIRST`,
+  `HELP_IDLE`): after 3 s with nothing thrown at one (since it came or
+  since the last throw at it, `p.idle`), the brick it needs next glows
+  once with it, however often used (the joker too, where the game counts
+  on one), and again after every such pause. Only one equation and brick
+  glow at a time (`glowUntil`; the next waits). On level 1, while no brick
+  has been dragged in this game (`dragged`), the ghost hand also touches the
+  brick at the third and lifts it a little twice (`ghostNudge`). A switch
+  "Vihjeet päällä / pois" (Vadim; `setHints`, `.hintswitch`) in the start
+  and end dialogs (under the speed) and under the well turns all of it
+  off; kept for "↺ Alusta", nothing saved. (It began as a 400 ms flicker of
+  every brick used at most once at half the well; then a glow until thrown.)
 - Unsolved on landing → trash: single grey bricks, the equation's text faded
   on them while the block is whole. Trash above the red line → Game Over.
 - Points (Vadim): 100 per solved equation, and without a joker two kinds of

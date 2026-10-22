@@ -196,16 +196,16 @@
   .shard.dud{ opacity:.35; }
 
   /* ── Esittely (intro): the shared look is in theme.css; here only this game's part ── */
-  body.intro .hud, body.intro .statusrow > span:not(#pieBox), body.intro #pause, body.intro #restart, body.intro #introBtn,
+  body.intro .hud, body.intro .statusrow > span:not(#pieBox), body.intro #pause, body.intro #restart, body.intro #introBtn, body.intro #hintsBtn,
   body.intro #skipLevel, body:not(.intro) #introSkip, body:not(.intro) #introRestart{ display:none; }
   body.intro .statusrow{ justify-content:center; }
   .introlabel{ pointer-events:none; z-index:4; font-family:var(--ui); color:var(--muted); white-space:nowrap; transform:translateX(-50%); }
   .handsvg{ z-index:7; overflow:visible; }   /* the ghost hand (theme.css .ghost-hand) */
   .opb.introglow{ box-shadow:0 0 18px var(--accent), inset 0 0 6px var(--accent); }
-  /* a hint: the brick a falling equation needs, and the equation, blink as in the Esittely until it is thrown (Vadim; hints) */
-  .opb.hintflash, .piece.hintflash{ animation:hintGlow .6s ease-in-out infinite alternate; }   /* brighter, dimmer: 0.6 s each way (Vadim) */
-  .piece.hit.hintflash{ animation:hit .35s ease, hintGlow .6s ease-in-out infinite alternate; }   /* a throw's bump shows too */
-  .opb.pulse.hintflash{ animation:pulse .45s ease, hintGlow .6s ease-in-out infinite alternate; }
+  /* a hint: the brick a falling equation needs, and the equation, glow once (Vadim; hints) */
+  .opb.hintflash, .piece.hintflash{ animation:hintGlow .6s ease-in-out 2 alternate; }   /* once: brighter, then dimmer, 0.6 s each way (Vadim; GLOW_T) */
+  .piece.hit.hintflash{ animation:hit .35s ease, hintGlow .6s ease-in-out 2 alternate; }   /* a throw's bump shows too */
+  .opb.pulse.hintflash{ animation:pulse .45s ease, hintGlow .6s ease-in-out 2 alternate; }
   @keyframes hintGlow{ to{ box-shadow:0 0 20px var(--accent), inset 0 0 7px var(--accent); filter:brightness(1.3); } }
   .opb.blink{ animation:softBlink 1.1s ease-in-out infinite; }   /* the brick to throw */
   @keyframes softBlink{ 50%{ box-shadow:0 0 22px var(--accent), inset 0 0 8px var(--accent); filter:brightness(1.35); } }
@@ -321,6 +321,19 @@
   .speedlabels button.on{ color:var(--accent-ink); }
   .speedlabels button:focus-visible{ outline:2px solid var(--magenta); outline-offset:2px; }
   .speedmult{ color:var(--muted); font-family:var(--ui); font-size:14px; }
+  /* the hints' switch (Vadim): in the dialogs and under the well */
+  .hintswitch{ display:inline-flex; align-items:center; gap:6px; background:none; border:none; padding:8px 4px; cursor:pointer;
+    font:600 14px var(--ui); color:var(--muted); }
+  .hintswitch b{ font-weight:600; color:var(--ink); min-width:3.6em; text-align:left; }
+  .speedpick .hintswitch{ margin-top:12px; }
+  .subctrl .hintswitch{ font-size:13px; padding:0; }
+  .subctrl .hintswitch b{ min-width:3.2em; }
+  .hintswitch .sw{ position:relative; width:30px; height:16px; border-radius:8px; background:var(--line); transition:background .2s ease; }
+  .hintswitch .sw::after{ content:""; position:absolute; left:2px; top:2px; width:12px; height:12px; border-radius:50%;
+    background:var(--muted); transition:transform .2s ease, background .2s ease; }
+  .hintswitch[aria-pressed="true"] .sw{ background:color-mix(in srgb, var(--accent) 45%, transparent); }
+  .hintswitch[aria-pressed="true"] .sw::after{ transform:translateX(14px); background:var(--accent); }
+  .hintswitch:focus-visible{ outline:2px solid var(--magenta); outline-offset:2px; }
 </style>
 </head>
 <body class="game">
@@ -349,6 +362,7 @@
       <button id="pause" title="Tauko (P tai Esc)">⏸&#xFE0E; Tauko</button>
       <button id="restart">↺ Alusta</button>
       <button id="introBtn">Esittely</button>
+      <button type="button" class="hintswitch" id="hintsBtn" aria-pressed="true">Vihjeet <b>päällä</b> <span class="sw" aria-hidden="true"></span></button>
       <button id="introRestart">↺ Alusta</button>
       <button class="btn" id="introSkip">Ohita esittely</button>
       <button id="skipLevel" hidden>⏭ Ohita taso (testi)</button>
@@ -367,6 +381,7 @@
           <button type="button" data-s="0">Hidas</button><button type="button" data-s="1">Keskinopea</button><button type="button" data-s="2">Nopea</button><button type="button" data-s="3">Kreisi</button>
         </div>
         <div class="speedmult" id="speedMult"></div>
+        <button type="button" class="hintswitch" aria-pressed="true">Vihjeet <b>päällä</b> <span class="sw" aria-hidden="true"></span></button>
       </div>
       <div class="btns">
         <button class="primary" id="again">Pelaa uudestaan</button>
@@ -1565,7 +1580,7 @@ function surface(c0, c1){
 // operation key on equation p, dropped at x (cells from the left wall); the
 // joker writes the answer straight away (x on the side that had more x)
 function applyOp(key, p, x){
-  if(!p || p.bomb != null || p.glow != null || over || paused || !p.dry && counts[key] <= 0) return false;   // dry: a copy (nextBrick)
+  if(!p || p.bomb != null || p.glow != null || over || paused || !p.dry && counts[key] <= 0) return false;   // dry: a copy (solveOrder)
   const o = OPS[key];
   if(!p.avail) p.avail = {...counts};   // what the player had when they started on it
   if(!p.dry){ counts[key]--; drawCount(key); levelUsed[key] = (levelUsed[key] || 0) + 1; p.idle = 0; }
@@ -2550,65 +2565,71 @@ function frame(t){
 }
 
 /* Hints (Vadim, every level, not in the Esittely): when a falling equation's
-   middle reaches half of the well, each brick it still needs (as the game
-   plans it: toGo and plan; ⚡ for a contradiction, the joker where the game
-   counts on one) that has been thrown at most HINT_USED times on this level
-   glows when the equation's middle reaches a third of the well, until it is
-   thrown (anywhere) or the equation is gone, and the equation with it while
-   any of its bricks does (Vadim: with several on the screen, which one). On
-   level 1, if no brick has been dragged yet in this game, the ghost hand
-   also lifts the brick a little then (ghostNudge). The first HELP_FIRST
-   equations of a level get more (Vadim): after HELP_IDLE s with nothing
-   thrown at it, the brick it needs next glows, however often it has been
-   used (nextBrick). */
-const HINT_USED = 2, HELP_FIRST = 5, HELP_IDLE = 1;
+   middle reaches a third of the well, one brick it still needs (as the game
+   plans it: toGo and plan; ⚡ for a contradiction), the first in the solving
+   order (solveOrder) of those thrown at most HINT_USED times on this level
+   (never the joker), glows once, brighter and
+   dimmer, and the equation with it (Vadim: with several on the screen,
+   which one). On level 1, if no brick has been dragged yet in this game,
+   the ghost hand also lifts that brick a little (ghostNudge). The first
+   HELP_FIRST equations of a level get more (Vadim): after HELP_IDLE s with
+   nothing thrown at one, the brick it needs next glows once with it,
+   however often it has been used (the joker too, where the game counts on
+   one: only here, Vadim), and again after every such pause. A brick that
+   has glowed twice on the level no longer glows from the third-of-the-well
+   rule (glowed). Only one equation and brick glow at a time (glowUntil:
+   the next waits). The player can switch them all off (hintsOn, setHints). */
+const HINT_USED = 2, HELP_FIRST = 3, HELP_IDLE = 3;
 let dragged = false;            // a brick dragged in this game (level 1's ghost hand)
+let hintsOn = true;             // the player's switch (Vadim): off, no hints at all
+let glowed = {};                // glows of each brick on this level: twice, and no more from the third-of-the-well rule (Vadim)
+let glowUntil = 0;              // only one equation and brick glow at a time (Vadim): the next waits
 function hints(dt){
+  if(!hintsOn) return;
+  for(const p of inAir()) p.idle = (p.idle || 0) + dt;   // since it came, or since the last throw at it (applyOp)
   for(const p of inAir()){
-    if(!p.hint) p.hint = {};    // brick: its throws on the level when it began to glow (one more, and it is thrown)
+    if(performance.now() < glowUntil) return;   // one glowing: the others wait their turn
     if(!p.crossed && p.y - ht(p)/2 >= ROWS/3){
       p.crossed = true;
-      const keys = needed(p).filter(key => (levelUsed[key] || 0) <= HINT_USED);
-      for(const key of keys) p.hint[key] = levelUsed[key] || 0;
-      if(keys.length && level === 1 && !dragged) ghostNudge(keys[0]);
+      const key = solveOrder(p).find(k => k !== "J" && (levelUsed[k] || 0) <= HINT_USED && (glowed[k] || 0) < 2);   // the joker only in the first ones' help (Vadim)
+      if(key){ hintGlow(key, p); if(level === 1 && !dragged) ghostNudge(key); }
     }
-    if(p.no <= HELP_FIRST && (p.idle = (p.idle || 0) + dt) >= HELP_IDLE){   // nothing thrown at it for a second
+    if(p.no <= HELP_FIRST && p.idle >= HELP_IDLE){   // nothing thrown at it for a while
       p.idle = 0;
-      const key = nextBrick(p);
-      if(key && (levelUsed[key] || 0) !== p.hint[key]) p.hint[key] = levelUsed[key] || 0;
+      const key = solveOrder(p)[0];
+      if(key) hintGlow(key, p);
     }
   }
-  // what blinks now: a hinted brick not thrown since, of an equation still in the air
-  const on = new Set();
-  for(const p of pieces){
-    if(!p.hint) continue;
-    const left = p.bomb != null || p.glow != null ? [] : Object.keys(p.hint).filter(key => (levelUsed[key] || 0) === p.hint[key]);   // solved: no more
-    p.el.classList.toggle("hintflash", left.length > 0);
-    for(const key of left) on.add(key);
-  }
-  for(const key of Object.keys(opEls)) opEls[key].classList.toggle("hintflash", on.has(key));
 }
-// the bricks p still needs, as the game plans it (⚡ for a contradiction; the joker where it counts on one)
-function needed(p){
-  const g = p.contra ? null : toGo(p), need = p.contra ? {N:1} : g && plan(g, counts);
-  return Object.entries(need || {}).filter(([key, n]) => n > 0 && owned.has(key)).map(([key]) => key);   // (a plan lists the others with 0)
+function hintGlow(key, p){ glowOnce(opEls[key]); glowOnce(p.el); glowed[key] = (glowed[key] || 0) + 1; glowUntil = performance.now() + GLOW_T; }
+// the switch, in the start and end dialogs and under the well: both show the same
+function setHints(on){
+  hintsOn = on;
+  for(const b of document.querySelectorAll(".hintswitch")){ b.setAttribute("aria-pressed", on); b.querySelector("b").textContent = on ? "päällä" : "pois"; }
+  if(!on){ nudgeTok++; for(const el of board.querySelectorAll(".hintflash")) el.classList.remove("hintflash"); for(const key of Object.keys(opEls)) opEls[key].classList.remove("hintflash"); }
 }
-// the brick p needs next: the first of an order of its bricks that solves a
-// copy of it (x³ + 1 = 9: −1 before ∛), the plan's own order tried first
+for(const b of document.querySelectorAll(".hintswitch")) b.addEventListener("click", () => setHints(!hintsOn));
+const GLOW_T = 1200;            // ms: one glow, brighter and dimmer again (CSS .hintflash)
+function glowOnce(el){
+  el.classList.remove("hintflash"); el.offsetWidth; el.classList.add("hintflash");
+  clearTimeout(el.glowTimer); el.glowTimer = setTimeout(() => el.classList.remove("hintflash"), GLOW_T);
+}
+// the bricks p still needs in an order that solves it: tried on a copy of
+// it (x³ + 1 = 9: −1 before ∛), the plan's own order first; [] if none
 const FAKE_EL = {classList:{add(){}, remove(){}, toggle(){}, contains:() => false}, offsetWidth:0};
-function nextBrick(p){
-  if(p.contra) return owned.has("N") && counts.N > 0 ? "N" : null;
+function solveOrder(p){
+  if(p.contra) return owned.has("N") && counts.N > 0 ? ["N"] : [];
   const g = toGo(p), need = g && plan(g, counts);
-  const keys = Object.entries(need || {}).filter(([key, n]) => n > 0 && owned.has(key)).flatMap(([key, n]) => Array(n).fill(key));
-  if(keys.length < 2) return keys[0] || null;
+  const keys = Object.entries(need || {}).filter(([key, n]) => n > 0 && owned.has(key)).flatMap(([key, n]) => Array(n).fill(key));   // (a plan lists the others with 0)
+  if(keys.length < 2) return keys;
   const solves = order => {
     const q = {...p, L:structuredClone(p.L), R:structuredClone(p.R), used:{...p.used}, make:p.make && structuredClone(p.make), el:FAKE_EL, dry:true, solved:null};
     for(const key of order){ if(q.solved) break; applyOp(key, q, 0); }
     return !!q.solved && (!p.truth || q.solved.every(v => p.truth.some(t => same(t, v))));
   };
-  if(solves(keys)) return keys[0];
+  if(solves(keys)) return keys;
   const seen = new Set(), go = (rest, acc) => {   // every other order, each once
-    if(!rest.length){ const k = acc.join(); if(seen.has(k)) return null; seen.add(k); return solves(acc) ? acc[0] : null; }
+    if(!rest.length){ const k = acc.join(); if(seen.has(k)) return null; seen.add(k); return solves(acc) ? acc : null; }
     for(let i = 0; i < rest.length; i++){
       if(i && rest[i] === rest[i - 1]) continue;
       const r = go([...rest.slice(0, i), ...rest.slice(i + 1)], [...acc, rest[i]]);
@@ -2616,7 +2637,7 @@ function nextBrick(p){
     }
     return null;
   };
-  return go([...keys].sort(), []) || keys[0];
+  return go([...keys].sort(), []) || keys;
 }
 // level 1 (Vadim): the ghost hand touches the brick and lifts it a little, then lets it settle
 let nudgeTok = 0;
@@ -2651,7 +2672,7 @@ function newGame(){
 // too unless the level is fresh (it was paid for in the dialog, showLevel)
 function startLevel(){
   $("overlay").classList.remove("show");
-  level++; eqNo = 0; solved = 0; over = false; since = 0; contras = 0; levelUsed = {};
+  level++; eqNo = 0; solved = 0; over = false; since = 0; contras = 0; levelUsed = {}; glowed = {};
   for(const key of Object.keys(opEls)) opEls[key].classList.remove("hintflash");
   if(lv().fresh){
     for(const b of bricks) b.el.remove();
