@@ -691,14 +691,16 @@ games/<category>/<course>/<game>/index.html
   lattiasta operaatiopalikka ja heitä se yhtälöön. Tällöin operaatiota
   sovelletaan puolittain."): −1 blinks (`blink`), and if nothing has been
   thrown in 4 s the hand shows the move once without throwing (`nudge`;
-  the brick flies back); Jatka only after the throw, when x = 3 has
+  the brick flies back); a throw that doesn't solve it brings "Yritä nyt
+  ratkaista yhtälö, eli muuttaa se muotoon x = __." (`retry`); Jatka only
+  after the solve, when x = 3 has
   exploded into bricks; 3x = 7, the ghost pulls it down ("Jos yhtälöä ei
   pysty ratkaisemaan olemassa olevilla palikoilla, tai et muusta syystä
   halua ratkaista sitä, voit vetää yhtälön alas.") and it lands as jäte
   (the red line); a gold 3 and a magenta −2 bomb ("Positiivinen pommi
   antaa palikoita. Negatiivinen raivaa jätettä ja antaa pisteitä."); a
   zero bomb ("0 on erikoispommi, joka tuo bonuksen."); x + 3 = x + 5 with
-  another equation beside it: the ghost throws −x, 3 = 5, the player
+  another equation beside it: the ghost throws −x ("Tässä x supistuu pois"), 3 = 5, the player
   throws ⚡ and both go ("Jos yrität heittää salaman yhtälöön, jolla on
   ratkaisu, salama menee hukkaan."); the joker glowing ("…ristiriitaan se
   ei käy: siihen se menee hukkaan."); the table of levels 1–3's bricks
@@ -891,6 +893,13 @@ games/<category>/<course>/<game>/index.html
     2^x, 2^x + 2 → 2^(x − 1) + 1, 3·2^x → 3·2^(x − 1). So 2^(x + 1) = 8
     → :2 → 2^x = 4 → log₂ is as short as log₂, −1. (It used to give
     2^x/2, which nothing could finish.)
+  - A squared bracket has a power (`bp`, 2 if not given; Vadim): □² on
+    1 = (x + 1)² gives 1 = (x + 1)⁴ and □³ (x + 1)⁶ (drawn with `supNum`);
+    √ halves a power divisible by 4 ((x + 1)⁴ → (x + 1)², no ±: it is ≥
+    0) and ∛ thirds one divisible by 3; √ on (x + 1)⁶ is |x + 1|³, so it
+    goes around it as on anything else. avaa only opens squares, and the
+    plans (`toGo`, `binRoot`) only know squares. □² also takes x² to x⁴
+    (√ brings it back).
   - log₂ (`log2Side`) undoes 2^, turns a power of 2 into its exponent
     (1/4 → −2), and anything else into log₂(…). A number ≤ 0 is refused,
     like √ of a negative number.

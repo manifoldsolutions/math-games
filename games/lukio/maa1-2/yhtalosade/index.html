@@ -679,7 +679,7 @@ function toGo(p){
   }
   const bs = L.bin ? L : R.bin ? R : null;
   if(bs){   // (x + k)² = n²: √, then k off
-    if((bs.bc ?? 1) !== 1 || [bs.p4, bs.q, bs.a, bs.b, bs.pa, bs.root, bs.pn].some(Boolean) || !plain(bs === L ? R : L)) return null;
+    if((bs.bc ?? 1) !== 1 || (bs.bp ?? 2) !== 2 || [bs.p4, bs.q, bs.a, bs.b, bs.pa, bs.root, bs.pn].some(Boolean) || !plain(bs === L ? R : L)) return null;
     return {kb:0, kq:0, k:bs.bin.b, div:0, deg:2};
   }
   if([L, R].some(s => s.root || s.pa || s.p3 || s.m || s.rec || s.fac || s.ex || s.lg || s.cr)) return null;
@@ -1006,7 +1006,7 @@ function timesX(s){
 // out, also in a fraction's top; null: nothing to open
 function openSide(s){
   if(s.fd){ const f = openSide(s.f); return f && {...s, f}; }
-  if(!s.bin && !s.fac) return null;
+  if(!s.bin && !s.fac || s.bin && (s.bp ?? 2) !== 2) return null;   // (x + 1)⁴ isn't opened
   const r = {...s}; let q = s.q || 0, a = s.a || 0, b = s.b || 0;
   if(s.bin){ const c = s.bc ?? 1, u = s.bin.a, v = s.bin.b; q += c*u*u; a += 2*c*u*v; b += c*v*v; delete r.bin; delete r.bc; }
   if(s.fac){ const c = s.fc ?? 1, [[u1, v1], [u2, v2]] = s.fac.map(f => [f.a, f.b]); q += c*u1*u2; a += c*(u1*v2 + u2*v1); b += c*v1*v2; delete r.fac; delete r.fc; }
@@ -1079,6 +1079,7 @@ function jokerAnswer(p){
 }
 // Level 6's bricks on a side (Vadim). `only` u: the side is just that term
 // (its own factor c), nothing beside it
+const supNum = n => String(n).replace(/\d/g, d => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);   // a power as superscript digits
 const only = (s, u) => s[u] && ![s.p4, s.p3, s.q, s.a, s.b, s.m, s.root, s.pa, s.pn, s.fd, s.bin, s.fac, s.rec, s.ex, s.lg, s.cr]
   .some((v, i) => v && ["p4", "p3", "q", "a", "b", "m", "root", "pa", "pn", "fd", "bin", "fac", "rec", "ex", "lg", "cr"][i] !== u);
 const cubeRoot = v => { const r = Math.round(Math.cbrt(v)); return r**3 === v ? r : null; };
@@ -1087,16 +1088,21 @@ const cubeRoot = v => { const r = Math.round(Math.cbrt(v)); return r**3 === v ? 
 function cbrtSide(s){
   if(plain(s)){ const r = cubeRoot(s.b); return r != null ? {a:0, b:r} : {a:0, b:0, cr:{a:0, b:s.b}, cc:1}; }
   if(only(s, "p3")){ const r = cubeRoot(s.p3); if(r != null) return {a:r, b:0}; }
+  if(only(s, "bin") && (s.bp ?? 2) % 3 === 0){ const r = cubeRoot(s.bc ?? 1); if(r != null) return {...s, bp:s.bp/3, bc:r}; }   // (x + 1)⁶ → (x + 1)²
   return {a:0, b:0, cr:{...s}, cc:1};
 }
 // □² and □³: both sides to a power. √(…) → …, ∛(…) → …, a number, kx,
-// x + k → (x + k)², 2^(…) → 2^(2·…); null where it can't be written (the brick is wasted)
+// x + k → (x + k)², 2^(…) → 2^(2·…), (x + k)² → (x + k)⁴ or ⁶ (the bracket's
+// power bp, Vadim; √ halves 4 and ∛ thirds 6 again), x² → x⁴; null where it
+// can't be written (the brick is wasted)
 function powerSide(s, n){
   const u = n === 2 ? "root" : "cr", c = n === 2 ? (s.rc ?? 1) : s.cc;
   if(only(s, u) && Math.abs(c) === 1) return c > 0 || n === 2 ? {...s[u]} : timesSide(s[u], -1);   // (−∛u)³ = −u
   if(plain(s)) return {a:0, b:s.b**n};
   if(only(s, "a")) return n === 2 ? {q:s.a**2, a:0, b:0} : {p3:s.a**3, a:0, b:0};
   if(only(s, "ex")) return {a:0, b:0, ex:scale(s.ex, n), ec:s.ec**n};
+  if(only(s, "bin")) return {...s, bp:(s.bp ?? 2)*n, bc:(s.bc ?? 1)**n};   // (x + 1)² → (x + 1)⁴ (Vadim)
+  if(only(s, "q") && n === 2) return {p4:s.q**2, a:0, b:0};               // x² → x⁴
   if(n === 2 && !(s.p4 || s.p3 || s.q || s.m || s.root || s.pa || s.pn || s.fd || s.bin || s.fac || s.rec || s.ex || s.lg || s.cr)) return {a:0, b:0, bin:{a:s.a, b:s.b}};
   return null;
 }
@@ -1273,7 +1279,7 @@ function addSides(x, y){
   if(pa) z.pa = pa; else delete z.pa;
   if(y.pr) z.pr = y.pr;
   if(y.root && !x.root){ z.root = y.root; z.rc = y.rc; }
-  if(y.bin && !x.bin){ z.bin = y.bin; z.bc = y.bc; }
+  if(y.bin && !x.bin){ z.bin = y.bin; z.bc = y.bc; if(y.bp) z.bp = y.bp; }
   if(y.rec && !x.rec){ z.rec = y.rec; z.rk = y.rk; }
   if(y.fac && !x.fac){ z.fac = y.fac; z.fc = y.fc; }
   for(const [u, c] of [["ex", "ec"], ["lg", "lc"], ["cr", "cc"]]) if(y[u] && !x[u]){ z[u] = y[u]; z[c] = y[c]; }
@@ -1345,7 +1351,7 @@ function sideHTML(s){
     // x + 1 = ±2 (after √ of (x + 1)² = 4): the ± with its number
     if(t === "pn") return `<span class="op">±</span>${cHTML(v)}`;
     if(t === "bin"){   // (x + 1)², its brackets in IBM Plex Sans; a factor before them after ·2 or ·(−1)
-      const body = (Math.abs(v) === 1 ? "" : numText(Math.abs(v))) + `<span class="paren">(</span>${sideHTML(s.bin)}<span class="paren">)</span>²`;
+      const body = (Math.abs(v) === 1 ? "" : numText(Math.abs(v))) + `<span class="paren">(</span>${sideHTML(s.bin)}<span class="paren">)</span>${supNum(s.bp ?? 2)}`;
       return i === 0 ? (v < 0 ? `<span class="xterm">${minus}</span>` : "") + body : `<span class="op">${v < 0 ? minus : "+"}</span>${body}`;
     }
     // ±2x, ±√2x (after √ of 4x², 2x²): its own sign, whatever its place
@@ -1642,7 +1648,7 @@ function writeAnswer(p, r = p.n){
 }
 // (x + k)² = n² (Vadim): √ gives x + k = ±n, or x + k = 0 for n = 0; else null
 function binRoot(p){
-  const pure = s => s.bin && (s.bc ?? 1) === 1 && ![s.p4, s.q, s.a, s.b, s.pa, s.root, s.fd, s.pn].some(Boolean);
+  const pure = s => s.bin && (s.bc ?? 1) === 1 && (s.bp ?? 2) === 2 && ![s.p4, s.q, s.a, s.b, s.pa, s.root, s.fd, s.pn].some(Boolean);
   const [U, V] = pure(p.L) ? [p.L, p.R] : [p.R, p.L];
   if(!pure(U) || !plain(V) || V.b < 0 || !Number.isInteger(Math.sqrt(V.b))) return null;
   const n = Math.sqrt(V.b), I = {...U.bin}, N = n ? {a:0, b:0, pn:n} : {a:0, b:0};
@@ -1677,6 +1683,8 @@ function sqrtSide(s){
     const v = numVal(s), [a, b] = ratio(v).map(u => Math.sqrt(Math.abs(u)));
     return v < 0 ? null : Number.isInteger(a) && Number.isInteger(b) ? numSide(a/b) : {a:0, b:0, root:s};
   }
+  if(only(s, "bin") && (s.bp ?? 2) % 4 === 0 && (s.bc ?? 1) > 0 && Number.isInteger(Math.sqrt(s.bc ?? 1)))
+    return {...s, bp:s.bp/2, bc:Math.sqrt(s.bc ?? 1)};   // (x + 1)⁴ → (x + 1)² (Vadim; no ±: it is ≥ 0)
   if(s.fd){   // x² or x⁴ alone over a square (Vadim): x²/4 → ±x/2, x⁴/4 → x²/2, then ·2; any other fraction gets √ around it
     const f = s.f, d = Math.sqrt(s.fd);
     if(f.p4 > 0 && !f.q && !f.a && !f.b && !f.root && !s.p4 && !s.q && !s.a && !s.b && !s.root && Number.isInteger(d) && Number.isInteger(Math.sqrt(f.p4)*1024))
@@ -2780,6 +2788,7 @@ const INTRO_STEPS = {
     // the player throws at once (Vadim): −1 blinks, and the hand shows the move once if nothing happens
     {bricks:BASIC4, counts:each(BASIC4, 4), setup(){ introEq({a:1, b:1}, {a:0, b:4}, null, 7, {n:3}); },
      blink:"-1", nudge:true, check:() => exploded(intro.eq[0]),
+     retry:"Yritä nyt ratkaista yhtälö, eli muuttaa se muotoon x = __.",   // after a throw that doesn't solve it
      prompt:"Ota lattiasta operaatiopalikka ja heitä se yhtälöön. Tällöin operaatiota sovelletaan puolittain.",
      ok:"Hyvä! Heitto kulutti palikan, ja ratkaistu yhtälö x = 3 muuttui pommiksi, joka jakoi palikoita."},
     {bricks:BASIC4, counts:each(BASIC4, 4), setup(){ introEq({a:3, b:0}, {a:0, b:7}, null, 5); },
@@ -2794,7 +2803,7 @@ const INTRO_STEPS = {
     {bricks:[...BASIC4, "N"], counts:{...each(BASIC4, 4), N:1},
      setup(){ introEq({a:1, b:3}, {a:1, b:5}, 1, 9, {contra:true}); introEq({a:1, b:-1}, {a:0, b:2}, 5, 4, {n:3}); },
      demo:[["throw", "-x", 0]], check:() => !pieces.includes(intro.eq[0]),
-     prompt:"Tässä x häviää: heitetään −x.",
+     prompt:"Tässä x supistuu pois: heitetään −x.",
      after:"3 = 5 ei ole koskaan totta: yhtälöllä ei ole ratkaisua. Heitä siihen ⚡ (ei ratkaisua).",
      ok:"⚡ räjäytti ristiriidan ja kaikki muut putoavat yhtälöt. Jos yrität heittää salaman yhtälöön, jolla on ratkaisu, salama menee hukkaan."},
     {bricks:[...BASIC4, "N", "J"], counts:{...each(BASIC4, 4), N:1, J:1}, glow:"J",
@@ -2886,7 +2895,9 @@ function introStep(i){
 }
 function introTick(){   // every frame: is the step's task done?
   const st = intro.step;
-  if(st.blink && intro.eq[0] && intro.eq[0].ops) opEls[st.blink].classList.remove("blink");   // thrown: no more blinking
+  const p0 = intro.eq[0];
+  if(st.blink && p0 && p0.ops) opEls[st.blink].classList.remove("blink");   // thrown: no more blinking
+  if(st.retry && !intro.done && p0 && p0.ops && p0.glow == null && p0.bomb == null && pieces.includes(p0)) say(st.retry);   // thrown, not solved
   if(!intro.done && !intro.demoOn && st.check && st.check()) introDone();
 }
 // a table of bricks in the well's place (Vadim): the bricks as they look, what they do, their level
