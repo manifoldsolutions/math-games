@@ -178,16 +178,14 @@
   .bomb .core .frac{ font-size:.62em; line-height:1; }
   @media (prefers-reduced-motion: reduce){ .bomb .pie{ animation:none; } }
   /* the pie in the status row: positive fractions add up there, a whole bursts */
-  #pieBox{ display:inline-flex; align-items:center; gap:6px; height:18px; --fc:var(--gold); }
+  #pieBox{ display:inline-flex; align-items:center; height:18px; --fc:var(--gold); }
   #pieBox[hidden]{ display:none; }
-  #pieSvg{ width:22px; height:22px; overflow:visible; }
-  #pieSvg .rim{ fill:none; stroke:var(--gold); stroke-width:4; }
-  #pieText{ color:var(--brown-ink); font-family:var(--math); }
-  #pieText .frac{ font-size:10px; line-height:1; }
+  #pieSvg{ width:calc(16px*5.48); height:16px; overflow:visible; }   /* PIE_W/100 circles' widths */
+  #pieSvg .rim{ fill:none; stroke:color-mix(in srgb, var(--gold) 55%, transparent); stroke-width:6; }
   #pieBox.got #pieSvg{ animation:pieGot .45s ease; }
-  #pieBox.burst #pieSvg{ animation:pieBurst .6s ease; }
-  @keyframes pieGot{ 50%{ scale:1.35; } }
-  @keyframes pieBurst{ 40%{ scale:1.9; filter:drop-shadow(0 0 10px var(--gold)); } }
+  #pieBox.burst #pieSvg{ animation:pieBurst .7s ease; }
+  @keyframes pieGot{ 50%{ scale:1.15; } }
+  @keyframes pieBurst{ 40%{ scale:1.3; filter:drop-shadow(0 0 10px var(--gold)); } }
   .note.piesum{ color:var(--brown-ink); }
   /* a negative fraction bomb's slices: the lit ones fly to the trash, the others fade */
   .shard{ pointer-events:none; z-index:5; background:var(--magenta); transform:translate(-50%,-50%) rotate(var(--a));
@@ -303,7 +301,7 @@
     <div class="statusrow">
       <span>Yhtälö: <b id="eqNo">0/30</b></span>
       <span>Ratkaistu: <b id="solved">0</b></span>
-      <span id="pieBox" hidden title="Murtolukupiirakka"><svg id="pieSvg" viewBox="-50 -50 100 100" aria-hidden="true"></svg><b id="pieText"></b></span>
+      <span id="pieBox" hidden title="Murtolukupiirakat"><svg id="pieSvg" aria-hidden="true"></svg></span>
       <span>Roskaa: <b id="trashCount">0</b></span>
     </div>
     <!-- translate="no": a browser's page translation must not touch the equations and bricks -->
@@ -759,12 +757,12 @@ function multBuild(n, a, b, c, s, sq){
 // level (Vadim: the speed already makes it harder); at most one of ·2, :2,
 // ·4, :4 and one of ·3, :3 (Vadim: no prime factoring, no 9), both the same
 // way (6x, x/6: a 6 or 12 to split) rarely (MULT_SIX; 2x/3 shows both, it is
-// fine: MULT_MIX keeps it at a quarter), ·(−1) less often. A quarter of the answers are fractions (FRAC_ANS;
-// not with once, level 5's).
+// fine: MULT_MIX keeps it at a quarter), ·(−1) less often. A quarter of the
+// answers are fractions (FRAC_ANS; level 5's too, with their one scaling: 2x = 3).
 function multEquation(i, once = false, zero = Math.random() < (firstMissing(i) ? ZERO_NEW : i <= ZERO_FIRST ? ZERO_START : ZERO)){
   const t = Math.min(1, (i - 1)/(EQUATIONS - 1)), at = ([u, v]) => u + (v - u)*t;
   const tp = Math.min(1, (i - 1)/(lv().posBy - 1)), plus = Math.random() < lv().pos[0] + (lv().pos[1] - lv().pos[0])*tp;
-  let frac = !zero && !once && Math.random() < FRAC_ANS;
+  let frac = !zero && Math.random() < FRAC_ANS;
   // the recipe first: a, b, c (no 0/x), the minus, √ (none for 0), as many throws as drawn
   const throws = rnd(1, zero ? 3 : 4), splits = [];
   for(let a = -2; a <= 2; a++) for(let b = -1; b <= 1; b++) for(const c of zero ? [0] : [0, 1]) for(const s of [0, 1]) for(const sq of zero ? [0] : [0, 1])
@@ -802,7 +800,7 @@ function bracketEquation(i){
   };
   const kind = pick(["open", "sqr", "zp", "rec", "old"]);
   if(kind === "open"){   // (x + a)² = x² + c: avaa, −x², −1, :2 (and ·(−1) for a = −1)
-    const a = pick([1, -1]), n = answer(), c = 2*a*n + 1;
+    const a = pick([1, -1]), n = Math.random() < FRAC_ANS ? (plus ? 1 : -1)*pick([1, 3, 5, 7])/2 : answer(), c = 2*a*n + 1;   // 2x + 1 = 4: x = 3/2 now and then (Vadim)
     return make({a:0, b:0, bin:{a:1, b:a}}, {q:1, a:0, b:c}, {open:1, "-x2":1, "-1":1, ":2":1, ...(a < 0 && {"*-1":1})}, [n], [kind, a, n]);
   }
   if(kind === "sqr"){   // x² + 2kx + k² = m²: neliö, √, ∓k; x = ±m − k
@@ -2030,13 +2028,16 @@ function explode(p){
 }
 /* ── fraction bombs (Vadim) ─────────────────────────────────────────────────
    x = ¾ is a pie: 4 slices, 3 lit (3/2: a full pie, then half of another,
-   outwards). A positive one's slices fly to the pie in the status row, which
-   adds them up (½ + ¾ = 5/4); every whole bursts there: +1 for every brick,
-   as a zero bomb's burst (Vadim: no rounding). A negative one shatters: its
+   outwards). A positive one's slices fly to the pies in the status row (from
+   level 4 on): PIE_GOAL circles side by side, filled from the left, the
+   sum in a note (½ + ¾ = 5/4). When all are full (Vadim: 5), every brick
+   gets PIE_BONUS and they empty again (no rounding). A negative one shatters: its
    lit slices fly to the tallest trash columns, a different one each, and
    knock SHARD_HIT bricks off the top (25 × |x| points, 20 a brick). */
 const PIE_SIZE = 2;             // a fraction bomb's pie: diameter / the bomb's
-let pie = 0, pieComing = 0;     // twelfths in the pie; fractions on their way to it
+const PIE_GOAL = 5, PIE_BONUS = 2;   // all 5 pies full (Vadim): +2 for every brick
+const PIE_STEP = 112, PIE_W = 100 + (PIE_GOAL - 1)*PIE_STEP;   // the status row's pies: SVG units from one to the next, in all
+let pie = 0, pieComing = 0;     // twelfths in the pies; fractions on their way to them
 const fracHTML = v => { const [p, q] = ratio(Math.abs(v)), m = v < 0 ? minus : "";
   return q === 1 ? m + p : m + `<span class="frac"><span class="num">${p}</span><span class="den">${q}</span></span>`; };
 // n slices of a ring r0 … r1 (r0 = 0: of a pie) from the top clockwise, the first lit ones lit (SVG units)
@@ -2058,17 +2059,21 @@ function pieHTML(v){
   for(let j = 0; j < n; j++) out += slicesSVG(q, j < whole ? q : rest, r0 + j*(w + 2), r0 + j*(w + 2) + w);
   return `<svg class="pie" viewBox="-50 -50 100 100" aria-hidden="true">${out}</svg>`;
 }
+// the status row's pies: the full ones lit, the next one with its slices (¾: 4, 3 lit), the rest empty
 function drawPie(){
-  const [p, q] = ratio(pie/PIE);
-  $("pieBox").hidden = !pie && !pieComing;
-  $("pieSvg").innerHTML = `<circle r="48" class="rim"/>` + (!p ? "" : p >= q ? `<circle r="44" class="lit"/>` : slicesSVG(q, p, 0, 44));
-  $("pieText").innerHTML = pie ? fracHTML(pie/PIE) : "";
+  $("pieBox").hidden = !(lv() && lv().chapter === 2) && !pie && !pieComing;
+  const full = Math.floor(pie/PIE), [p, q] = ratio(pie % PIE/PIE), svg = $("pieSvg");
+  let out = "";
+  for(let i = 0; i < PIE_GOAL; i++)
+    out += `<g transform="translate(${50 + i*PIE_STEP} 50)"><circle r="46" class="rim"/>`
+         + (i < full ? `<circle r="40" class="lit"/>` : i === full && p ? slicesSVG(q, p, 0, 40) : "") + `</g>`;
+  svg.setAttribute("viewBox", `0 0 ${PIE_W} 100`); svg.innerHTML = out;
 }
-function pieAt(){   // the status row's pie, in the board's px
+function pieAt(i = Math.min(PIE_GOAL - 1, Math.floor(pie/PIE))){   // pie i (the one filling now), in the board's px
   const r = $("pieSvg").getBoundingClientRect(), b = board.getBoundingClientRect();
-  return {x:r.left - b.left + r.width/2, y:r.top - b.top + r.height/2};
+  return {x:r.left - b.left + r.width*(50 + i*PIE_STEP)/PIE_W, y:r.top - b.top + r.height/2};
 }
-// a positive fraction v flies to the pie; a whole bursts: +1 for every brick
+// a positive fraction v flies to the pie filling now; all full: +PIE_BONUS for every brick
 function pieIn(v, x, y){
   ring("pos", x, y, cell);
   pieComing++; drawPie();
@@ -2080,18 +2085,18 @@ function pieIn(v, x, y){
   setTimeout(() => {
     el.remove();
     if(game !== gameNo) return;
-    const before = pie;
+    const before = pie % PIE/PIE;   // what the pie filling now had
     pie += Math.round(v*PIE); pieComing--; drawPie();
     const box = $("pieBox"); box.classList.remove("got"); box.offsetWidth; box.classList.add("got");
-    if(before) note(`${fracHTML(before/PIE)} + ${fracHTML(v)} = ${fracHTML(pie/PIE)}`, t.x, t.y + cell*1.3, "piesum");
-    if(pie < PIE){ busy--; return; }
-    setTimeout(() => {   // a whole (or more): it bursts
+    if(before) note(`${fracHTML(before)} + ${fracHTML(v)} = ${fracHTML(before + v)}`, t.x, t.y + cell*1.3, "piesum");
+    if(pie < PIE_GOAL*PIE){ busy--; return; }
+    setTimeout(() => {   // all full: the bonus, and they empty again (what is over starts the first)
       if(game !== gameNo) return;
-      const w = Math.floor(pie/PIE), at = pieAt();
-      pie -= w*PIE; drawPie();
+      const at = pieAt(Math.floor(PIE_GOAL/2));
+      pie -= PIE_GOAL*PIE; drawPie();
       box.classList.remove("burst"); box.offsetWidth; box.classList.add("burst");
-      ring("pos", at.x, at.y, cell*1.4);
-      for(const key of owned) if(counts[key] < capOf(key)) fly(key, "+" + w, w, at.x, at.y);   // a full joker gets none
+      ring("pos", at.x, at.y, cell*2);
+      for(const key of owned) if(counts[key] < capOf(key)) fly(key, "+" + PIE_BONUS, PIE_BONUS, at.x, at.y);   // a full joker gets none
       busy--;
     }, 650);
   }, 720);
@@ -2517,6 +2522,7 @@ function startLevel(){
   for(const key of lv().drop || []) if(owned.has(key)){ counts[key] = 0; owned.delete(key); promised.delete(key); opEls[key].hidden = true; drawCount(key); }   // level 5: ·4 and :4 (paid as points, showLevel)
   for(const [key, n] of Object.entries(lv().add || {})){ counts[key] += n; promised.add(key); own(key); drawCount(key); }   // the others stay
   document.body.classList.toggle("metal", lv().chapter === 2);   // chapter 2's look (theme.css)
+  drawPie();   // the pies show from level 4 on
   layout();
   start = {score, pts:{...pts}};
   $("level").textContent = `${level}/${LEVELS.length}`;

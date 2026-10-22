@@ -703,16 +703,29 @@ games/<category>/<course>/<game>/index.html
   fractions are always in lowest terms (4x = 6 → :4 → x = 3/2, `low` in
   `timesSide`) and drawn stacked, never 1½. √ takes square fractions
   (x² = 1/4 → x = ±1/2; 4x² = 1 → √ → ±2x = 1 → :2). The joker writes
-  them too. Not on level 5 (its level 4 recipes keep whole answers) nor
-  levels 1–3 (Vadim); level 6 has log₂ x = −1 or −2 (below).
+  them too. Level 5 has them too (Vadim), in the two kinds that needed no
+  new arithmetic: its level 4 recipes (2x = 3, −2x = −3: one scaling) and
+  avaa with a half answer ((x + 1)² = x² + 4 → avaa, −x², −1 → 2x = 3 →
+  :2 → x = 3/2), each a quarter of the time: about 2 a level. Not 1/□
+  (x + 2 = 1/2 → −1, −1 would need 1/2 − 2 = −3/2 done by the game) nor
+  the zero-product rule with (2x − 1) (a new kind of factor); later,
+  maybe. A fraction beside x can always be cleared on level 5 (Vadim: x +
+  1/2 = 1 → ·2, −1, :2). Not on levels 1–3 (Vadim); level 6 has log₂ x =
+  −1 or −2 (below).
 - Fraction bombs (Vadim: no rounding, something of their own): a bomb
   x = 3/4 is a pie around its ball, 4 slices with 3 lit, turning slowly
   (`pieHTML`); 3/2 is a full ring with a half ring outside it. A positive
-  one's fraction flies to the pie in the status row (shown only when it
-  has something, `pieBox`), which adds them up with a note (3/4 + 1/2 =
-  5/4); every whole bursts there: +1 for every brick, ⚡ and the joker (up
-  to 4) too, like a zero bomb's burst; the rest stays (`pie` in twelfths,
-  kept to the end of the game). A negative one shatters (`shatter`): its
+  one's fraction flies to the pies in the status row (`pieBox`, from level
+  4 on, kept to the end of the game): 5 circles side by side, empty at
+  first, filled from the left; the one filling shows its slices (¾: 4, 3
+  lit), and a note gives the sum (3/4 + 1/2 = 5/4: one full, ¼ in the
+  next). When all 5 are full (Vadim: `PIE_GOAL`; it paid +1 at every
+  whole for a while), every brick gets +2 (`PIE_BONUS`; ⚡ and the joker,
+  up to 4, too), and they empty again, what was over starting the first
+  (`pie` in twelfths). Simulated (500 games; perfect / 80 % / 50 % play):
+  the bonus comes in 53 / 49 / 35 % of games over levels 4–6, in 31 / 26 /
+  18 % already on level 4 (level 4 brings about 3.9 in fractions, level 5
+  about 1, level 6 about 0.3). A negative one shatters (`shatter`): its
   slices fly out, the lit ones (the numerator: −3/4 three, −3/2 three)
   each to one of the tallest trash columns, a different one each, and
   knock 2 bricks off its top (`SHARD_HIT`); what hung on them falls. 25 ×
@@ -729,8 +742,11 @@ games/<category>/<course>/<game>/index.html
   missing), 1.5 contradictions, 2 bursts, 2.1 throws an equation. With ·4,
   :4 and the fractions: 2.5 throws an equation, 5 fraction answers and 3.5
   pie bursts a level, jokers 0 / 0.5, unsolvable 0 / 0.3, and level 4
-  ends with 77 / 53 bricks instead of 50 / 34: richer, to be tuned later
-  (Vadim). Levels 5 and 6 hardly change.
+  ends with 77 / 53 bricks instead of 50 / 34. With the bonus at 5 pies
+  only (perfect / 80 % / 50 %): level 4 ends with 50 / 44 / 33 bricks,
+  jokers 0 / 0.3 / 0.7; level 5 jokers 2.6 / 2.8 / 2.7, unsolvable 0 /
+  0.08 / 1.0 (it was 0.3 at 50 % play: level 4 no longer pays a burst at
+  every whole).
 - Level 5 (Vadim): brackets and reciprocals. Level 4's bricks stay
   (Vadim), except ·4 and :4 (`drop`: their uses become 10 points each, as
   in "Poistuneet operaatiot"), +1 and −1 come at the start (`add`, 4 each), and from zero bombs
