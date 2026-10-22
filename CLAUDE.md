@@ -670,22 +670,48 @@ games/<category>/<course>/<game>/index.html
   colours, cyan, ⚡ orange and the red line stay. Not a lighter page: lighter
   means Esittely.
 - Level 4 (Vadim): only multiplying and dividing, no ±1. Bricks ·2 :2 ·3 :3
-  ·x, 4 each at the start (floor: :3 :2 ·2 ·3 ·x, then ·(−1) √ joker; ⚡ in
-  the left wall); zero bombs bring ·(−1), √, the joker, then ⚡ (`first`).
+  ·x ·4 :4, 4 each at the start (floor: :3 :2 ·2 ·3 ·x, then ·(−1) √ joker;
+  :4 and above it ·4 in the right wall, where ±1 come on level 5; ⚡ in the
+  left wall); zero bombs bring ·(−1), √, the joker, then ⚡ (`first`).
   Equations (`multEquation`, `multBuild`): x = n, or x² = n² (about 39 %,
   `MULT_SQ`, once √ is there), with both sides divided by ±2^a·3^b·x^c, so
   each side stays one term: 3x = 12, x/2 = 4, 2x/3 = 4, 12/x = 3, 4 = 12/x,
   x²/2 = 8, x/6 = 6/x. 1–4 throws, each as likely, mixed over the whole
-  level (Vadim: the speed already makes it harder). Each of ·2, :2, ·3, :3
-  mostly at most once (Vadim: else it is prime factoring, 24x = k, and those
-  bricks run out): a brick needed twice (4x, x/9, x/4 = 4/x) a tenth as likely
-  (`MULT_TWICE`; measured 10 % of the equations, it was 30 %), never three
-  times (it was 14 %); ·(−1) less often (23 %). The recipe is drawn first,
-  then an answer that keeps its sides whole (near the level's size). Its "no
-  solution" (⚡, from the 20th equation): k/x = 0 and x/k = −j/x
-  (`multContradiction`). "Täydellinen": the bricks commute, so the fewest is
-  |a| + |b| + c + the minus + √, except that √ first halves the 2s and 3s
-  (x/4 = 4/x → ·x → x²/4 = 4 → √ → ±x/2 = 2 → ·2: 3 throws, ⌈a/2⌉ + ⌈b/2⌉).
+  level (Vadim: the speed already makes it harder). At most one of ·2, :2,
+  ·4, :4 and one of ·3, :3 (Vadim: else it is prime factoring, 24x = k, and
+  those bricks run out; no 9, so no 9x or x/9), so 4 is as common as 2 and 3
+  (measured: ·4 or :4 in 41 % of the equations); ·(−1) less often. The
+  recipe is drawn first, then an answer that keeps the number side whole
+  (near the level's size). Its "no solution" (⚡, from the 20th equation):
+  k/x = 0 and x/k = −j/x (`multContradiction`). "Täydellinen": the bricks
+  commute, so the fewest is one throw for each brick of the recipe (√ first
+  halves the 2s: x/4 = 4/x → ·x → x²/4 = 4 → √ → ±x/2 = 2 → ·2). ·4 and :4
+  are two steps in one throw (`STEPS`), like ±2: 4x = 12 → :2, :2 is
+  "Siisti", and "Täydellinen" only if the player had no :4 (`four`,
+  `fewestThrows`). Where :4 runs short the generator plans :2 twice
+  (`FOUR`, `plan`).
+- Fraction answers (Vadim, level 4): a quarter of the answers (`FRAC_ANS`;
+  measured 25 %) are ±1/2, 3/2, 5/2, 1/3, 2/3, 4/3, 5/3, 1/4, 3/4, 5/4
+  (`FRACS`), whichever the drawn recipe takes with a whole number side:
+  2x = 1, 3x = −2, 4x = 6, 4 = 6/x, −10/x = 4, 4x² = 1 and 9/x = 4x
+  (x = ±1/2, ±3/2). x = 3/2 counts as solved (`solvedValue`, `numVal`);
+  fractions are always in lowest terms (4x = 6 → :4 → x = 3/2, `low` in
+  `timesSide`) and drawn stacked, never 1½. √ takes square fractions
+  (x² = 1/4 → x = ±1/2; 4x² = 1 → √ → ±2x = 1 → :2). The joker writes
+  them too. Not on level 5 (its level 4 recipes keep whole answers) nor
+  levels 1–3 (Vadim); level 6 has log₂ x = −1 or −2 (below).
+- Fraction bombs (Vadim: no rounding, something of their own): a bomb
+  x = 3/4 is a pie around its ball, 4 slices with 3 lit, turning slowly
+  (`pieHTML`); 3/2 is a full ring with a half ring outside it. A positive
+  one's fraction flies to the pie in the status row (shown only when it
+  has something, `pieBox`), which adds them up with a note (3/4 + 1/2 =
+  5/4); every whole bursts there: +1 for every brick, ⚡ and the joker (up
+  to 4) too, like a zero bomb's burst; the rest stays (`pie` in twelfths,
+  kept to the end of the game). A negative one shatters (`shatter`): its
+  slices fly out, the lit ones (the numerator: −3/4 three, −3/2 three)
+  each to one of the tallest trash columns, a different one each, and
+  knock 2 bricks off its top (`SHARD_HIT`); what hung on them falls. 25 ×
+  |x| points, 20 a brick. With no trash the slices just fade.
 - Sides gain x³ (`p3`) and n/x (`m`, drawn as a fraction, two rows);
   ·x (`timesX`) raises every power (12/x → 12; a side it can't take, ±x or a
   root, wastes the brick); :3 and ·3 work as :2 and ·2 (`timesSide`: a side
@@ -695,9 +721,14 @@ games/<category>/<course>/<game>/index.html
 - Simulated (500 games; perfect / 50 % play): jokers 0.2 / 1.0 a level
   (1.3 / 1.8 before the bricks were spread over the recipes), unsolvable 0 /
   0.5, no fallback, about 6 zeros (they come often while the new bricks are
-  missing), 1.5 contradictions, 2 bursts, 2.1 throws an equation.
-- Level 5 (Vadim): brackets and reciprocals. Level 4's bricks all stay
-  (Vadim), +1 and −1 come at the start (`add`, 4 each), and from zero bombs
+  missing), 1.5 contradictions, 2 bursts, 2.1 throws an equation. With ·4,
+  :4 and the fractions: 2.5 throws an equation, 5 fraction answers and 3.5
+  pie bursts a level, jokers 0 / 0.5, unsolvable 0 / 0.3, and level 4
+  ends with 77 / 53 bricks instead of 50 / 34: richer, to be tuned later
+  (Vadim). Levels 5 and 6 hardly change.
+- Level 5 (Vadim): brackets and reciprocals. Level 4's bricks stay
+  (Vadim), except ·4 and :4 (`drop`: their uses become 10 points each, as
+  in "Poistuneet operaatiot"), +1 and −1 come at the start (`add`, 4 each), and from zero bombs
   (from level 4's 20th equation on) ab=0 and 1/□, then neliö and avaa, then
   ±x² (3 each): 17 bricks. New ones in the walls (`OP_AT2`): left avaa, ⚡,
   neliö, ab=0, 1/□; right −1, +1, −x², +x². Labels are words ("avaa",
@@ -747,7 +778,10 @@ games/<category>/<course>/<game>/index.html
   - roots undone: √x = 3 (□²), ∛x = −2 (□³), √(x + 1) = 3, ∛(x − 2) = 1;
   - exponents: 2^x = 16 (log₂), 2^(x + 1) = 8, 2^(2x) = 64 (log₂, :2),
     2^(x²) = 16 (log₂, √: two bombs, ±2);
-  - logarithms: log₂ x = 3 (2^□), log₂(x − 1) = 2, log₂ x + 1 = 4;
+  - logarithms: log₂ x = 3 (2^□), log₂(x − 1) = 2, log₂ x + 1 = 4; in the
+    first and last now and then m = −1 or −2 (`LOG_FRAC`): log₂ x = −1 →
+    x = 1/2, a pie bomb (about one a level; not log₂(x − 1) = −1, which
+    would need 1/2 + 1);
   - level 3's (x + a)² = m².
   Answers −9 … 10. Its zeros use the new bricks or the kept ones
   (x + 1 = 1, 2x = 0, x² = 0), so a player without the new bricks can
