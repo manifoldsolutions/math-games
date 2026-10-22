@@ -680,23 +680,38 @@ games/<category>/<course>/<game>/index.html
   `ghostPull`; then maybe the player's turn, `after`), a throw by the
   player (`check` says when it is done, every frame: `introTick`), or a
   picture with a sentence (bombs drawn still, twice their size, with a word
-  under each: `introBomb`; a brick glowing: `glow`).
-- Perusteet (7 steps, Vadim): x + 2 = 5, the ghost throws −1 (one brick
-  used); the player throws −1, x = 3 explodes into bricks; 3x = 7 can't be
-  solved, the ghost pulls it down ("pyyhkäise alaspäin tai kaksoisnapauta")
-  and it lands as trash (the red line); a gold 3 and a magenta −2 bomb
-  ("Positiivinen pommi antaa tiiliä. Negatiivinen raivaa roskaa ja antaa
-  pisteitä."); a zero bomb ("0 on erikoispommi, joka tuo bonuksen."); x + 3
-  = x + 5 with another equation beside it: the ghost throws −x, 3 = 5, the
-  player throws ⚡ and both go ("Muulle yhtälölle se menee hukkaan."); the
-  joker glowing ("…ristiriitaan se ei käy: siihen se menee hukkaan.").
-- Luku 2 (6 steps, Vadim): 12/x = 3 (the ghost throws ·x, the player :3);
+  under each: `introBomb`; a brick glowing: `glow`), or a table of bricks
+  in the well's place (`table`, `introTable`: the bricks as they look,
+  what they do, the level they come on; the empty hint and a one-line
+  question make room, so they fit a 390 × 844 phone, a 375 × 667 one
+  scrolls a little). Words (Vadim): "palikka" for a brick, "jäte" for the
+  trash, also in the game ("Jätettä", "Siivottu jäte", "Jätettä jäi");
+  "puolittain" for both sides.
+- Perusteet (7 steps, Vadim): x + 1 = 4, the player throws at once ("Ota
+  lattiasta operaatiopalikka ja heitä se yhtälöön. Tällöin operaatiota
+  sovelletaan puolittain."): −1 blinks (`blink`), and if nothing has been
+  thrown in 4 s the hand shows the move once without throwing (`nudge`;
+  the brick flies back); Jatka only after the throw, when x = 3 has
+  exploded into bricks; 3x = 7, the ghost pulls it down ("Jos yhtälöä ei
+  pysty ratkaisemaan olemassa olevilla palikoilla, tai et muusta syystä
+  halua ratkaista sitä, voit vetää yhtälön alas.") and it lands as jäte
+  (the red line); a gold 3 and a magenta −2 bomb ("Positiivinen pommi
+  antaa palikoita. Negatiivinen raivaa jätettä ja antaa pisteitä."); a
+  zero bomb ("0 on erikoispommi, joka tuo bonuksen."); x + 3 = x + 5 with
+  another equation beside it: the ghost throws −x, 3 = 5, the player
+  throws ⚡ and both go ("Jos yrität heittää salaman yhtälöön, jolla on
+  ratkaisu, salama menee hukkaan."); the joker glowing ("…ristiriitaan se
+  ei käy: siihen se menee hukkaan."); the table of levels 1–3's bricks
+  (`TABLE1`, Vadim's texts).
+- Luku 2 (8 steps, Vadim): 12/x = 3 (the ghost throws ·x, the player :3);
   4x = 6 → :4 → x = 3/2 into the five pies (+2 for every brick when all are
-  full); 2x = −1 → x = −1/2 shatters into the tallest trash; avaa on (x +
+  full); 2x = −1 → x = −1/2 shatters into the tallest trash; the table of
+  level 4's bricks (`TABLE2`); avaa on (x +
   1)² = x² + 7 (the ghost); x² + 2x + 1 = 9 with neliö, √, −1 (the player:
   two bombs); x² − 3x = 0, the ghost throws x(□), the player ab=0 and it
-  splits ("ab=0 käy vain tuloon"). Level 5's bricks are shown here because
-  there is no Esittely before level 5.
+  splits ("ab=0 käy vain tuloon"); the table of levels 5–6's bricks
+  (`TABLE3`; one table of 18 rows didn't fit on a phone). Level 5's bricks
+  are shown here because there is no Esittely before level 5.
 - The ⚡ and the joker come only on level 2, but the basics show them
   (Vadim); they go again when the Esittely ends.
 
