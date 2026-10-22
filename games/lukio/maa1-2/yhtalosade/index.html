@@ -35,8 +35,10 @@
      them (not ·4 and :4) and adds ±1, ±x² and four bricks that rewrite a side: avaa,
      neliö, ab=0 (an equation splits in two) and 1/□. Level 6 keeps only
      ±1, :2, √, the joker and ⚡ and brings ∛, □², □³, 2^□ and log₂: x³ = −8,
-     √x = 3, 2^(x + 1) = 8, log₂(x − 1) = 2. First draft, 6 levels: numbers
-     are to be balanced (Vadim).
+     √x = 3, 2^(x + 1) = 8, log₂(x − 1) = 2. An Esittely (guided intro, on
+     assets/intro.js) comes before level 1 and before level 4 (Vadim: none
+     before the others, so these two cover it all). First draft, 6 levels:
+     numbers are to be balanced (Vadim).
      ════════════════════════════════════════════════════════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -193,6 +195,14 @@
     transition:left .35s cubic-bezier(.3,.1,.4,1), top .35s cubic-bezier(.3,.1,.4,1); }
   .shard.dud{ opacity:.35; }
 
+  /* ── Esittely (intro): the shared look is in theme.css; here only this game's part ── */
+  body.intro .hud, body.intro .statusrow > span:not(#pieBox), body.intro #pause, body.intro #restart, body.intro #introBtn,
+  body.intro #skipLevel, body:not(.intro) #introSkip, body:not(.intro) #introRestart{ display:none; }
+  body.intro .statusrow{ justify-content:center; }
+  .introlabel{ pointer-events:none; z-index:4; font-family:var(--ui); color:var(--muted); white-space:nowrap; transform:translateX(-50%); }
+  .handsvg{ z-index:7; overflow:visible; }   /* the ghost hand (theme.css .ghost-hand) */
+  .opb.introglow{ box-shadow:0 0 18px var(--accent), inset 0 0 6px var(--accent); }
+
   /* trash: single bricks, the equation's text faded on top while the block is whole */
   .trash{
     background:color-mix(in srgb, var(--muted) 22%, transparent);
@@ -304,11 +314,19 @@
       <span id="pieBox" hidden title="Murtolukupiirakat"><svg id="pieSvg" aria-hidden="true"></svg></span>
       <span>Roskaa: <b id="trashCount">0</b></span>
     </div>
+    <!-- Esittely (intro): progress and the step's question -->
+    <div class="introbar" id="introBar" hidden><span class="introtag">Esittely</span><div class="progress" id="introProgress" role="img"></div></div>
+    <p class="prompt" id="introPrompt" aria-live="polite" hidden></p>
     <!-- translate="no": a browser's page translation must not touch the equations and bricks -->
     <div class="stage" id="stage"><div id="board" translate="no" aria-label="Kaivo, johon yhtälöt putoavat"></div></div>
+    <div class="hint" id="introHint" aria-live="polite" hidden></div>
+    <div class="answers" id="introAnswers" hidden></div>
     <div class="subctrl">
       <button id="pause" title="Tauko (P tai Esc)">⏸&#xFE0E; Tauko</button>
       <button id="restart">↺ Alusta</button>
+      <button id="introBtn">Esittely</button>
+      <button id="introRestart">↺ Alusta</button>
+      <button class="btn" id="introSkip">Ohita esittely</button>
       <button id="skipLevel" hidden>⏭ Ohita taso (testi)</button>
     </div>
   </main>
@@ -343,6 +361,7 @@
   </div>
 
 <script src="../../../../assets/celebrate.js"></script>
+<script src="../../../../assets/intro.js"></script>
 <script>
 "use strict";
 /* ── settings (first draft: to be balanced) ─────────────────────────────── */
@@ -1739,7 +1758,7 @@ function solvedNow(p, v, from, two = null){
   points("solve", POINTS, null, 0, 0);
   if(perfect){ pts.perfects++; points("perfect", PERFECT, null, 0, 0); }
   if(neat){ pts.neats++; points("neat", NEAT, null, 0, 0); }
-  note(perfect ? `Täydellinen! +${pt(POINTS + PERFECT)}` : neat ? `Siisti! +${pt(POINTS + NEAT)}` : `+${pt(POINTS)}`, x, Y(p.y) + cell*.9, "pts");
+  if(!intro) note(perfect ? `Täydellinen! +${pt(POINTS + PERFECT)}` : neat ? `Siisti! +${pt(POINTS + NEAT)}` : `+${pt(POINTS)}`, x, Y(p.y) + cell*.9, "pts");
 }
 // The fewest throws that solve p's equation as it came (Vadim): ±2 and ±2x
 // do two steps in one, if the player had them when they started on it (or
@@ -1804,7 +1823,7 @@ function contraNow(p, from){
   setTimeout(() => { if(pieces.includes(p)) sparks(X(p.x0 + p.w/2), Y(p.y - ht(p)/2), "contra"); }, GLOW*500);
   solved++; $("solved").textContent = solved;
   points("solve", POINTS, null, 0, 0);
-  note(`+${pt(POINTS)}`, x, Y(p.y) + cell*.9, "pts");
+  if(!intro) note(`+${pt(POINTS)}`, x, Y(p.y) + cell*.9, "pts");
 }
 function blowUp(p){
   const x = X(p.x0 + p.w/2), y = Y(p.y - ht(p)/2);
@@ -1854,6 +1873,7 @@ function bolts(lines, ms){
 // score, by kind for the result; a note at (x, y) unless text is null
 // (pts: as earned, for the result's rows; score: times the speed's mult)
 function points(kind, v, text, x, y){
+  if(intro) return;   // the Esittely: no points
   pts[kind] += v; score += v*speed.mult; $("score").textContent = num(score);
   if(text) note(text, x, y, "pts");
 }
@@ -2471,7 +2491,7 @@ function frame(t){
       if(over) break;
       if(!pieces.includes(p)) continue;   // gone in a contradiction's blowup
       if(p.bomb != null){ stepBomb(p, dt); continue; }
-      p.y += (p.fast ? DROP : ramp(speed.fall))*dt;
+      p.y += (p.fast ? DROP : intro ? 0 : ramp(speed.fall))*dt;   // the Esittely: still, unless dropped
       const s = surface(p.x0, p.x0 + p.w - 1);
       if(p.glow != null){   // solved and glowing: it rests on the trash if it gets there
         p.y = Math.min(p.y, s); drawPiece(p);
@@ -2480,8 +2500,9 @@ function frame(t){
       else if(p.y >= s){ p.y = s; drawPiece(p); land(p); }
       else drawPiece(p);
     }
-    if(wantSpawn(dt)) spawn();
-    if(!over && eqNo >= EQUATIONS && !pieces.length && !busy) finish();
+    if(intro) introTick();
+    else if(wantSpawn(dt)) spawn();
+    if(!over && !intro && eqNo >= EQUATIONS && !pieces.length && !busy) finish();
   }
   if(!paused) stepFlights(dt);
   showTarget();
@@ -2527,7 +2548,10 @@ function startLevel(){
   start = {score, pts:{...pts}};
   $("level").textContent = `${level}/${LEVELS.length}`;
   $("eqNo").textContent = `0/${EQUATIONS}`; $("solved").textContent = 0;
+  if(level > 1 && INTRO_AT[level]) startIntro(INTRO_AT[level], () => {}, `Aloita taso ${level}`);   // level 4 (level 1's: restartGame, showStart)
 }
+// a new game starts with the basics, every time (Vadim: nothing is remembered)
+function restartGame(){ newGame(); startIntro("perus", () => {}, "Aloita peli"); }
 function gameOver(){
   over = true;
   showResult("Peli päättyi");
@@ -2578,7 +2602,7 @@ function showStart(){
   $("ovTitle").textContent = "Taso 1";
   $("ovResult").textContent = `${EQUATIONS} yhtälöä`;
   $("ovScore").innerHTML = "";
-  showDialog("Aloita", () => { over = false; $("overlay").classList.remove("show"); }, true);
+  showDialog("Aloita", () => { $("overlay").classList.remove("show"); startIntro("perus", () => { over = false; }, "Aloita peli"); }, true);
 }
 // a level done: its own points. The trash left goes on to the next level and
 // is no loss yet, unless the next level starts with an empty well: then it
@@ -2611,10 +2635,10 @@ function showResult(title){
     row("Roskaa jäi", `${all ? minus : ""}${all} × ${CLEAR_POINTS}`) +
     speedRow() +
     row("Pisteet", num(total), "tot");
-  showDialog("Pelaa uudestaan", newGame, true);
+  showDialog("Pelaa uudestaan", restartGame, true);
 }
 
-$("restart").addEventListener("click", newGame);
+$("restart").addEventListener("click", restartGame);
 $("again").addEventListener("click", () => onAgain());
 window.addEventListener("resize", () => { if(counts) layout(); });
 /* Pause (Vadim). Android's back gesture (a swipe in from the screen's left or
@@ -2650,6 +2674,262 @@ document.addEventListener("keydown", e => {
   if(e.key !== "Escape" && e.key.toLowerCase() !== "p" || e.repeat) return;
   if(paused) resume(); else pause();
 });
+
+/* ── Esittely (intro) ───────────────────────────────────────────────────
+   A short guided demo on the real well (Vadim), not a game: nothing falls or
+   comes by itself and there are no points. A chapter runs before its level
+   every time (INTRO_AT: the basics before level 1, chapter 2 before level 4;
+   there are none before the others, so these two cover it all). "Ohita
+   esittely" skips it; the Esittely button opens a menu of the chapters up to
+   this level, and afterwards the game goes on as it was (the stash). Each
+   step asks one thing at the top. Kinds of steps:
+     demo — the ghost hand throws a brick or pulls an equation down; then
+            maybe the player's turn (after, check)
+     do   — the player throws; check() says when the step is done
+     info — a picture (bombs, a brick) and a sentence
+   Every step sets up its own equations, trash and bricks, so "↺ Alusta"
+   plays it again from the start. The well is a few rows shorter meanwhile. */
+const INTRO_AT = {1:"perus", 4:"luku2"};
+const INTRO_NAME = {perus:"Perusteet", luku2:"Luku 2: kerto- ja jakolasku, uudet tiilet"};
+const INTRO_DONE = {perus:"Ratkaise yhtälöt ennen kuin ne putoavat. Uudet tiilet tulevat nollapommeista.",
+                    luku2:"Luku 2 alkaa: kerto- ja jakolaskua ja murtolukuja. Tasolla 5 tulevat avaa, neliö, x(□) ja ab=0."};
+let intro = null;   // the Esittely while it runs
+const {wait, tween} = IntroKit.timing(tok => !!intro && intro.token === tok);
+const BASIC4 = ["+x", "-x", "+1", "-1"], L4 = [":3", ":2", "*2", "*3", "*x"];
+const each = (keys, n) => Object.fromEntries(keys.map(k => [k, n]));
+// a step's equation, hanging still (x0 null: in the middle)
+function introEq(L, R, x0, y, more = {}){
+  const el = document.createElement("div"); el.className = "piece";
+  board.appendChild(el);
+  const p = {L, R, n:null, par:9, contra:false, deg:0, ops:0, steps:0, used:{}, avail:null, fewest:null, zp:null, truth:null,
+             make:{kb:0, kq:0, k:0, div:0, deg:0}, el, y, x0:0, w:3, bomb:null, ...more};
+  measure(p); p.x0 = x0 == null ? Math.round((COLS - p.w)/2) : Math.max(0, Math.min(COLS - p.w, x0));
+  pieces.push(p); drawPiece(p); intro.eq.push(p);
+  return p;
+}
+// a bomb that stays still, for a picture, with a word under it
+function introBomb(v, bx, by, label){
+  const el = document.createElement("div"); board.appendChild(el);
+  const p = {L:{a:0, b:0}, R:{a:0, b:0}, el, y:by + .5, x0:bx - 1.5, w:3};
+  toBomb(p, v, bx);
+  const D = 1.6*cell; p.el.style.fontSize = cell*.75 + "px"; place(p.el, X(bx) - D/2, Y(by) - D/2, D, D);   // twice a bomb's size
+  if(!label) return;
+  const t = document.createElement("div"); t.className = "introlabel"; t.textContent = label;
+  t.style.fontSize = cell*.45 + "px"; board.appendChild(t); place(t, X(bx), Y(by) + cell*1.8);
+}
+const introTrash = hs => hs.forEach((h, c) => { for(let k = 0; k < h; k++) addBrick(ROWS - 1 - k, c, 0); });
+const exploded = p => p.bomb != null && !pieces.includes(p);
+const INTRO_STEPS = {
+  perus: [
+    {bricks:BASIC4, counts:each(BASIC4, 4), setup(){ introEq({a:1, b:2}, {a:0, b:5}, null, 7); },
+     demo:[["throw", "-1", 0]],
+     prompt:"Yhtälöt putoavat kaivoon. Raahaa tiili lattiasta ylös ja heitä se yhtälöön: sama tehdään yhtälön molemmille puolille.",
+     ok:"Heitto kuluttaa tiilen: −1-tiilen luku pieneni."},
+    {bricks:BASIC4, counts:{...each(BASIC4, 4), "-1":3}, setup(){ introEq({a:1, b:1}, {a:0, b:4}, null, 7, {n:3}); },
+     check:() => exploded(intro.eq[0]),
+     prompt:"Nyt sinä: heitä −1 yhtälöön, niin jää x = 3.",
+     ok:"Hyvä! Ratkaistu yhtälö muuttui pommiksi, ja pommi jakoi tiiliä."},
+    {bricks:BASIC4, counts:each(BASIC4, 4), setup(){ introEq({a:3, b:0}, {a:0, b:7}, null, 5); },
+     demo:[["pull", 0]], check:() => !pieces.includes(intro.eq[0]),
+     prompt:"Tätä et voi ratkaista näillä tiilillä. Pyyhkäise yhtälöä alaspäin tai kaksoisnapauta sitä, niin se putoaa heti.",
+     ok:"Ratkaisematon yhtälö jää roskaksi. Jos roska nousee punaisen viivan yli, peli päättyy."},
+    {bricks:BASIC4, counts:each(BASIC4, 4),
+     setup(){ introTrash([1, 2, 0, 1, 3, 1, 0, 2, 1]); introBomb(3, 2.5, ROWS/2 - 1, "antaa tiiliä"); introBomb(-2, 6.5, ROWS/2 - 1, "raivaa roskaa"); },
+     prompt:"Positiivinen pommi antaa tiiliä. Negatiivinen raivaa roskaa ja antaa pisteitä."},
+    {bricks:BASIC4, counts:each(BASIC4, 4), setup(){ introBomb(0, COLS/2, ROWS/2 - 1); },
+     prompt:"0 on erikoispommi, joka tuo bonuksen."},
+    {bricks:[...BASIC4, "N"], counts:{...each(BASIC4, 4), N:1},
+     setup(){ introEq({a:1, b:3}, {a:1, b:5}, 1, 9, {contra:true}); introEq({a:1, b:-1}, {a:0, b:2}, 5, 4, {n:3}); },
+     demo:[["throw", "-x", 0]], check:() => !pieces.includes(intro.eq[0]),
+     prompt:"Tässä x häviää: heitetään −x.",
+     after:"3 = 5 ei ole koskaan totta: yhtälöllä ei ole ratkaisua. Heitä siihen ⚡ (ei ratkaisua).",
+     ok:"⚡ räjäytti ristiriidan ja kaikki muut putoavat yhtälöt. Muulle yhtälölle se menee hukkaan."},
+    {bricks:[...BASIC4, "N", "J"], counts:{...each(BASIC4, 4), N:1, J:1}, glow:"J",
+     prompt:"Jokeri (x = ?) ratkaisee minkä tahansa yhtälön, mutta ristiriitaan se ei käy: siihen se menee hukkaan."},
+  ],
+  luku2: [
+    {bricks:L4, counts:each(L4, 4), setup(){ introEq({a:0, b:0, m:12}, {a:0, b:3}, null, 6, {n:4}); },
+     demo:[["throw", "*x", 0]], check:() => exploded(intro.eq[0]),
+     prompt:"Luvussa 2 on vain kerto- ja jakolaskua. Tässä x on nimittäjässä: kerrotaan x:llä.",
+     after:"Nyt sinä: jaa 3:lla.",
+     ok:"Hyvä! x = 4."},
+    {bricks:[...L4, ":4", "*4"], counts:each([...L4, ":4", "*4"], 4), setup(){ introEq({a:4, b:0}, {a:0, b:6}, null, 6, {n:1.5}); },
+     check:() => exploded(intro.eq[0]) && pie > 0 && !pieComing,
+     prompt:"Heitä :4.",
+     ok:"Vastaus voi olla murtoluku. Sen palat menevät piirakoihin ylhäällä: kun viisi on täynnä, jokainen tiili saa +2."},
+    {bricks:L4, counts:each(L4, 4), setup(){ introTrash([1, 3, 0, 2, 4, 1, 0, 2, 1]); introEq({a:2, b:0}, {a:0, b:-1}, null, 4, {n:-.5}); },
+     check:() => exploded(intro.eq[0]),
+     prompt:"Heitä :2.",
+     ok:"Negatiivinen murtoluku pirstoutuu: sen palat lohkaisevat korkeimpia roskapinoja."},
+    {bricks:[...L4, "open"], counts:{...each(L4, 4), open:1}, setup(){ introEq({a:0, b:0, bin:{a:1, b:1}}, {q:1, a:0, b:7}, null, 6); },
+     demo:[["throw", "open", 0]],
+     prompt:"Tasolla 5 tulee uusia tiiliä. avaa kirjoittaa sulut auki.",
+     ok:"Sitten −x², −1 ja :2 ratkaisevat sen."},
+    {bricks:[...L4, "sqr", "sq", "-1"], counts:{...each(L4, 4), sqr:1, sq:1, "-1":2},
+     setup(){ introEq({q:1, a:2, b:1}, {a:0, b:9}, null, 6, {n:3, deg:2}); },
+     check:() => { const p = intro.eq[0]; return (p.two || p.answer != null) && !pieces.length; },
+     prompt:"neliö kirjoittaa summan neliöksi. Heitä neliö, sitten √ ja lopuksi −1.",
+     ok:"√ antoi kaksi vastausta: x = 2 ja x = −4."},
+    {bricks:[...L4, "xf", "zp"], counts:{...each(L4, 4), xf:1, zp:1},
+     setup(){ introEq({q:1, a:-3, b:0}, {a:0, b:0}, null, 6, {zp:[0, 3], n:0}); },
+     demo:[["throw", "xf", 0]], check:() => pieces.some(q => q.child),
+     prompt:"x(□) ottaa x:n yhteiseksi tekijäksi.",
+     after:"Tulo on nolla, kun jokin sen tekijöistä on nolla. Heitä ab=0.",
+     ok:"Yhtälö jakautui kahdeksi: x = 0 ja x − 3 = 0. ab=0 käy vain tuloon."},
+  ],
+};
+// the game as it was is put away (stash) and comes back when the intro ends
+function startIntro(ch, then, doneLabel){
+  if(intro) return;
+  const snap = {counts:{...counts}, owned:new Set(owned), promised:new Set(promised), score, pts:{...pts}, pie, eqNo, solved, since,
+                contras, recent:[...recent], pieces, bricks, blocks, flights, ROWS, nextBrickId};
+  for(const p of pieces) p.el.remove();
+  for(const b of bricks) b.el.remove();
+  for(const f of flights) f.g.remove();
+  pieces = []; bricks = []; blocks = {n:0}; flights = [];
+  intro = {ch, steps:INTRO_STEPS[ch], then, doneLabel, snap, token:0, i:0, eq:[]};
+  document.body.classList.add("intro");
+  for(const id of ["introBar", "introPrompt", "introHint", "introAnswers"]) $(id).hidden = false;
+  $("overlay").classList.remove("show");
+  over = false; paused = false; drag = null; pull = null;
+  chooseRows();   // a shorter well: room for the question and the tiles
+  introStep(0);
+}
+function clearIntroBoard(){
+  for(const el of board.querySelectorAll(".piece, .bomb, .trash, .trashtext, .fly, .ring, .note, .ghost, .shot, .sparks, .flash, .bolts, .shard, .introlabel, .handsvg")) el.remove();
+  pieces = []; bricks = []; blocks = {n:0}; flights = []; gameNo++; busy = 0; drag = null; pull = null;   // what is still on its way is dropped
+}
+function introStep(i){
+  const st = intro.steps[i], tok = ++intro.token;   // stops the scripts of the step before
+  Object.assign(intro, {i, step:st, done:false, eq:[], demoOn:!!st.demo});
+  clearIntroBoard();
+  owned = new Set(st.bricks); promised = new Set(st.bricks);
+  counts = {...START, ...st.counts}; pie = 0; pieComing = 0;
+  for(const key of Object.keys(OPS)){ opEls[key].hidden = !owned.has(key); opEls[key].classList.toggle("introglow", key === st.glow); drawCount(key); }
+  layout(); drawPie();
+  $("introPrompt").innerHTML = IntroKit.nb(st.prompt); say("");
+  IntroKit.progress($("introProgress"), intro.steps.length, i);
+  $("introAnswers").innerHTML = "";
+  if(st.setup) st.setup();
+  if(st.demo) runDemo(st.demo, tok).then(ok => {
+    if(!ok) return;
+    intro.demoOn = false;
+    if(st.after) $("introPrompt").innerHTML = IntroKit.nb(st.after);
+    if(!st.check) introDone();
+  });
+  else if(!st.check) introDone();
+}
+function introTick(){   // every frame: is the step's task done?
+  if(!intro.done && !intro.demoOn && intro.step.check && intro.step.check()) introDone();
+}
+function introDone(){
+  intro.done = true; say(intro.step.ok || "", "good");
+  const last = intro.i === intro.steps.length - 1;
+  IntroKit.next($("introAnswers"), last, () => last ? finishIntro() : introStep(intro.i + 1));
+}
+function say(html, cls = ""){
+  const el = $("introHint");
+  el.innerHTML = IntroKit.nb(html); el.classList.toggle("good", cls === "good");
+}
+function finishIntro(){
+  intro.token++;
+  $("ovTitle").textContent = "Valmista!";
+  $("ovResult").textContent = INTRO_DONE[intro.ch];
+  $("ovScore").innerHTML = "";
+  showDialog(intro.doneLabel, exitIntro);
+  celebrate();
+}
+function exitIntro(){
+  if(!intro) return;
+  const {snap, then} = intro;
+  intro.token++;
+  clearIntroBoard();
+  $("overlay").classList.remove("show");
+  intro = null;
+  document.body.classList.remove("intro");
+  for(const id of ["introBar", "introPrompt", "introHint", "introAnswers"]) $(id).hidden = true;
+  ({counts, owned, promised, score, pts, pie, eqNo, solved, since, contras, recent, pieces, bricks, blocks, flights, ROWS, nextBrickId} = snap);
+  pieComing = 0;
+  for(const p of pieces) board.appendChild(p.el);
+  for(const b of bricks) board.appendChild(b.el);
+  for(const f of flights) board.appendChild(f.g);
+  for(const key of Object.keys(OPS)){ opEls[key].hidden = !owned.has(key); opEls[key].classList.remove("introglow"); drawCount(key); }
+  layout(); drawTrashText(); drawTrashCount(); drawPie();
+  $("score").textContent = num(score); $("solved").textContent = solved; $("eqNo").textContent = `${eqNo}/${EQUATIONS}`;
+  then();
+}
+// the Esittely button: a menu of the chapters up to this level (Yksikköympyrä's);
+// the game waits meanwhile and goes on as it was
+function openIntroMenu(){
+  if(intro || over || paused || busy || $("overlay").classList.contains("show")) return;
+  paused = true;
+  const chs = Object.keys(INTRO_AT).map(Number).filter(l => l <= level);
+  $("ovTitle").textContent = "Esittely";
+  $("ovResult").innerHTML = `<p class="intro-q">Minkä esittelyn haluat katsoa?</p><div id="ovMenu"></div>`;
+  $("ovScore").innerHTML = "";
+  IntroKit.menu($("ovMenu"), chs.map((l, i) => ({ch:INTRO_AT[l], html:INTRO_NAME[INTRO_AT[l]],
+      sub:`taso ${l} · ${INTRO_STEPS[INTRO_AT[l]].length} vaihetta`, latest:i === chs.length - 1})),
+    it => startIntro(it.ch, () => {}, "Jatka peliä"));
+  showDialog("Sulje", () => { $("overlay").classList.remove("show"); paused = false; });
+  $("ovMenu").querySelector(".latest").focus();
+}
+// the ghost hand (IntroKit.HAND_PATH, fingertip at (0, 0)) in the board's px
+const HAND_W = 1.7;   // cells
+function handEl(){
+  let h = board.querySelector(".handsvg");
+  if(!h){
+    h = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    h.setAttribute("class", "ghost-hand handsvg"); h.setAttribute("viewBox", "-30 -10 80 100");
+    h.innerHTML = `<path d="${IntroKit.HAND_PATH}"/>`; board.appendChild(h);
+  }
+  h.style.width = HAND_W*cell + "px"; h.style.height = HAND_W*cell*100/80 + "px";
+  return h;
+}
+function moveHand(h, x, y){ const k = HAND_W*cell/80; place(h, x - 30*k, y - 10*k); }
+// a demo: ["throw", brick, equation] (the index in intro.eq) and ["pull", equation];
+// every await checks the step's token, so leaving the step stops it
+async function runDemo(script, tok){
+  for(const [op, a, b] of script)
+    if(!(op === "throw" ? await ghostThrow(a, intro.eq[b], tok) : await ghostPull(intro.eq[a], tok))) return false;
+  return true;
+}
+// the hand takes the brick from its slot, drags it up and flicks it: the game's own flight
+async function ghostThrow(key, p, tok){
+  const from = opCenter(key), h = handEl();
+  h.style.opacity = 0; moveHand(h, from.x, from.y + cell);
+  if(!await wait(400, tok)) return false;
+  h.style.opacity = 1;
+  if(!await tween(450, e => moveHand(h, from.x, from.y + cell*(1 - IntroKit.ease(e))), tok)) return false;
+  const g = document.createElement("div"), src = opEls[key];
+  g.className = "opb ghost"; g.innerHTML = `<span class="lbl">${OPS[key].html}</span>`;
+  g.style.fontSize = src.style.fontSize; g.style.width = g.style.height = src.offsetWidth + "px";
+  board.appendChild(g); place(g, from.x, from.y);
+  const to = pieceMiddle(p), mid = {x:from.x + (to.x - from.x)*.4, y:from.y + (to.y - from.y)*.5};
+  const ok = await tween(700, e => {
+    const k = IntroKit.ease(e), q = {x:from.x + (mid.x - from.x)*k, y:from.y + (mid.y - from.y)*k};
+    place(g, q.x, q.y); moveHand(h, q.x, q.y);
+  }, tok);
+  if(!ok){ g.remove(); return false; }
+  launch({g, key, p, x:p.x0 + p.w/2}, mid);
+  await tween(180, e => moveHand(h, mid.x + (to.x - mid.x)*.3*e, mid.y + (to.y - mid.y)*.3*e), tok);
+  h.style.opacity = 0;
+  return wait(700, tok);
+}
+// the hand pulls the equation down two rows and lets go: it drops
+async function ghostPull(p, tok){
+  const h = handEl(), m = pieceMiddle(p);
+  h.style.opacity = 0; moveHand(h, m.x, m.y - cell);
+  if(!await wait(600, tok)) return false;
+  h.style.opacity = 1;
+  if(!await tween(450, e => moveHand(h, m.x, m.y - cell*(1 - IntroKit.ease(e))), tok)) return false;
+  const y0 = p.y;
+  if(!await tween(650, e => { p.y = y0 + 2*IntroKit.ease(e); drawPiece(p); const q = pieceMiddle(p); moveHand(h, q.x, q.y); }, tok)) return false;
+  dropFast(p); h.style.opacity = 0;
+  return wait(300, tok);
+}
+$("introBtn").addEventListener("click", openIntroMenu);
+$("introRestart").addEventListener("click", () => { if(intro) introStep(intro.i); });   // the step from the start
+$("introSkip").addEventListener("click", exitIntro);
 
 /* testing (Vadim): typing "xyz", or the page opened with ?testi, shows a
    button that ends the level now (what is in the air goes away; the trash

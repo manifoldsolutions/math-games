@@ -46,7 +46,7 @@ games/<category>/<course>/<game>/index.html
   `assets/celebrate.js`; a game must not define its own `celebrate` function.
   Both have an Esittely built on `assets/intro.js` (progress bar, tiles, Jatka,
   the Esittely menu, timing, ghost hand) with its styles in theme.css; the steps and
-  how they set up the board stay in each game.
+  how they set up the board stay in each game. Yhtälösade has one too.
 - An intro must never look like the game (Vadim): while it runs the page is
   lighter (`body.intro` redefines `--bg`, so label halos and cut-outs follow),
   an "ESITTELY" tag stands before the progress bar, and "Ohita esittely" is a
@@ -600,10 +600,10 @@ games/<category>/<course>/<game>/index.html
   after it first touched something. Settings at the top (`GRAVITY`, `VMAX`,
   `BOUNCE`, `KICK`, `FUSE`), tuned by eye. Tunnels under overhangs are
   entered rarely: the ball has to land beside the entrance and roll in.
-- No explanations in the game for now (Vadim): no hint line under the well,
+- No explanations in the game itself (Vadim): no hint line under the well,
   no messages in the dialogs (what the next level brings, why the game
-  ended, the start dialog's how-to), no notes on new operations. They come
-  later with the tutorial (Esittely). The notes on the equations themselves
+  ended, the start dialog's how-to), no notes on new operations. The
+  Esittely (below) explains. The notes on the equations themselves
   (`| + 1`) and the flying rewards stay.
 - Unsolved on landing → trash: single grey bricks, the equation's text faded
   on them while the block is whole. Trash above the red line → Game Over.
@@ -644,8 +644,8 @@ games/<category>/<course>/<game>/index.html
 - Start dialog (Vadim): when the page opens, the game waits behind "Taso 1",
   "30 yhtälöä" and Aloita. The tap on Aloita is the touch
   that lets the pause catch back from the first swipe on (without it, a
-  first drag caught by the gesture left the page). "Pelaa uudestaan" and
-  "↺ Alusta" start at once.
+  first drag caught by the gesture left the page). Aloita, "Pelaa
+  uudestaan" and "↺ Alusta" go to the Esittely's basics first (below).
 - Speed (Vadim, `SPEEDS`): a slider with three stops, Hidas / Keskinopea /
   Nopea (the labels can be tapped; "Pisteet ×1,5" under them), in the start
   dialog and the end dialog (not between levels); Keskinopea at first, kept
@@ -656,6 +656,49 @@ games/<category>/<course>/<game>/index.html
   Every point ×1, ×1,5, ×2 as it is earned, the trash left at the end too;
   the result rows show the points as earned, then "Nopeus: Keskinopea ×1,5"
   and the total (whole points).
+
+## Yhtälösade Esittely (built)
+
+- Yksikköympyrä's frame (`assets/intro.js`, Vadim): on the real well with
+  the real bricks and throwing; nothing falls or comes by itself, no
+  points (`intro` stops the fall, the timetable, `points`); the lighter
+  page, ESITTELY tag, progress bar and question above the well, the hint
+  and Jatka under it, "↺ Alusta" (the step again) and "Ohita esittely".
+  The well is a few rows shorter meanwhile (`chooseRows`). The game as it
+  was is put away and comes back afterwards (`startIntro`'s stash): its
+  equations, trash, bricks, counts, score, pies. A chapter comes every time
+  before its level (`INTRO_AT`; nothing is remembered): the basics after
+  Aloita, "Pelaa uudestaan" and "↺ Alusta" (`restartGame`), chapter 2 when
+  level 4 starts. None before levels 2, 3, 5, 6 (Vadim), so these two cover
+  it all. The "Esittely" button under the well (beside Tauko and Alusta)
+  opens a menu of the chapters up to this level (`openIntroMenu`; the game
+  waits), and the game goes on as it was. Every step sets up its own
+  equations, trash and bricks (`bricks`, `counts`, `setup`), so a step can
+  start over.
+- Steps (`INTRO_STEPS`): a demo (the ghost hand throws a brick from its
+  slot with the game's own flight, `ghostThrow`, or pulls an equation down,
+  `ghostPull`; then maybe the player's turn, `after`), a throw by the
+  player (`check` says when it is done, every frame: `introTick`), or a
+  picture with a sentence (bombs drawn still, twice their size, with a word
+  under each: `introBomb`; a brick glowing: `glow`).
+- Perusteet (7 steps, Vadim): x + 2 = 5, the ghost throws −1 (one brick
+  used); the player throws −1, x = 3 explodes into bricks; 3x = 7 can't be
+  solved, the ghost pulls it down ("pyyhkäise alaspäin tai kaksoisnapauta")
+  and it lands as trash (the red line); a gold 3 and a magenta −2 bomb
+  ("Positiivinen pommi antaa tiiliä. Negatiivinen raivaa roskaa ja antaa
+  pisteitä."); a zero bomb ("0 on erikoispommi, joka tuo bonuksen."); x + 3
+  = x + 5 with another equation beside it: the ghost throws −x, 3 = 5, the
+  player throws ⚡ and both go ("Muulle yhtälölle se menee hukkaan."); the
+  joker glowing ("…ristiriitaan se ei käy: siihen se menee hukkaan.").
+- Luku 2 (6 steps, Vadim): 12/x = 3 (the ghost throws ·x, the player :3);
+  4x = 6 → :4 → x = 3/2 into the five pies (+2 for every brick when all are
+  full); 2x = −1 → x = −1/2 shatters into the tallest trash; avaa on (x +
+  1)² = x² + 7 (the ghost); x² + 2x + 1 = 9 with neliö, √, −1 (the player:
+  two bombs); x² − 3x = 0, the ghost throws x(□), the player ab=0 and it
+  splits ("ab=0 käy vain tuloon"). Level 5's bricks are shown here because
+  there is no Esittely before level 5.
+- The ⚡ and the joker come only on level 2, but the basics show them
+  (Vadim); they go again when the Esittely ends.
 
 ## Yhtälösade, chapter 2 (levels 4–6, built)
 
@@ -886,7 +929,7 @@ games/<category>/<course>/<game>/index.html
   open it with `?testi` (works on phones), and a "⏭ Ohita taso (testi)"
   button appears under the game. In the two older games it goes through
   `nextLevel()`/`enterLevel()`, so a level's intro chapter still comes first.
-  In Yhtälösade it ends the level at once: what is in the air goes away, the
+  In Yhtälösade it ends the level at once (level 4's Esittely still comes): what is in the air goes away, the
   trash and counts go on, and every brick the player could have by the end
   of that level gets +3 (Vadim: the basic ones, its gifts, the next level's
   new ones, ⚡). Keep it hidden from students.
