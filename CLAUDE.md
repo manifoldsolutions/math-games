@@ -609,8 +609,9 @@ games/<category>/<course>/<game>/index.html
   equation's middle reaches half of the well, each brick it still needs (as
   the game plans it: `toGo`, `plan`; ⚡ for a contradiction, the joker where
   the game counts on one) that has been thrown at most once on this level
-  (`levelUsed`, any throw, counted from the level's start) flickers for 400
-  ms (`hints`, `HINT_T`, `.hintflash`), and the equation with it (Vadim:
+  (`levelUsed`, any throw, counted from the level's start) blinks twice
+  like the Esittely's brick (`softBlink`, 2.2 s; Vadim: 400 ms was too
+  fast; `hints`, `HINT_T`, `.hintflash`), and the equation with it (Vadim:
   with several on the screen, which one). Once per equation.
 - Unsolved on landing → trash: single grey bricks, the equation's text faded
   on them while the block is whole. Trash above the red line → Game Over.
