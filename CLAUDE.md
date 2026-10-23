@@ -46,7 +46,7 @@ games/<category>/<course>/<game>/index.html
   `assets/celebrate.js`; a game must not define its own `celebrate` function.
   Both have an Esittely built on `assets/intro.js` (progress bar, tiles, Jatka,
   the Esittely menu, timing, ghost hand) with its styles in theme.css; the steps and
-  how they set up the board stay in each game. Yhtälösade has one too.
+  how they set up the board stay in each game. Yhtälöhyökkäys has one too.
 - An intro must never look like the game (Vadim): while it runs the page is
   lighter (`body.intro` redefines `--bg`, so label halos and cut-outs follow),
   an "ESITTELY" tag stands before the progress bar, and "Ohita esittely" is a
@@ -242,7 +242,11 @@ games/<category>/<course>/<game>/index.html
   with the step counts. The model comes from how the puzzle was built (take
   off the constant k, then the kb extra boxes), never from a search.
 
-## Yhtälösade (falling equations) — first draft, 3 levels
+## Yhtälöhyökkäys (falling equations) — first draft, 3 levels
+
+- Named Yhtälöhyökkäys (Vadim, 2026-10-23; it was Yhtälöhyökkäys). Its folder,
+  `games/lukio/maa1-2/yhtalosade/`, and its catalog id `yhtalosade` stay, so
+  old links keep working.
 
 - A Tetris-like well (9 columns, brick walls and floor). 30 equations per
   level; they come on a timetable (see Levels), in columns that don't
@@ -679,7 +683,7 @@ games/<category>/<course>/<game>/index.html
   the result rows show the points as earned, then "Nopeus: Keskinopea ×1,25"
   and the total (whole points).
 
-## Yhtälösade Esittely (built)
+## Yhtälöhyökkäys Esittely (built)
 
 - Yksikköympyrä's frame (`assets/intro.js`, Vadim): on the real well with
   the real bricks and throwing; nothing falls or comes by itself, no
@@ -746,7 +750,7 @@ games/<category>/<course>/<game>/index.html
 - The ⚡ and the joker come only on level 2, but the basics show them
   (Vadim); they go again when the Esittely ends.
 
-## Yhtälösade, chapter 2 (levels 4–6, built)
+## Yhtälöhyökkäys, chapter 2 (levels 4–6, built)
 
 - Chapter 2 (Vadim): a fresh start after level 3. The dialog after level 3
   pays every brick left 10 points ("Poistuneet operaatiot") and says
@@ -983,7 +987,7 @@ games/<category>/<course>/<game>/index.html
   row in the chain simply has no annotation.
 - Division (e.g. 3x = 12 with ÷2/÷3/÷4 tokens that split a cup into equal
   piles): as extra levels in this game, or a separate game "Yhtälövaaka 2"?
-- Yhtälösade: ⚡ is no longer reset to 2 on level 3 and nothing refills it,
+- Yhtälöhyökkäys: ⚡ is no longer reset to 2 on level 3 and nothing refills it,
   so a player who used both on level 2 gets no level 3 contradictions
   (x² = a negative number). Should zero bombs on level 3 be able to give ⚡?
 - Unlockable visual skins (e.g. a "Metalli" skin for finishing the game):
@@ -1004,7 +1008,7 @@ games/<category>/<course>/<game>/index.html
   open it with `?testi` (works on phones), and a "⏭ Ohita taso (testi)"
   button appears under the game. In the two older games it goes through
   `nextLevel()`/`enterLevel()`, so a level's intro chapter still comes first.
-  In Yhtälösade it ends the level at once (level 4's Esittely still comes): what is in the air goes away, the
+  In Yhtälöhyökkäys it ends the level at once (level 4's Esittely still comes): what is in the air goes away, the
   trash and counts go on, and every brick the player could have by the end
   of that level gets +3 (Vadim: the basic ones, its gifts, the next level's
   new ones, ⚡). Keep it hidden from students.

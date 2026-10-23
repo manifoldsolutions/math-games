@@ -81,7 +81,7 @@ body{
     radial-gradient(90% 60% at 50% 30%, #1a1240 0%, var(--bg) 70%) fixed,
     var(--bg);
 }
-/* "Metalli" skin (Vadim: Yhtälösade's chapter 2, levels 4–): an ember
+/* "Metalli" skin (Vadim: Yhtälöhyökkäys's chapter 2, levels 4–): an ember
    background, iron bars, rusty plates. A game sets body.metal; the maths
    colours, cyan and ⚡ orange stay as they are. */
 body.metal{
