@@ -15,8 +15,9 @@
      Place: click, or lift the finger. Placing on an existing point removes it.
      From level 3 there are also "Ei ratkaisuja" and "Jokainen piste" answers.
      A placed point counts if it is within TOL degrees of a solution.
-     Levels 0–7, 6 tasks each. Level 0 shows the angle while aiming; levels
-     1–6 have their own themes, level 7 mixes levels 3–6.
+     Levels 0–7, 6 tasks each. Level 0 is angles in degrees (the angle is no
+     longer shown while aiming: the Esittely shows it, and in the game it is a
+     hint); levels 1–6 have their own themes, level 7 mixes levels 3–6.
      Help: "Vihje" (plan in VIHJEET.md). Press 1, 2, 3 gives a random hint of
      hint level 1, 2, 3 (levels 0–2: two presses; 6–7: a fourth, anything
      left); level 1 is general, level 2
@@ -371,7 +372,7 @@ function degSplit(d){
   return [30,45,60].includes(r) ? `${d}° = ${base} + ${r}°` : "";
 }
 const BANK = {
-0: [ // angles in degrees, the angle is shown while aiming
+0: [ // angles in degrees (the angle is a hint, as on levels 1–2)
   ...[30,90,45,120,180,270,210,135,300,60,330,225,150,240,315].map(d => P(eq(A,`${d}°`), [d], {t:"rays"}, {unit:"deg", split:degSplit(d), easy:EASY[d]})),
 ],
 1: [ // angles in degrees
@@ -461,8 +462,8 @@ const BANK = {
 ],
 };
 const LEVEL_INTRO = {
-  0:"Kulma α mitataan positiiviselta x-akselilta vastapäivään. Liikuta sädettä: näet kulman suuruuden. Merkitse ympyrälle kohta, jossa yhtälö on totta.",
-  1:"Nyt kulmaa ei enää näytetä. Merkitse ympyrälle kaikki kohdat, joissa yhtälö on totta.",   // first sentence: tasks 1–2 only
+  0:"Kulma α mitataan positiiviselta x-akselilta vastapäivään. Merkitse ympyrälle kohta, jossa yhtälö on totta.",
+  1:"Merkitse ympyrälle kaikki kohdat, joissa yhtälö on totta.",
   2:"Nyt kulmat ovat radiaaneina. Täysi kierros on 2π ja puoli kierrosta π.",   // first sentence: tasks 1–2 only
   3:"cos α on pisteen x-koordinaatti ja sin α sen y-koordinaatti. Jos ratkaisuja ei ole, paina Ei ratkaisuja.",
   4:"tan α on säteen kulmakerroin.",
@@ -473,7 +474,7 @@ const LEVEL_INTRO = {
 
 /* the text under the circle when a task starts; the news of what changed on
    this level is dropped after the first two tasks */
-const LEVEL_NEWS = {1:"Nyt kulmaa ei enää näytetä. ", 2:"Nyt kulmat ovat radiaaneina. "};
+const LEVEL_NEWS = {2:"Nyt kulmat ovat radiaaneina. "};
 function introText(){
   const t = LEVEL_INTRO[Math.min(level,7)];
   return idx >= 2 && LEVEL_NEWS[level] ? t.replace(LEVEL_NEWS[level], "") : t;
@@ -533,7 +534,7 @@ let levelDone = false;          // last task solved: the level dialog is on its 
 let clicks = 0, hintsUsed = 0, taskStart = 0, lastWin = null, gameOver = false;
 const task = () => tasks[idx];
 let intro = null;                // the Esittely while it runs (see the intro section)
-const showAngle = () => intro ? !!intro.step.angle : level === 0 || !!hintFx.angle;
+const showAngle = () => intro ? !!intro.step.angle : !!hintFx.angle;
 // the tangent picture (the line x = 1, the extended ray, the blue segment,
 // "tan α" in the legend): in the game only after a hint has brought it in
 const tanOn = () => intro ? !!intro.step.tan : !!hintFx.tan;
@@ -609,7 +610,7 @@ function drawAim(){
   layer.innerHTML = h;
 }
 
-const ARC_R = 70;                 // radius of the angle arc (level 0)
+const ARC_R = 70;                 // radius of the angle arc
 /* the angle as text: in radians on a radian task and from game level 3 on
    (unless the task itself is in degrees), as a multiple of π: 7π/6 when it is
    within 1.5° of a 15° step, otherwise ≈ 1,23π. Otherwise whole degrees. */
@@ -924,12 +925,13 @@ function bHints(p, tier){
   // shows the angle inside the function, 2α (α + 30° …) (Vadim). Any hint level.
   if(p.lin && n && tier <= 3)
     add("vis-inner", `Kun käännät sädettä ${A}, katkoviiva näyttää nyt kulman ${p.inner}.`, () => { hintFx.inner = true; });
-  // the angle shown while aiming: level 2 hint, from game level 5 also level 1.
+  // the angle shown while aiming: level 2 hint (game level 0 too, Vadim: the
+  // Esittely shows it), from game level 5 also level 1.
   // Only for tasks whose answers are angles to find (α = π ± π/2, sin 2α = 1 …);
   // where a line or a value leads to the points the readout adds nothing.
   const angleTier = level >= 5 ? [1,2] : [2];
   // (not for sin 2α, sin(α + 30°) …: the readout shows α, the task is about 2α or α + 30°)
-  if(level >= 1 && n && g.t === "rays" && angleTier.includes(tier) && !p.inner)
+  if(n && g.t === "rays" && angleTier.includes(tier) && !p.inner)
     add("vis-angle", "Kulma on nyt merkitty tehtävän loppuun saakka.", () => { hintFx.angle = true; });
   // sin α · cos α = 0 has no angle readout any more: name both axes at level 2
   if(tier === 2 && g.t === "axes")

@@ -323,7 +323,7 @@ vihjetasollaan ja jää näkyviin tehtävän loppuun.
 | 2 | arccos | arvojoukon kaari 0 … π (yläpuoli) korostetaan, päät täytettyinä pisteinä | Ratkaisu on korostetulla kaarella. |
 | 2 | sin α = 2, cos α = −3/2 | akselille korostetaan väli −1 … 1, ja arvo c merkitään sen ulkopuolelle (kuvan reunaan, jos se ei mahdu) | sin α on aina korostetulla välillä. / cos α on aina korostetulla välillä. |
 | 2 | cos²α = −1 | x-akselille korostetaan väli −1 … 1 | cos α on aina korostetulla välillä, joten cos²α on aina vähintään 0. |
-| 2 | tehtävät, joiden ratkaisut ovat suoraan kulmia (pelitasot 1–2); ei pelitason 6 tehtäviä (sin 2α = 1, sin(α/2) = 0, cos(α + 30°) = 0 …), joissa lukema näyttäisi α:n eikä 2α:aa tai α + 30°:ta (Vadim); ei arvo-, tangentti- eikä muita tehtäviä, joissa suora tai arvo johtaa pisteisiin | kulma näytetään tehtävän loppuun asti kuten pelitasolla 0: kaari ja lukema säteen vieressä, merkittyjen pisteiden kulmat | Kulma on nyt merkitty tehtävän loppuun saakka. |
+| 2 | tehtävät, joiden ratkaisut ovat suoraan kulmia (pelitasot 0–2); ei pelitason 6 tehtäviä (sin 2α = 1, sin(α/2) = 0, cos(α + 30°) = 0 …), joissa lukema näyttäisi α:n eikä 2α:aa tai α + 30°:ta (Vadim); ei arvo-, tangentti- eikä muita tehtäviä, joissa suora tai arvo johtaa pisteisiin | kulma näytetään tehtävän loppuun asti kuten esittelyssä: kaari ja lukema säteen vieressä, merkittyjen pisteiden kulmat | Kulma on nyt merkitty tehtävän loppuun saakka. |
 | 3 | sin α = c, cos α = c, tan α = c, käänteisfunktiot, sin α · cos α = 0 | apuviiva (kun se näkyy kuvassa) | Apuviiva on nyt piirretty ympyrään. / Apuviivat … |
 | 3 | sin²α + cos²α = 1 | kun sädettä liikutetaan, piirretään kolmio: kateetit cos α ja sin α, hypotenuusa 1 | Kolmion sivut ovat cos α, sin α ja 1. |
 
@@ -350,8 +350,8 @@ Tarkennuksia:
   kirjoitettu suoraan yhdeksi merkityistä kulmista (α = 90° ilman neljänneksiä,
   α = 135° ilman kahdeksasosia), koska merkintä näyttäisi vastauksen.
   Tehtävissä −270°, 390° ja 3π merkinnät saa.
-- **Kulman näyttäminen:** pelitasolla 0 kulma näkyy aina, joten siellä tätä
-  vihjettä ei ole. Lukema on asteina pelitasoilla 0–1 ja radiaaneina
+- **Kulman näyttäminen:** pelitasolla 0 kulma näkyi ennen aina; nyt se on
+  vihje sielläkin, koska esittely näyttää kulman (Vadim, 23.10.2026). Lukema on asteina pelitasoilla 0–1 ja radiaaneina
   radiaanitehtävissä sekä pelitasoilla 3–7, paitsi jos tehtävä on kirjoitettu
   asteina (cos(α + 30°) = 0). Radiaanit näytetään π:n monikertana, kun kulma on
   alle 1,5°:n päässä 15°:n monikerrasta (esim. 7π/6), muuten likiarvona

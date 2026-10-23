@@ -99,6 +99,10 @@ games/<category>/<course>/<game>/index.html
 - Yksikköympyrä writes 1/√2 and 1/√3 (as the memory triangles give them),
   never √2/2 and √3/3, except on level 7, where half of the tasks with them
   use the harder forms (`hardForm`, Vadim). The triangle cards show both.
+- Yksikköympyrä's level 0 no longer shows the angle while aiming (Vadim,
+  2026-10-23: its Esittely already does): as on levels 1–4, the angle is a
+  hint on the second press ("Kulma on nyt merkitty tehtävän loppuun
+  saakka."), and the hint line no longer mentions it.
 - Yksikköympyrä's tangent picture (the line x = 1, the extended ray, the blue
   segment, "tan α" in the legend) shows in the game only after a hint has
   brought it in (`hintFx.tan`), and goes with the task (Vadim). The intro
@@ -244,7 +248,7 @@ games/<category>/<course>/<game>/index.html
 
 ## Yhtälöhyökkäys (falling equations) — first draft, 3 levels
 
-- Named Yhtälöhyökkäys (Vadim, 2026-10-23; it was Yhtälöhyökkäys). Its folder,
+- Named Yhtälöhyökkäys (Vadim, 2026-10-23; it was Yhtälösade). Its folder,
   `games/lukio/maa1-2/yhtalosade/`, and its catalog id `yhtalosade` stay, so
   old links keep working.
 
