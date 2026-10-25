@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fourier curve</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="../../../../assets/theme.css">
+<!-- Chakra Petch has no Greek; IBM Plex Sans supplies γ, π and Σ -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* the frame is the IFS explorer's (games/artsy_math/fractals/ifs_explorer), with its names */
+  --paper: var(--bg); --panel: var(--surface); --rule: var(--line); --well: var(--surface-2);
+  --focus: var(--magenta);
+  --barh: 42px;
+  --sans: "Chakra Petch", "IBM Plex Sans", system-ui, sans-serif;
+  /* the picture has its own colours (PIC in the script): paper, dark ink */
+  --pic-bg: #f4e8c1; --pic-ink: #3b2a1c;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+*, *::before, *::after { box-sizing: inherit; }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+body {
+  height: 100%; margin: 0; color: var(--ink);
+  font: 14px/1.4 var(--sans); font-variant-numeric: tabular-nums;
+}
+body { display: flex; flex-direction: column; }
+.app { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 460px; }
+
+/* ---------- stage ---------- */
+.stage { position: relative; display: grid; place-items: center; padding: 18px; min-height: 0; }
+.frame {
+  position: relative; width: min(100%, calc(100dvh - 36px - var(--barh) - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)));
+  aspect-ratio: 1; background: var(--pic-bg); border-radius: 3px;
+  box-shadow: 0 0 0 1px var(--rule), 0 10px 40px rgba(0,0,0,.45);
+}
+#view { width: 100%; height: 100%; display: block; border-radius: 3px; }
+.caption {
+  position: absolute; left: 14px; top: 11px; right: 14px; pointer-events: none;
+  font: 500 17px/1.35 var(--sans); color: var(--pic-ink);
+}
+.caption sup { font-size: .68em; line-height: 0; }
+.caption .tm { white-space: nowrap; }   /* lines break between terms, never inside one */
+.status {
+  position: absolute; left: 14px; bottom: 10px; right: 14px; pointer-events: none;
+  font-size: 13px; color: var(--pic-ink); opacity: .75;
+}
+
+/* ---------- panel ---------- */
+.panel { background: var(--panel); border-left: 1px solid var(--rule); overflow-y: auto; min-height: 0; }
+.head { position: sticky; top: 0; z-index: 2; background: var(--panel); padding: 16px 20px 12px; border-bottom: 1px solid var(--rule); }
+h1 { margin: 0 0 10px; font: 700 19px/1.2 var(--display); letter-spacing: .05em; text-transform: uppercase;
+     color: var(--accent-ink); text-shadow: var(--glow-text); }
+h1 small { font: 500 14px var(--sans); letter-spacing: 0; text-transform: none; color: var(--muted); text-shadow: none; margin-left: 6px; white-space: nowrap; display: inline-block; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; }
+button {
+  font: 500 13px var(--sans); color: var(--ink); background: var(--well);
+  border: 1px solid var(--rule); border-radius: 5px; padding: 6px 10px; cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 700; box-shadow: 0 0 12px rgba(0,229,255,.45); }
+button:disabled { opacity: .45; cursor: default; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+details { border-bottom: 1px solid var(--rule); }
+summary {
+  list-style: none; cursor: pointer; padding: 12px 20px; font: 600 15px var(--sans);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+summary::-webkit-details-marker { display: none; }
+summary::after { content: "+"; font: 400 16px var(--sans); color: var(--muted); }
+details[open] > summary::after { content: "−"; }
+summary .sub { font: 400 14px var(--sans); color: var(--muted); margin-left: 8px; flex: 1; }
+.body { padding: 0 20px 16px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
+
+.term { margin-bottom: 10px; }
+.term h3 { margin: 6px 0 2px; font: 500 15px var(--sans); display: flex; align-items: center; gap: 4px; }
+.term h3 b { font-weight: 600; margin-right: auto; }
+.term h3 .nval { min-width: 46px; text-align: center; font-size: 13px; color: var(--muted); }
+.term h3 button { padding: 0 7px; line-height: 20px; font-size: 14px; }
+.term h3 button.del { margin-left: 4px; color: var(--muted); }
+.term h3 button.del:hover { color: var(--red); border-color: var(--red); }
+
+.row { display: grid; grid-template-columns: 1fr 74px; grid-template-rows: auto auto; column-gap: 8px; margin: 4px 0 6px; }
+.row label { grid-column: 1 / 3; font-size: 12px; color: var(--muted); }
+.row input[type=number] {
+  width: 74px; font: 12px var(--sans); font-variant-numeric: tabular-nums; color: var(--ink);
+  background: var(--paper); border: 1px solid var(--rule); border-radius: 4px; padding: 2px 4px;
+}
+input[type=range] { width: 100%; accent-color: var(--accent); margin: 0; height: 18px; }
+.line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+
+.presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.presets button { padding: 8px 6px; }
+.check { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.check input { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.check:hover { color: var(--ink); }
+
+@media (max-width: 900px) {
+  body { height: auto; }
+  .app { grid-template-columns: 1fr; height: auto; flex: none; }
+  .frame { width: min(100%, 92vw); transition: width .25s ease; }
+  .panel { border-left: 0; border-top: 1px solid var(--rule); overflow: visible; }
+  .head { position: static; }
+  /* the picture stays pinned at the top while the tools scroll under it;
+     once the page is scrolled it shrinks to half its width */
+  .stage { position: sticky; top: 0; z-index: 3; background: var(--paper); padding: 10px 18px; }
+  body.mini .frame { width: min(50%, 46vw); }
+  body.mini .status { display: none; }
+  body.mini .caption { font-size: 11px; left: 7px; top: 5px; right: 7px; }
+}
+@media (max-width: 420px) { .caption { font-size: 15px; } }
+@media (prefers-reduced-motion: reduce) { .frame { transition: none; } }
+.sitenav {
+  flex: none; height: var(--barh); display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 20px; background: rgba(8,7,15,.9); border-bottom: 1px solid var(--rule); font: 500 14px var(--sans);
+}
+.sitenav a { color: var(--muted); text-decoration: none; border-radius: 4px; }
+.sitenav a:hover { color: var(--accent-ink); }
+#btnInfo {
+  background: transparent; color: var(--magenta-ink); border-color: var(--magenta);
+  font: 600 14px var(--sans); padding: 6px 12px 6px 7px;
+  display: inline-flex; align-items: center; gap: 7px;
+}
+#btnInfo:hover { border-color: var(--magenta); box-shadow: 0 0 12px rgba(255,61,242,.4); }
+#btnInfo .i {
+  width: 18px; height: 18px; border-radius: 50%; background: var(--magenta); color: var(--bg);
+  display: inline-grid; place-items: center; font: italic 600 13px/1 var(--sans);
+}
+#info {
+  max-width: min(600px, calc(100vw - 32px)); max-height: calc(100dvh - 48px); overflow-y: auto;
+  padding: 22px 26px 18px; border: 1px solid var(--rule); border-radius: 8px;
+  background: var(--panel); color: var(--ink); box-shadow: 0 0 30px rgba(0,229,255,.18);
+  font: 16px/1.55 var(--sans);
+}
+#info::backdrop { background: rgba(10, 14, 20, .45); }
+#info h2 { margin: 0 0 10px; font: 700 19px/1.2 var(--display); letter-spacing: .04em; color: var(--accent-ink); }
+#info p { margin: 0 0 12px; }
+#info .eq { text-align: center; font-size: 18px; margin: 4px 0 14px; }
+#info .close { float: right; margin: -4px -8px 0 12px; font: 500 13px var(--sans); }
+</style>
+</head>
+<body class="game">
+<!-- site navigation: this page lives at games/artsy_math/fourier/fourier_curve/index.html -->
+<nav class="sitenav" aria-label="Site">
+  <a href="../../../../#/artsy">← Back to Artsy Math</a>
+  <a href="../../../../#/">Home</a>
+</nav>
+<div class="app">
+  <div class="stage">
+    <div class="frame">
+      <canvas id="view" width="800" height="800" aria-label="The curve in the complex plane"></canvas>
+      <div class="caption" id="caption"></div>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <aside class="panel">
+    <div class="head">
+      <h1>Fourier curve <small>γ(t) = Σ c<sub>n</sub> e<sup>int</sup></small></h1>
+      <div class="actions">
+        <button class="primary" id="btnDraw">Show drawing</button>
+        <button id="btnPng">Save PNG</button>
+        <button id="btnInfo"><span class="i" aria-hidden="true">i</span>What is this?</button>
+      </div>
+    </div>
+
+    <details open>
+      <summary>Sample curves</summary>
+      <div class="body"><div class="presets" id="presets"></div>
+        <label class="check"><input type="checkbox" id="chkDraw" checked>Show drawing</label></div>
+    </details>
+
+    <details open>
+      <summary>Terms<span class="sub">c<sub>n</sub> e<sup>int</sup></span></summary>
+      <div class="body">
+        <div class="grid2" id="terms"></div>
+        <div class="line"><button id="btnAdd">+ Add term</button></div>
+      </div>
+    </details>
+
+    <details open>
+      <summary>View</summary>
+      <div class="body"><div class="line"><button id="btnFit">Fit to picture</button></div></div>
+    </details>
+  </aside>
+</div>
+
+<dialog id="info" aria-labelledby="infoTitle">
+  <button class="close" id="infoClose">Close</button>
+  <h2 id="infoTitle">What is this?</h2>
+  <p>The picture shows the curve</p>
+  <p class="eq">γ(t) = Σ c<sub>n</sub> e<sup>int</sup>, &nbsp; 0 ≤ t ≤ 2π,</p>
+  <p>in the complex plane, where the sum has finitely many terms and every c<sub>n</sub> is a complex number.</p>
+  <p>Each term c<sub>n</sub>e<sup>int</sup> is a vector of length |c<sub>n</sub>|. While t runs from 0 to 2π it turns round |n| times: counterclockwise when n &gt; 0, clockwise when n &lt; 0. The term c<sub>0</sub> stays where it is. Put the vectors tip to tail, and the last tip is at γ(t). “Show drawing” shows exactly this.</p>
+  <p>At t = 2π every term is back where it started, so the curve is closed.</p>
+  <p>It works the other way round too: a closed curve γ has the Fourier coefficients c<sub>n</sub> = (1/2π) ∫<sub>0</sub><sup>2π</sup> γ(t) e<sup>−int</sup> dt, and a few terms already draw it well. The samples “Triangle” and “Square” are five terms of such a series.</p>
+</dialog>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const TAU = 2 * Math.PI;
+
+/* the picture's own colours: paper, quiet white axes, a dark red curve */
+const PIC = {
+  bg: "#f4e8c1",
+  grid: "rgba(255,255,255,.55)",
+  axis: "#ffffff",
+  label: "#9a865b",
+  curve: "#8e1b1b",
+  ink: "#2e2016",                    // the vectors
+  circle: "rgba(46,32,22,.2)",       // the circles they turn on
+  dot: "#c62828",                    // γ(t) while drawing
+};
+const DRAW_T = 3500;      // ms for t to run from 0 to 2π
+const FADE_T = 600;       // ms for the vectors to fade away afterwards
+const PNG_SIZE = 2000;
+const SLIDER = 2;         // the sliders go from −2 to 2; the fields take any value
+
+/* The order of the terms everywhere (vectors, caption): n = 0, 1, −1, 2, −2, … */
+const rank = n => n > 0 ? 2*n - 1 : -2*n;
+const nOfRank = r => r % 2 ? (r + 1) / 2 : -r / 2;
+
+/* samples as [n, Re c_n, Im c_n] */
+const PRESETS = [
+  ["Circle",   [[1, 1, 0]]],
+  ["Ellipse",  [[1, 1, 0], [-1, .5, 0]]],
+  ["Cardioid", [[1, 1, 0], [2, .5, 0]]],
+  ["Deltoid",  [[1, 1, 0], [-2, .5, 0]]],
+  ["Astroid",  [[1, .75, 0], [-3, .25, 0]]],
+  // a polygon's Fourier coefficients fall off as 1/n² (n ≡ 1 mod the number of sides;
+  // the pentagram goes round twice, so n ≡ 2 mod 5)
+  ["Star",     [[2, 0, 1], [-3, 0, 4/9], [7, 0, 4/49], [-8, 0, 1/16], [12, 0, 1/36]]],
+  ["Triangle", [[1, 1, 0], [-2, 1/4, 0], [4, 1/16, 0], [-5, 1/25, 0], [7, 1/49, 0]]],
+  ["Square",   [[1, 1, 0], [-3, 1/9, 0], [5, 1/25, 0], [-7, 1/49, 0], [9, 1/81, 0]]],
+  // x = 16 sin³t, y = 13 cos t − 5 cos 2t − 2 cos 3t − cos 4t, scaled by 1/10
+  ["Heart",    [[1, 0, .05], [-1, 0, 1.25], [2, 0, -.25], [-2, 0, -.25], [3, 0, .1], [-3, 0, -.3], [4, 0, -.05], [-4, 0, -.05]]],
+];
+
+let terms = [];           // {n, re, im} in the order of the cards
+let active = [];          // the non-zero terms in the drawing order
+let curve = null;         // the whole curve, sampled: x0, y0, x1, y1, …
+let N = 0;                // number of steps in it
+let view = { cx: 0, cy: 0, half: 2 };   // the picture shows cx ± half, cy ± half
+let autoFit = true;       // the view is a fit of the current curve (so a resize may fit it again)
+let capFrac = .1;         // the part of the picture's height the caption covers
+let anim = null;          // the drawing in progress
+let shown = { t: null, a: 0 };          // what is on the screen: t (null = the whole curve) and the vectors' alpha
+
+/* ============================ the maths ============================ */
+function recompute() {
+  active = terms.filter(c => c.re || c.im).sort((a, b) => rank(a.n) - rank(b.n));
+  const top = active.reduce((m, c) => Math.max(m, Math.abs(c.n)), 1);
+  N = clamp(128 * top, 1024, 8192);
+  curve = new Float64Array(2 * (N + 1));
+  for (let j = 0; j <= N; j++) {
+    const [x, y] = gamma(j / N * TAU);
+    curve[2*j] = x; curve[2*j+1] = y;
+  }
+}
+function gamma(t) {
+  let x = 0, y = 0;
+  for (const c of active) {
+    const co = Math.cos(c.n * t), si = Math.sin(c.n * t);
+    x += c.re * co - c.im * si; y += c.re * si + c.im * co;
+  }
+  return [x, y];
+}
+function chain(t) {       // the partial sums: 0, then each vector's tip
+  const P = [0, 0];
+  let x = 0, y = 0;
+  for (const c of active) {
+    const co = Math.cos(c.n * t), si = Math.sin(c.n * t);
+    x += c.re * co - c.im * si; y += c.re * si + c.im * co;
+    P.push(x, y);
+  }
+  return P;
+}
+/* The box around the curve, every vector and every circle at any t, and the
+   origin (so the axes are always in the picture). */
+function box() {
+  let x0 = 0, x1 = 0, y0 = 0, y1 = 0;
+  const M = 720;
+  for (let j = 0; j < M; j++) {
+    const t = j / M * TAU;
+    let x = 0, y = 0;
+    for (const c of active) {
+      if (c.n) {
+        const r = Math.hypot(c.re, c.im);
+        x0 = Math.min(x0, x - r); x1 = Math.max(x1, x + r);
+        y0 = Math.min(y0, y - r); y1 = Math.max(y1, y + r);
+      }
+      const co = Math.cos(c.n * t), si = Math.sin(c.n * t);
+      x += c.re * co - c.im * si; y += c.re * si + c.im * co;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+  }
+  return { x0, x1, y0, y1 };
+}
+/* The box goes in the part of the picture under the caption. */
+function fitView() {
+  const b = box(), f = capFrac;
+  const half = Math.max(b.x1 - b.x0, (b.y1 - b.y0) / (1 - f), 1) / 2 * 1.12;
+  view = { cx: (b.x0 + b.x1) / 2, cy: (b.y0 + b.y1) / 2 + f * half, half };
+  autoFit = true;
+}
+/* While a term is edited the view stays, unless the drawing would leave it. */
+function growView() {
+  const b = box(), v = view, m = .02 * v.half;
+  if (b.x0 < v.cx - v.half + m || b.x1 > v.cx + v.half - m ||
+      b.y0 < v.cy - v.half + m || b.y1 > v.cy + v.half * (1 - 2 * capFrac) - m) fitView();
+  else autoFit = false;
+}
+
+/* ============================ the picture ============================ */
+const canvas = $("view"), ctx = canvas.getContext("2d");
+let cssSize = 800;
+
+function niceStep(raw) {
+  const p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+  return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+}
+function tickText(v, dec, imag) {
+  const s = String(Number(Math.abs(v).toFixed(dec))), sign = v < 0 ? "−" : "";
+  if (!imag) return sign + s;
+  return sign + (s === "1" ? "" : s) + "i";
+}
+
+/* Draws the picture on any canvas S×S. u = device pixels per CSS pixel of
+   the on-screen picture (the PNG is the same picture, bigger). t = null
+   draws the whole curve; otherwise the curve up to t, and the vectors at t
+   with alpha a. */
+function paint(g, S, u, t, a) {
+  const k = S / (2 * view.half);
+  const X = x => S/2 + (x - view.cx) * k, Y = y => S/2 - (y - view.cy) * k;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.fillStyle = PIC.bg; g.fillRect(0, 0, S, S);
+  g.lineCap = "round"; g.lineJoin = "round";
+
+  // grid and axes
+  const step = niceStep(2 * view.half / 7), dec = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  const lo = v => Math.ceil((v - view.half) / step), hi = v => Math.floor((v + view.half) / step);
+  g.strokeStyle = PIC.grid; g.lineWidth = 1 * u;
+  g.beginPath();
+  for (let j = lo(view.cx); j <= hi(view.cx); j++) { if (j) { const x = Math.round(X(j*step)) + .5; g.moveTo(x, 0); g.lineTo(x, S); } }
+  for (let j = lo(view.cy); j <= hi(view.cy); j++) { if (j) { const y = Math.round(Y(j*step)) + .5; g.moveTo(0, y); g.lineTo(S, y); } }
+  g.stroke();
+  const ox = X(0), oy = Y(0);
+  g.strokeStyle = PIC.axis; g.lineWidth = 2 * u;
+  g.beginPath(); g.moveTo(0, oy); g.lineTo(S, oy); g.moveTo(ox, 0); g.lineTo(ox, S); g.stroke();
+  g.lineWidth = 1.5 * u; g.beginPath();
+  for (let j = lo(view.cx); j <= hi(view.cx); j++) if (j) { const x = X(j*step); g.moveTo(x, oy - 4*u); g.lineTo(x, oy + 4*u); }
+  for (let j = lo(view.cy); j <= hi(view.cy); j++) if (j) { const y = Y(j*step); g.moveTo(ox - 4*u, y); g.lineTo(ox + 4*u, y); }
+  g.stroke();
+  if (S / u >= 240) {           // no numbers on the small pinned picture
+    g.fillStyle = PIC.label; g.font = `500 ${11*u}px "Chakra Petch", sans-serif`;
+    const below = oy < S - 22*u;
+    g.textAlign = "center"; g.textBaseline = below ? "top" : "bottom";
+    for (let j = lo(view.cx); j <= hi(view.cx); j++) {      // only numbers that fit whole
+      const s = tickText(j*step, dec, false), x = X(j*step), w = g.measureText(s).width / 2 + 3*u;
+      if (j && x - w > 0 && x + w < S) g.fillText(s, x, oy + (below ? 7 : -7)*u);
+    }
+    const left = ox > 34*u;
+    g.textAlign = left ? "right" : "left"; g.textBaseline = "middle";
+    const capY = S * capFrac;
+    for (let j = lo(view.cy); j <= hi(view.cy); j++)        // none under the caption
+      if (j && Y(j*step) > capY + 6*u) g.fillText(tickText(j*step, dec, true), ox + (left ? -7 : 7)*u, Y(j*step));
+    g.font = `italic 500 ${12*u}px "Chakra Petch", sans-serif`;
+    g.textAlign = "right"; g.textBaseline = "bottom"; g.fillText("Re", S - 8*u, oy - 5*u);
+    g.textAlign = left ? "left" : "right"; g.textBaseline = "top"; g.fillText("Im", ox + (left ? 7 : -7)*u, Math.max(S * .1, capY));
+  }
+
+  // the curve (so far)
+  const end = t == null ? N : Math.min(N, Math.floor(t / TAU * N));
+  g.strokeStyle = PIC.curve; g.lineWidth = 2.6 * u;
+  g.beginPath(); g.moveTo(X(curve[0]), Y(curve[1]));
+  for (let j = 1; j <= end; j++) g.lineTo(X(curve[2*j]), Y(curve[2*j+1]));
+  if (t != null) { const [x, y] = gamma(t); g.lineTo(X(x), Y(y)); }
+  g.stroke();
+
+  // the vectors, tip to tail, on their circles
+  if (t != null && a > 0 && active.length) {
+    const P = chain(t);
+    g.globalAlpha = a;
+    g.strokeStyle = PIC.circle; g.lineWidth = 1 * u;
+    g.beginPath();
+    active.forEach((c, i) => {
+      const r = Math.hypot(c.re, c.im) * k;
+      if (c.n && r > 2*u) { g.moveTo(X(P[2*i]) + r, Y(P[2*i+1])); g.arc(X(P[2*i]), Y(P[2*i+1]), r, 0, TAU); }
+    });
+    g.stroke();
+    g.strokeStyle = g.fillStyle = PIC.ink;
+    for (let i = 0; i < active.length; i++) arrow(g, X(P[2*i]), Y(P[2*i+1]), X(P[2*i+2]), Y(P[2*i+3]), u);
+    g.beginPath(); g.arc(X(0), Y(0), 2.5*u, 0, TAU); g.fill();
+    const tx = X(P[P.length-2]), ty = Y(P[P.length-1]);
+    g.beginPath(); g.arc(tx, ty, 5.5*u, 0, TAU);
+    g.fillStyle = "#fff"; g.fill();
+    g.beginPath(); g.arc(tx, ty, 4*u, 0, TAU);
+    g.fillStyle = PIC.dot; g.fill();
+    g.globalAlpha = 1;
+  }
+}
+function arrow(g, x0, y0, x1, y1, u) {
+  const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+  if (len < .5) return;
+  const h = Math.min(9*u, .35*len), w = h * .55, ex = dx / len, ey = dy / len;
+  const bx = x1 - ex*h, by = y1 - ey*h;
+  g.lineWidth = 1.7 * u;
+  g.beginPath(); g.moveTo(x0, y0); g.lineTo(bx, by); g.stroke();
+  g.beginPath(); g.moveTo(x1, y1); g.lineTo(bx - ey*w, by + ex*w); g.lineTo(bx + ey*w, by - ex*w); g.closePath(); g.fill();
+}
+
+function paintScreen() { paint(ctx, canvas.width, canvas.width / cssSize, shown.t, shown.a); }
+let queued = false;
+function requestPaint() {
+  if (queued || anim) return;      // a running drawing paints every frame anyway
+  queued = true;
+  requestAnimationFrame(() => { queued = false; paintScreen(); });
+}
+new ResizeObserver(() => {
+  const r = canvas.getBoundingClientRect();
+  if (!r.width) return;
+  cssSize = r.width;
+  const px = Math.round(r.width * (window.devicePixelRatio || 1));
+  if (canvas.width !== px) { canvas.width = canvas.height = px; }
+  fitCaption();
+  // fit again for the new caption, but not on the small pinned picture (its caption is one line)
+  if (autoFit && !document.body.classList.contains("mini")) fitView();
+  paintScreen();
+}).observe(canvas);
+
+/* ============================ "Show drawing" ============================ */
+function startDrawing() {
+  stopDrawing();
+  anim = { t0: performance.now() };
+  anim.raf = requestAnimationFrame(frame);
+}
+function frame(now) {
+  const e = now - anim.t0;
+  if (e < DRAW_T) shown = { t: e / DRAW_T * TAU, a: 1 };
+  else if (e < DRAW_T + FADE_T) shown = { t: TAU, a: 1 - (e - DRAW_T) / FADE_T };
+  else { anim = null; shown = { t: null, a: 0 }; paintScreen(); $("status").textContent = ""; return; }
+  paintScreen();
+  $("status").textContent = "t = " + Math.min(shown.t, TAU).toFixed(2);
+  anim.raf = requestAnimationFrame(frame);
+}
+function stopDrawing() {
+  if (!anim) return;
+  cancelAnimationFrame(anim.raf);
+  anim = null; shown = { t: null, a: 0 };
+  $("status").textContent = "";
+}
+
+/* ============================ the caption ============================ */
+const MINUS = "−", THIN = " ";
+const r2 = v => Math.round(v * 100) / 100;
+function exponent(n) { return (n < 0 ? MINUS : "") + (Math.abs(n) === 1 ? "" : Math.abs(n)) + "it"; }
+function termHTML(c, first) {    // null when it rounds to 0
+  let re = r2(c.re), im = r2(c.im), sign = "+", body;
+  if (!re && !im) return null;
+  const e = c.n ? `e<sup>${exponent(c.n)}</sup>` : "";
+  if (!im) { if (re < 0) sign = MINUS; body = Math.abs(re) === 1 && c.n ? "" : String(Math.abs(re)); }
+  else if (!re) { if (im < 0) sign = MINUS; body = (Math.abs(im) === 1 ? "" : Math.abs(im)) + "i"; }
+  else {
+    if (re < 0) { sign = MINUS; re = -re; im = -im; }
+    body = `(${re} ${im < 0 ? MINUS : "+"} ${Math.abs(im)}i)`;
+  }
+  const s = body + (body && e && !body.endsWith(")") ? THIN : "") + e;
+  return first ? `<span class="tm">${sign === MINUS ? MINUS : ""}${s}</span>` : ` <span class="tm">${sign} ${s}</span>`;
+}
+let captionParts = [];
+function updateCaption() {
+  captionParts = [];
+  for (const c of active) { const h = termHTML(c, !captionParts.length); if (h) captionParts.push(h); }
+  fitCaption();
+}
+/* Every term, on at most 3 lines (1 on the small pinned picture); what doesn't fit is "+ ⋯". */
+function fitCaption() {
+  const el = $("caption"), p = captionParts;
+  if (!p.length) el.innerHTML = "γ(t) = 0";
+  const lines = document.body.classList.contains("mini") ? 1 : 3;
+  const max = parseFloat(getComputedStyle(el).lineHeight) * (lines + .5);
+  for (let k = p.length; k >= 1; k--) {
+    el.innerHTML = "γ(t) = " + p.slice(0, k).join("") + (p.length > k ? ` <span class="tm">+ ⋯</span>` : "");
+    if (el.offsetHeight <= max) break;
+  }
+  const w = canvas.getBoundingClientRect().width;
+  capFrac = w ? Math.min(.4, (el.offsetTop + el.offsetHeight + 6) / w) : .1;
+}
+document.fonts.ready.then(() => { fitCaption(); if (autoFit) fitView(); requestPaint(); });
+
+/* ============================ the panel ============================ */
+const fmtField = v => String(Math.round(v * 1000) / 1000);
+const nLabel = n => `c<sub>${n < 0 ? MINUS + -n : n}</sub>`;
+
+function changed(refit) {
+  stopDrawing();
+  recompute();
+  updateCaption();          // first: the fit leaves room for it
+  if (refit) fitView(); else growView();
+  requestPaint();
+}
+function makeRow(parent, part, term) {
+  const row = document.createElement("div");
+  row.className = "row";
+  row.innerHTML = `<label></label><input type="range" min="${-SLIDER}" max="${SLIDER}" step="0.01"><input type="number" step="0.01">`;
+  const [lab, range, num] = row.children;
+  const set = v => { term[part] = v; changed(false); };
+  range.addEventListener("input", () => { num.value = fmtField(Number(range.value)); set(Number(range.value)); });
+  num.addEventListener("input", () => {
+    const v = num.value.trim() === "" ? 0 : Number(num.value);   // an empty field counts as 0
+    if (!isFinite(v)) return;
+    range.value = clamp(v, -SLIDER, SLIDER); set(v);
+  });
+  num.addEventListener("change", () => { num.value = fmtField(term[part]); });
+  range.value = clamp(term[part], -SLIDER, SLIDER); num.value = fmtField(term[part]);
+  parent.appendChild(row);
+  return () => {
+    const name = (part === "re" ? "Re " : "Im ") + nLabel(term.n);
+    lab.innerHTML = name;
+    range.setAttribute("aria-label", lab.textContent); num.setAttribute("aria-label", lab.textContent);
+  };
+}
+function termCard(term) {
+  const card = document.createElement("div");
+  card.className = "term";
+  card.innerHTML = `<h3><b></b><button aria-label="n − 1">‹</button><span class="nval"></span><button aria-label="n + 1">›</button><button class="del" aria-label="Remove this term">×</button></h3>`;
+  const [b, prev, nval, next, del] = card.firstChild.children;
+  const labels = [makeRow(card, "re", term), makeRow(card, "im", term)];
+  const update = () => {
+    b.innerHTML = nLabel(term.n);
+    nval.textContent = "n = " + (term.n < 0 ? MINUS + -term.n : term.n);
+    labels.forEach(f => f());
+  };
+  // ‹ › skip the n's other terms already have
+  const shift = dir => {
+    let n = term.n;
+    do n += dir; while (terms.some(o => o !== term && o.n === n));
+    if (Math.abs(n) > 99) return;
+    term.n = n; update(); changed(false);
+  };
+  prev.onclick = () => shift(-1);
+  next.onclick = () => shift(1);
+  del.onclick = () => { terms.splice(terms.indexOf(term), 1); buildTerms(); changed(false); };
+  update();
+  return card;
+}
+function buildTerms() {
+  const list = $("terms");
+  list.textContent = "";
+  for (const t of terms) list.appendChild(termCard(t));
+}
+$("btnAdd").onclick = () => {
+  let r = 0;
+  while (terms.some(t => t.n === nOfRank(r))) r++;
+  terms.push({ n: nOfRank(r), re: .2, im: 0 });   // not 0, so the new term shows at once
+  buildTerms(); changed(false);
+};
+
+function loadPreset(list) {
+  terms = list.map(([n, re, im]) => ({ n, re, im }));
+  buildTerms(); changed(true);
+  if ($("chkDraw").checked) startDrawing();
+}
+for (const [name, list] of PRESETS) {
+  const b = document.createElement("button");
+  b.textContent = name;
+  b.onclick = () => loadPreset(list);
+  $("presets").appendChild(b);
+}
+try { $("chkDraw").checked = localStorage.getItem("fourierDraw") !== "0"; } catch (e) {}
+$("chkDraw").addEventListener("change", () => { try { localStorage.setItem("fourierDraw", $("chkDraw").checked ? "1" : "0"); } catch (e) {} });
+
+$("btnDraw").onclick = startDrawing;
+$("btnFit").onclick = () => { fitView(); requestPaint(); if (anim) paintScreen(); };
+$("btnPng").onclick = () => {
+  const c = document.createElement("canvas");
+  c.width = c.height = PNG_SIZE;
+  paint(c.getContext("2d"), PNG_SIZE, PNG_SIZE / cssSize, shown.t, shown.a);
+  c.toBlob(blob => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "fourier-curve.png";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }, "image/png");
+};
+
+$("btnInfo").onclick = () => $("info").showModal();
+$("infoClose").onclick = () => $("info").close();
+$("info").addEventListener("click", (e) => { if (e.target === $("info")) $("info").close(); });   // click outside
+
+/* ---- narrow layout: shrink the pinned picture once the page is scrolled ---- */
+const narrow = window.matchMedia("(max-width: 900px)");
+function updateMini() {
+  // hysteresis, so the layout change caused by shrinking can't flip it back
+  const y = window.scrollY, mini = document.body.classList.contains("mini");
+  document.body.classList.toggle("mini", narrow.matches && (mini ? y > 4 : y > 40));
+}
+window.addEventListener("scroll", updateMini, { passive: true });
+narrow.addEventListener("change", updateMini);
+
+/* ============================ start ============================ */
+loadPreset(PRESETS.find(p => p[0] === "Heart")[1]);
+</script>
+</body>
+</html>

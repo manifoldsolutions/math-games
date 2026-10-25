@@ -40,7 +40,7 @@ games/<category>/<course>/<game>/index.html
   gets an "In Finnish"/"In English" tag in the other language. Games keep
   their own language. `kind: "tool"` (IFS explorer) says "Avaa/Explore", not
   "Pelaa/Play". A category whose sections aren't courses has `sub: "topics"`
-  (Artsy Math: "1 aihe / 1 topic").
+  (Artsy Math: "2 aihetta / 2 topics").
 - Shared JS goes in `assets/` too, loaded with a plain `<script src>` before the
   game's own script (no modules). Yhtälövaaka and Yksikköympyrä use
   `assets/celebrate.js`; a game must not define its own `celebrate` function.
@@ -112,6 +112,16 @@ games/<category>/<course>/<game>/index.html
   (`--paper`, `--panel`, `--rule`, `--well`, `--steel` …) are aliases of the
   theme tokens at the top of its `<style>`. Its maths in the info dialog is
   typeset with MathJax 3.
+- `games/artsy_math/fourier/fourier_curve` (Fourier-käyrä, 2026-10-25) is a
+  tool in the IFS explorer's frame (copied, not shared): γ(t) = Σ cₙe^{int}
+  with the terms as cards (Re, Im sliders and fields; ‹ › skip the n's in
+  use). English only. Its picture has its own colours (`PIC`: cream, a dark
+  red curve, quiet white axes; Vadim chose), not the theme's. "Show drawing"
+  (3.5 s) chains the vectors tip to tail on faint circles in the order
+  n = 0, 1, −1, 2, −2, …, the caption's order. The caption shows every term
+  on at most 3 lines (1 on the pinned phone picture, Vadim), and the fit
+  leaves room under it. Triangle, Square and Star are five terms of the
+  polygon's series (cₙ ∝ 1/n²; the pentagram goes round twice, n ≡ 2 mod 5).
 
 ## Yhtälövaaka (balance-scale equations) — design decisions
 
