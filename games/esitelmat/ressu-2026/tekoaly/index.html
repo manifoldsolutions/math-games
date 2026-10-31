@@ -169,10 +169,32 @@ blockquote{
   justify-content:space-between; gap:16px; padding:0 18px; font-size:14px; color:var(--muted);
   border-top:1px solid var(--line); background:rgba(8,7,15,.85); transition:opacity .4s ease;
 }
-#bar .prog{ position:absolute; left:0; top:-1px; height:2px; background:var(--accent); box-shadow:0 0 8px var(--accent); transition:width .3s ease; }
+/* the bar is a scrubber, like a video's: press or drag anywhere on it (not on
+   its buttons; the track along its top edge works over them too) to go to the
+   slide at that point. The track shows where you are, with a tick where each
+   part starts. The link off the page is at the far right, away from the slides
+   one scrubs to most. */
+#bar{ cursor:pointer; touch-action:none; user-select:none; }
+#bar .track{ position:absolute; left:0; right:0; top:-2px; height:4px; background:var(--line); transition:height .15s ease, top .15s ease; }
+#bar:hover .track, #bar.scrub .track{ top:-4px; height:8px; }
+#bar .track::after{ content:""; position:absolute; left:0; right:0; top:-8px; bottom:-6px; }   /* easier to hit, also above the buttons */
+#bar .prog{ position:absolute; left:0; top:0; bottom:0; background:var(--accent); box-shadow:0 0 8px var(--accent); }
+#bar .tick{ position:absolute; top:0; bottom:0; width:2px; margin-left:-1px; background:var(--bg); }
+#bar .hover{ position:absolute; top:0; bottom:0; background:rgba(255,255,255,.25); display:none; }
+#bar:hover .hover{ display:block; }
+#bar .tip{
+  position:absolute; bottom:52px; transform:translateX(-50%); white-space:nowrap; pointer-events:none;
+  background:var(--surface); border:1px solid var(--accent); border-radius:var(--radius);
+  padding:6px 12px; font-size:15px; color:var(--ink); display:none;
+}
+#bar .tip b{ color:var(--accent-ink); font-variant-numeric:tabular-nums; margin-right:8px; }
+#bar .tip small{ display:block; font-size:12px; color:var(--magenta-ink); letter-spacing:.06em; }
+#bar:hover .tip, #bar.scrub .tip{ display:block; }
+#bar button{ cursor:pointer; }
 #bar a{ color:var(--muted); text-decoration:none; }
 #bar a:hover{ color:var(--accent-ink); }
 #bar .ctl{ display:flex; align-items:center; gap:6px; }
+#bar .ctl a{ margin-left:10px; }
 #bar button{
   background:none; border:1px solid transparent; color:var(--muted); font:inherit; font-size:16px;
   cursor:pointer; padding:2px 10px; border-radius:var(--radius);
@@ -822,8 +844,8 @@ body.idle{ cursor:none; }
 <div id="blank" hidden></div>
 
 <div id="bar">
-  <div class="prog"></div>
-  <a href="../../../../">← Matikkapelit</a>
+  <div class="track"><div class="hover"></div><div class="prog"></div></div>
+  <div class="tip"></div>
   <span class="part"></span>
   <span class="ctl">
     <button id="prev" title="Edellinen (←)">‹</button>
@@ -831,6 +853,7 @@ body.idle{ cursor:none; }
     <button id="next" title="Seuraava (→)">›</button>
     <button id="fs" title="Koko näyttö (F)">⛶</button>
     <button id="nt" title="Muistiinpanot (N)">✎</button>
+    <a href="../../../../" title="Matikkapelit-etusivulle">Matikkapelit</a>
   </span>
 </div>
 
@@ -884,10 +907,58 @@ function show(i, revealAll = false) {
   const p = +s.dataset.part;
   bar.querySelector(".part").textContent = p ? p + " · " + PARTS[p] : "";
   bar.querySelector(".count").textContent = (cur + 1) + " / " + slides.length;
-  bar.querySelector(".prog").style.width = (100 * (cur + 1) / slides.length) + "%";
+  prog.style.width = (100 * (cur + 1) / slides.length) + "%";
   const n = s.querySelector(".notes");
   notesBox.innerHTML = "<h4>Muistiinpanot · dia " + (cur + 1) + "</h4>" + (n ? n.innerHTML : "<p class='muted'>–</p>");
 }
+
+// ── scrubber ──
+const track = bar.querySelector(".track"), prog = bar.querySelector(".prog");
+const hoverFill = bar.querySelector(".hover"), tip = bar.querySelector(".tip");
+
+// a tick where each part starts
+slides.forEach((s, i) => {
+  if (i && s.dataset.part !== slides[i - 1].dataset.part) {
+    const t = document.createElement("div");
+    t.className = "tick"; t.style.left = (100 * i / slides.length) + "%";
+    track.appendChild(t);
+  }
+});
+
+// a slide's name for the tooltip: its title, or the start of its first big line
+function slideName(s) {
+  const h = s.querySelector("h1, h2, .big, blockquote, .demo .what");
+  const t = h ? h.textContent.replace(/\s+/g, " ").trim() : "";
+  return t.length > 48 ? t.slice(0, 46) + "…" : t;
+}
+
+const slideAt = x => Math.max(0, Math.min(slides.length - 1, Math.floor(x / innerWidth * slides.length)));
+
+function hoverAt(x) {
+  const i = slideAt(x), s = slides[i], p = +s.dataset.part;
+  hoverFill.style.width = (100 * (i + 1) / slides.length) + "%";
+  tip.innerHTML = (p ? "<small>" + p + " · " + PARTS[p] + "</small>" : "") + "<b>" + (i + 1) + "</b>";
+  tip.append(slideName(s));
+  tip.style.left = Math.max(tip.offsetWidth / 2 + 6, Math.min(innerWidth - tip.offsetWidth / 2 - 6, x)) + "px";
+}
+
+const onControl = e => e.target.closest("a, button");
+bar.addEventListener("pointermove", e => { if (!onControl(e)) hoverAt(e.clientX); });
+bar.addEventListener("pointerdown", e => {
+  if (onControl(e)) return;
+  e.preventDefault();
+  bar.classList.add("scrub");
+  try { bar.setPointerCapture(e.pointerId); } catch {}
+  hoverAt(e.clientX);
+  const i = slideAt(e.clientX); if (i !== cur) show(i);
+});
+bar.addEventListener("pointermove", e => {
+  if (!bar.classList.contains("scrub")) return;
+  const i = slideAt(e.clientX); if (i !== cur) show(i);
+});
+const endScrub = () => bar.classList.remove("scrub");
+bar.addEventListener("pointerup", endScrub);
+bar.addEventListener("pointercancel", endScrub);
 
 function next() {
   const f = frags(slides[cur]).find(f => !f.classList.contains("shown"));
