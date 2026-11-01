@@ -85,7 +85,91 @@ ul.pts.tight{ gap:10px; }
 .demo .what{ font-size:30px; color:var(--ink); }
 .demo .how{ font-size:22px; max-width:900px; }
 
-/* part dividers */
+/* Pictures that follow the fragments: a fragment's data-viz is a list of words,
+   and the .viz box gets those of the last shown fragment that has one, as
+   data-state (CSS picks parts with [data-state~="word"]). <i class="f step">
+   inside a row is an extra press that only moves the picture on.
+   On a .grow slide rows not yet shown take no room, so the one picture box
+   sits under the newest row. */
+.grow{ justify-content:flex-start; }
+.grow .cols.top{ align-items:start; flex:1; min-height:0; }
+.grow .stack.fill{ height:100%; min-height:0; }
+.grow ul.pts li.f:not(.shown){ display:none; }
+.grow ul.pts li.f.shown{ animation:slide-in .35s ease; }
+.f.step{ display:none !important; }
+.viz{ position:relative; flex:1; min-height:0; }
+.grow .viz{ transition:opacity .3s ease; }
+.grow .viz[data-state=""]{ opacity:0; }
+.viz .pane{ position:absolute; inset:0; width:100%; height:100%; }
+.viz.side{ width:620px; height:640px; flex:none; }
+
+/* Eulerin oivallus: map → river and bridges → graph → what happens at the island */
+.kb .map{ filter:invert(1) brightness(.85); opacity:0; transition:opacity .6s ease; }
+.kb .hl ellipse{ fill:rgba(255,225,77,.55); stroke:var(--gold); stroke-width:1.5; }
+.kb .hl{ opacity:0; transition:opacity .4s ease; filter:drop-shadow(0 0 4px rgba(255,225,77,.7)); }
+[data-state~="map"] .kb .map{ opacity:.9; }
+[data-state~="map"] .kb .hl{ opacity:1; }
+.kb .water path{ fill:none; stroke:var(--accent); stroke-opacity:.28; stroke-width:20; stroke-linejoin:round; }
+.kb .water, .kb .bridges{ opacity:0; transition:opacity .6s ease; }
+.kb .bridges line{ stroke:var(--gold); stroke-width:8; stroke-linecap:round; }
+.kb .bridges{ filter:drop-shadow(0 0 4px rgba(255,225,77,.6)); }
+[data-state~="sketch"] .kb .water, [data-state~="sketch"] .kb .bridges{ opacity:1; }
+[data-state~="graph"] .kb .water{ opacity:.35; }
+/* once it is a graph, zoom in on it (it fills only the middle of the map) */
+.kb .cam{ transform-box:view-box; transition:transform 1s ease .3s; }
+[data-state~="graph"] .kb .cam{ transform:translate(314px,218px) scale(1.5) translate(-380px,-225px); }
+[data-state~="graph"] .kb .bridges{ transition-delay:.7s; }
+.kb .edges, .kb .nodes{ filter:var(--glow-cyan); }
+.kb .edges path{ fill:none; stroke:var(--accent); stroke-width:3; stroke-dasharray:1; stroke-dashoffset:1; transition:stroke-dashoffset .9s ease; }
+.kb .nodes circle{ fill:var(--bg); stroke:var(--accent); stroke-width:3; transform-box:fill-box; transform-origin:center; transform:scale(0); transition:transform .5s ease; }
+[data-state~="graph"] .kb .edges path{ stroke-dashoffset:0; }
+[data-state~="graph"] .kb .nodes circle{ transform:scale(1); }
+.kb .ov{ fill:none; stroke-width:6; opacity:0; transition:opacity .4s ease; }
+.kb .ov-m{ filter:var(--glow-magenta); } .kb .ov-m .ov{ stroke:var(--magenta); }
+.kb .ov-g .ov{ stroke:var(--gold); }
+.kb .ov-r .ov{ stroke:var(--red); stroke-dasharray:10 8; }
+.kb .ov-r text.q{ fill:var(--red); stroke:none; font:700 34px var(--ui); }
+[data-state~="in"] .kb .in, [data-state~="out"] .kb .out,
+[data-state~="pairs"] .kb .ov{ opacity:1; }
+.kb .deg{ opacity:0; transition:opacity .4s ease; filter:var(--glow-magenta); }
+.kb .deg circle{ fill:var(--bg); stroke:var(--magenta); stroke-width:3; }
+.kb .deg text{ fill:var(--magenta-ink); font:700 22px var(--ui); text-anchor:middle; dominant-baseline:central; }
+[data-state~="deg"] .kb .deg{ opacity:1; }
+
+/* Eulerin lause: a big graph, odd nodes in magenta, two attempts that get stuck */
+.sq .e{ stroke:var(--accent); stroke-width:1.6; opacity:.75; }
+.sq .n{ fill:var(--bg); stroke:var(--accent); stroke-width:1.6; }
+.sq .n.odd{ stroke:var(--magenta); fill:rgba(255,61,242,.35); }
+.sq .lines{ filter:var(--glow-cyan); }
+.sq .trail{ fill:none; stroke:var(--gold); stroke-width:4.5; stroke-linejoin:round; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:1; opacity:0; }
+.sq .trails{ filter:drop-shadow(0 0 4px rgba(255,225,77,.6)); }
+.sq .start{ fill:var(--gold); opacity:0; }
+.sq .stuck{ fill:none; stroke:var(--red); stroke-width:3; opacity:0; }
+[data-state~="try1"] .sq .k1, [data-state~="try2"] .sq .k2{ opacity:1; }
+[data-state~="try1"] .sq .trail.k1, [data-state~="try2"] .sq .trail.k2{ stroke-dashoffset:0; transition:stroke-dashoffset 4s linear; }
+[data-state~="try1"] .sq .stuck.k1, [data-state~="try2"] .sq .stuck.k2{ transition:opacity .3s ease 4s; animation:stuck-pulse 1s ease 4.2s 3; }
+@keyframes stuck-pulse{ 50%{ stroke-width:7; } }
+
+/* Eulerin polku: the house */
+s.strike{ text-decoration:none; position:relative; color:var(--muted); text-shadow:none; }
+s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; height:5px; background:var(--magenta); transform:rotate(-8deg); box-shadow:0 0 8px var(--magenta); }
+.house .lines{ filter:var(--glow-cyan); }
+.house line{ stroke:var(--accent); stroke-width:3; transition:opacity .5s ease, stroke-dashoffset .8s ease; }
+.house circle{ fill:var(--bg); stroke:var(--accent); stroke-width:3; transition:opacity .5s ease, fill .3s ease, stroke .3s ease; }
+.house .low{ opacity:0; }
+.house line.low{ stroke-dasharray:1; stroke-dashoffset:1; }
+[data-state~="roof"] .house .low{ opacity:1; stroke-dashoffset:0; }
+[data-state~="cut"] .house .ceil{ stroke:var(--red); stroke-dasharray:8 8; opacity:.6; }
+[data-state~="deg1"] .house .o1, [data-state~="deg3"] .house .o3{ stroke:var(--magenta); fill:rgba(255,61,242,.45); }
+.house .trails{ filter:drop-shadow(0 0 5px rgba(255,225,77,.7)); }
+.house .trail{ fill:none; stroke:var(--gold); stroke-width:6; stroke-linejoin:round; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:1; opacity:0; transition:opacity .3s ease; }
+[data-state~="trail1"] .house .t1, [data-state~="trail2"] .house .t2{ opacity:.9; stroke-dashoffset:0; transition:stroke-dashoffset 3.5s linear; }
+.house .dl{ opacity:0; transition:opacity .4s ease; }
+.house .dl text{ fill:var(--ink); font:700 24px var(--ui); text-anchor:middle; dominant-baseline:central; }
+.house .dl text.odd{ fill:var(--magenta-ink); }
+[data-state~="deg1"] .house .d1, [data-state~="deg2"] .house .d2, [data-state~="deg3"] .house .d3{ opacity:1; }
+
+
 .divider{ justify-content:center; gap:18px; }
 .divider .num{
   font:800 190px/1 var(--display); color:transparent; -webkit-text-stroke:2px var(--accent);
@@ -232,7 +316,7 @@ body.idle{ cursor:none; }
 <!-- ════════════════════════ 1 · KÖNIGSBERG ════════════════════════ -->
 <section class="slide divider" data-part="1">
   <div class="num">01</div>
-  <h2>Kokeile itse</h2>
+  <h2>Königsbergin sillat</h2>
   <aside class="notes"><ul><li>5 min.</li></ul></aside>
 </section>
 
@@ -250,35 +334,164 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="1">
-  <div class="cols">
-    <div class="stack">
+<section class="slide grow" data-part="1">
+  <div class="cols top">
+    <div class="stack fill">
       <h2>Eulerin oivallus</h2>
       <ul class="pts">
-        <li class="f">Unohda kartta. Jäljelle jää vain, mikä on yhteydessä mihin: <span class="cyan">verkko</span>.</li>
-        <li class="f">Kun kuljet maa-alueen läpi, tulet sisään yhtä siltaa ja lähdet toista. Sillat menevät pareittain.</li>
-        <li class="f">Siksi kierros vaatii, että jokaiselta alueelta lähtee <span class="gold">parillinen määrä</span> siltoja.</li>
-        <li class="f">Königsbergissä kaikilta neljältä pariton. <span class="mag">Mahdotonta.</span></li>
+        <li class="f" data-viz="map">Abstrahoidaan kartta <span class="cyan">verkoksi</span>: jätetään solmut ja särmät.<i class="f step" data-viz="sketch"></i><i class="f step" data-viz="graph"></i></li>
+        <li class="f" data-viz="graph in">Kun solmuun saavutaan särmää pitkin, on samasta solmusta poistuttava toista särmää pitkin.<i class="f step" data-viz="graph in out"></i></li>
+        <li class="f" data-viz="graph pairs">Sisään- ja ulostulo särmät muodostavat pareja, eli jokaisen solmun aste on oltava <span class="gold">parillinen</span>.</li>
+        <li class="f" data-viz="graph deg">Königsbergin verkossa kaikki asteet ovat parittomia ⇒ <span class="mag">Mahdotonta.</span></li>
       </ul>
+      <div class="viz" data-state="">
+        <!-- The map → a sketch of river and bridges → the graph, then what happens
+             at the island. Drawn on the map's own pixels (628 × 437) so all line up.
+             Land: N (280,110), island A (302,228), S (240,340), D (520,268). -->
+        <svg class="pane kb" viewBox="0 0 628 437" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <marker id="kb-m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="3" markerHeight="3" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--magenta)"/></marker>
+            <marker id="kb-g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="3" markerHeight="3" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--gold)"/></marker>
+          </defs>
+          <g class="cam">
+          <image class="map" href="img/koenigsberg-merian.jpg" x="0" y="0" width="628" height="437"/>
+          <g class="hl">
+            <ellipse cx="243.5" cy="188.7" rx="20" ry="7.5" transform="rotate(114 243.5 188.7)"/>
+            <ellipse cx="319.1" cy="189.2" rx="20" ry="8" transform="rotate(124 319.1 189.2)"/>
+            <ellipse cx="199.5" cy="269.3" rx="22" ry="8" transform="rotate(114 199.5 269.3)"/>
+            <ellipse cx="261.8" cy="268.9" rx="23" ry="8.5" transform="rotate(115 261.8 268.9)"/>
+            <ellipse cx="406.9" cy="236.5" rx="25" ry="9" transform="rotate(11 406.9 236.5)"/>
+            <ellipse cx="422.0" cy="194.5" rx="21" ry="8" transform="rotate(80 422 194.5)"/>
+            <ellipse cx="428.4" cy="351.0" rx="28" ry="10" transform="rotate(123 428.4 351)"/>
+          </g>
+          <g class="water">
+            <path d="M0 264 L178 268 L408 268"/>
+            <path d="M178 268 L214 189 L408 189 L408 268"/>
+            <path d="M408 189 Q470 200 628 190"/>
+            <path d="M408 268 C400 300 372 318 392 338 S470 356 628 336"/>
+          </g>
+          <g class="bridges">
+            <line x1="226" y1="188.7" x2="261" y2="188.7" transform="rotate(114 243.5 188.7)"/>
+            <line x1="301.6" y1="189.2" x2="336.6" y2="189.2" transform="rotate(124 319.1 189.2)"/>
+            <line x1="182" y1="269.3" x2="217" y2="269.3" transform="rotate(114 199.5 269.3)"/>
+            <line x1="244.3" y1="268.9" x2="279.3" y2="268.9" transform="rotate(115 261.8 268.9)"/>
+            <line x1="389.4" y1="236.5" x2="424.4" y2="236.5" transform="rotate(11 406.9 236.5)"/>
+            <line x1="404.5" y1="194.5" x2="439.5" y2="194.5" transform="rotate(80 422 194.5)"/>
+            <line x1="410.9" y1="351" x2="445.9" y2="351" transform="rotate(123 428.4 351)"/>
+          </g>
+          <!-- each edge is a curve through its bridge: control = 2·bridge − (ends)/2 -->
+          <g class="edges">
+            <path pathLength="1" d="M302 228 Q196 208.4 280 110"/>
+            <path pathLength="1" d="M302 228 Q347.2 209.4 280 110"/>
+            <path pathLength="1" d="M302 228 Q128 254.6 240 340"/>
+            <path pathLength="1" d="M302 228 Q252.6 253.8 240 340"/>
+            <path pathLength="1" d="M302 228 Q402.8 225 520 268"/>
+            <path pathLength="1" d="M280 110 Q444 200 520 268"/>
+            <path pathLength="1" d="M240 340 Q476.8 398 520 268"/>
+          </g>
+          <!-- at the island: in and out (magenta), a second pair (gold), one left over (red) -->
+          <g class="ov-m">
+            <path class="ov in" d="M280 110 Q347.2 209.4 302 228" marker-end="url(#kb-m)"/>
+            <path class="ov out" d="M302 228 Q402.8 225 520 268" marker-end="url(#kb-m)"/>
+          </g>
+          <g class="ov-g">
+            <path class="ov p2" d="M280 110 Q196 208.4 302 228" marker-end="url(#kb-g)"/>
+            <path class="ov p2" d="M302 228 Q128 254.6 240 340" marker-end="url(#kb-g)"/>
+          </g>
+          <g class="ov-r">
+            <path class="ov left" d="M302 228 Q252.6 253.8 240 340"/>
+            <text class="ov left q" x="276" y="306">?</text>
+          </g>
+          <g class="nodes">
+            <circle cx="280" cy="110" r="11"/><circle cx="302" cy="228" r="11"/>
+            <circle cx="240" cy="340" r="11"/><circle cx="520" cy="268" r="11"/>
+          </g>
+          <g class="deg">
+            <circle cx="280" cy="110" r="19"/><text x="280" y="110">3</text>
+            <circle cx="302" cy="228" r="19"/><text x="302" y="228">5</text>
+            <circle cx="240" cy="340" r="19"/><text x="240" y="340">3</text>
+            <circle cx="520" cy="268" r="19"/><text x="520" y="268">3</text>
+          </g>
+          </g>
+        </svg>
+      </div>
     </div>
     <figure class="face"><img src="img/euler.jpg" alt=""><figcaption>Leonhard Euler<small>1707–1783 · ratkaisi 1736</small></figcaption></figure>
   </div>
-  <div class="demo f" style="min-height:220px; flex:none">
-    <div class="tag">▶ DEMO</div>
-    <div class="what">Kartta muuttuu verkoksi: neljä solmua, seitsemän viivaa, solmujen asteet 5, 3, 3, 3</div>
-  </div>
   <aside class="notes"><ul>
+    <li>Kartta: Merian-Erben 1652. Sillat korostettuina, sitten pelkkä joki ja sillat, sitten verkko: maa-alueet ovat solmuja, sillat särmiä.</li>
+    <li>Saari: viisi siltaa. Kaksi paria (sisään–ulos), yksi jää yli.</li>
     <li>Paikallinen tieto (yhden solmun aste) ratkaisee globaalin kysymyksen (koko kierros). Tähän palataan osassa 5.</li>
-    <li>Polku, joka ei palaa alkuun, onnistuu, jos parittomia solmuja on tasan kaksi: aloita toisesta, lopeta toiseen.</li>
     <li>Verkkoteorian syntymä.</li>
   </ul></aside>
 </section>
 
-<section class="slide center" data-part="1">
-  <p class="big">Tekoäly olisi kertonut vastauksen 0,1 sekunnissa.</p>
-  <p class="big mag f">Menetittekö jotain?</p>
+<section class="slide" data-part="1">
+  <div class="cols">
+    <div class="stack">
+      <h2>Eulerin lause</h2>
+      <p>Tämä pätee kaikille yhtenäisille verkoille: Eulerin kierros on olemassa <span class="gold">jos ja vain jos</span> kaikki asteet ovat parillisia.</p>
+      <p class="small muted">Parittomat solmut <span class="mag">magentalla</span>.</p>
+      <p class="f" data-viz="try1">Yritetään kierrosta: polku juuttuu <span class="mag">parittomaan solmuun</span>.</p>
+      <p class="f" data-viz="try2"></p>
+      <p class="f">Solmujen parillisuus on siis hyödyllinen <span class="cyan">invariantti</span>.</p>
+    </div>
+    <!-- three nested squares of 12 nodes, built by the script (squareGraph) -->
+    <div class="viz side"><svg class="pane sq" viewBox="-10 -10 440 440" preserveAspectRatio="xMidYMid meet"></svg></div>
+  </div>
   <aside class="notes"><ul>
-    <li>Kysy oikeasti. Kuuntele pari vastausta. Ei tarvitse vielä ratkaista.</li>
+    <li>Polku, joka ei ole jo palannut alkuun, voi juuttua vain parittomaan solmuun: jokainen läpikulku käyttää kaksi särmää.</li>
+    <li>Yhtenäisyys tarvitaan: kaksi erillistä kolmiota ovat parillisia, mutta niitä ei kierretä yhdellä kertaa.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="1">
+  <div class="cols">
+    <div class="stack">
+      <h2>Eulerin <s class="strike">kierros</s> polku</h2>
+      <ul class="pts">
+        <li class="f" data-viz="trail1">Talon voi piirtää yhdellä vedolla: <span class="gold">Eulerin polku</span>.</li>
+        <li class="f" data-viz="trail1 deg1">Parittomia solmuja on tasan kaksi. Polku alkaa toisesta ja päättyy toiseen.</li>
+        <li class="f" data-viz="roof deg2">Toinen "katto" alas: kaikki asteet ovat nyt parillisia.</li>
+        <li class="f" data-viz="roof deg2 trail2">Nyt polku on jopa kierros: se palaa alkuun.</li>
+        <li class="f" data-viz="cut deg3">Nyt verkossa on neljä paritonta solmua ⇒ <span class="mag">mahdotonta</span>.</li>
+        <li class="f muted">Parittomia solmuja on aina parillinen määrä (kättelylemma).</li>
+      </ul>
+    </div>
+    <!-- K4 + a roof. BL (60,320) BR (240,320) TL (60,140) TR (240,140),
+         roof A (150,50), the second roof L (150,410) -->
+    <div class="viz side house-viz">
+      <svg class="pane house" viewBox="0 0 300 450" preserveAspectRatio="xMidYMid meet">
+        <g class="lines">
+          <line x1="60" y1="320" x2="240" y2="320"/>
+          <line x1="60" y1="320" x2="60" y2="140"/>
+          <line x1="240" y1="320" x2="240" y2="140"/>
+          <line class="ceil" x1="60" y1="140" x2="240" y2="140"/>
+          <line x1="60" y1="320" x2="240" y2="140"/>
+          <line x1="240" y1="320" x2="60" y2="140"/>
+          <line x1="60" y1="140" x2="150" y2="50"/>
+          <line x1="240" y1="140" x2="150" y2="50"/>
+          <line class="low" pathLength="1" x1="60" y1="320" x2="150" y2="410"/>
+          <line class="low" pathLength="1" x1="240" y1="320" x2="150" y2="410"/>
+        </g>
+        <g class="trails">
+          <polyline class="trail t1" pathLength="1" points="60,320 60,140 240,140 60,320 240,320 60,140 150,50 240,140 240,320"/>
+          <polyline class="trail t2" pathLength="1" points="60,320 60,140 240,140 60,320 240,320 60,140 150,50 240,140 240,320 150,410 60,320"/>
+        </g>
+        <g class="lines">
+          <circle class="o1 o3" cx="60" cy="320" r="8"/><circle class="o1 o3" cx="240" cy="320" r="8"/>
+          <circle class="o3" cx="60" cy="140" r="8"/><circle class="o3" cx="240" cy="140" r="8"/>
+          <circle cx="150" cy="50" r="8"/><circle class="low" cx="150" cy="410" r="8"/>
+        </g>
+        <g class="dl d1"><text class="odd" x="34" y="346">3</text><text class="odd" x="266" y="346">3</text><text x="34" y="128">4</text><text x="266" y="128">4</text><text x="150" y="24">2</text></g>
+        <g class="dl d2"><text x="34" y="346">4</text><text x="266" y="346">4</text><text x="34" y="128">4</text><text x="266" y="128">4</text><text x="150" y="24">2</text><text x="178" y="428">2</text></g>
+        <g class="dl d3"><text class="odd" x="34" y="346">3</text><text class="odd" x="266" y="346">3</text><text class="odd" x="34" y="128">3</text><text class="odd" x="266" y="128">3</text><text x="150" y="24">2</text></g>
+      </svg>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>"Joulupukin talo": neliö lävistäjineen (K₄) ja katto. Alakulmien aste on 3, joten polku alkaa toisesta alakulmasta ja päättyy toiseen.</li>
+    <li>Kättelylemma: asteiden summa on kaksi kertaa särmien määrä, joten parittomia solmuja on aina parillinen määrä. Kolmea paritonta ei voi olla.</li>
   </ul></aside>
 </section>
 
@@ -834,6 +1047,7 @@ body.idle{ cursor:none; }
     <li>John O'Keefe: Per Henning/NTNU, CC BY 2.0, <a href="https://commons.wikimedia.org/wiki/File:John_O%27Keefe_(neuroscientist)_2014_(cropped).jpg">Wikimedia Commons</a></li>
     <li>Thomas Hales: Slawekb, CC BY-SA 3.0, <a href="https://commons.wikimedia.org/wiki/File:Halescropped.jpg">Wikimedia Commons</a></li>
     <li>Alan Turing: Elliott &amp; Fry, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Alan_turing_header.jpg">Wikimedia Commons</a></li>
+    <li>Königsbergin kartta: Merian-Erben 1652, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Image-Koenigsberg,_Map_by_Merian-Erben_1652.jpg">Wikimedia Commons</a></li>
   </ul>
   <p class="muted small">Kuvat on rajattu. CC BY-SA -kuvien rajaukset ovat samalla lisenssillä.</p>
 </section>
@@ -861,7 +1075,7 @@ body.idle{ cursor:none; }
 // Keys: → ↓ PageDown space Enter = next, ← ↑ PageUp = back, Home/End,
 // F full screen, N speaker notes, B or . black screen (presentation clickers).
 // The slide number is kept in the URL (#12), so a reload stays put.
-const PARTS = ["", "Kokeile itse", "Tulos vai kokemus", "5000 vuotta ulkoistamista",
+const PARTS = ["", "Königsberg", "Tulos vai kokemus", "5000 vuotta ulkoistamista",
   "Mikä matematiikassa on inhimillistä", "Paikallinen sääntö, globaali rakenne",
   "Math 2.0", "Oma tarina", "Lopetus"];
 
@@ -894,7 +1108,112 @@ function setFrag(f, on) {
   f.classList.toggle("shown", on);
   const c = f.dataset.slideClass;
   if (c) f.closest(".slide").classList.toggle(c, on);
+  syncViz(f.closest(".slide"));
 }
+
+// a .viz box shows the picture named by the last shown fragment with data-viz
+function syncViz(s) {
+  const box = s.querySelector(".viz");
+  if (!box) return;
+  const on = [...s.querySelectorAll(".f.shown[data-viz]")];
+  box.dataset.state = on.length ? on[on.length - 1].dataset.viz : "";
+}
+
+// "Eulerin lause": three nested squares, each a cycle of 12 nodes (4 on every
+// side), joined ring to ring at random but without crossings (a fixed seed, so
+// it is the same every time). Odd nodes are magenta. Two attempts at a circuit
+// start from even nodes and run until no unused edge is left; a trail that
+// started at an even node can only get stuck at an odd one.
+function squareGraph(svg) {
+  const NS = "http://www.w3.org/2000/svg", C = 210, HALF = [180, 120, 60];
+  let seed = 7;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  const id = (r, i) => r * 12 + i;
+  const pos = n => {                             // i = 0…11 clockwise from the top-left corner
+    const r = Math.floor(n / 12), i = n % 12, h = HALF[r], side = Math.floor(i / 3), t = (i % 3) / 3 * 2 * h;
+    return [[C - h + t, C - h], [C + h, C - h + t], [C + h - t, C + h], [C - h, C + h - t]][side];
+  };
+  const edges = [];
+  for (let r = 0; r < 3; r++) for (let i = 0; i < 12; i++) edges.push([id(r, i), id(r, (i + 1) % 12)]);
+  for (const r of [0, 1]) {                      // spokes from ring r to ring r + 1
+    let prev = 0, first = 0;
+    for (let i = 0; i < 12; i++) {
+      const x = rnd();
+      let k = i === 1 ? 1 : x < .4 ? 0 : x < .8 ? 1 : x < .9 ? 2 : 3;   // none, straight, to i + 1, to i − 1
+      if (k === 3 && prev === 2) k = 1;          // these two would cross
+      if (i === 11 && k === 2 && first === 3) k = 1;
+      if (k) edges.push([id(r, i), id(r + 1, (i + [0, 0, 1, 11][k]) % 12)]);
+      prev = k; if (i === 0) first = k;
+    }
+  }
+  const deg = Array(36).fill(0);
+  for (const [a, b] of edges) { deg[a]++; deg[b]++; }
+
+  // a longest trail (of 400 random ones) from `start` that gets stuck at an odd node
+  function trail(start) {
+    let best = null;
+    for (let t = 0; t < 400; t++) {
+      const used = new Set(), path = [start];
+      let at = start;
+      for (;;) {
+        const opts = edges.map((e, k) => k).filter(k => !used.has(k) && edges[k].includes(at));
+        if (!opts.length) break;
+        const k = opts[Math.floor(rnd() * opts.length)];
+        used.add(k); at = edges[k][0] === at ? edges[k][1] : edges[k][0]; path.push(at);
+      }
+      if (deg[at] % 2 && (!best || path.length > best.length)) best = path;
+    }
+    return best;
+  }
+
+  const el = (tag, attrs, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const k in attrs) e.setAttribute(k, attrs[k]);
+    parent.appendChild(e); return e;
+  };
+  const lines = el("g", { class: "lines" }, svg);
+  for (const [a, b] of edges) {
+    const [x1, y1] = pos(a), [x2, y2] = pos(b);
+    el("line", { class: "e", x1, y1, x2, y2 }, lines);
+  }
+  const trails = el("g", { class: "trails" }, svg);
+  const marks = el("g", {}, svg);
+  const evens = deg.map((d, n) => n).filter(n => deg[n] % 2 === 0);
+  [evens[0], evens[evens.length - 1]].forEach((start, k) => {
+    const p = trail(start), cls = "k" + (k + 1);
+    el("polyline", { class: "trail " + cls, pathLength: 1, points: p.map(n => pos(n).join(",")).join(" ") }, trails);
+    const [sx, sy] = pos(p[0]), [ex, ey] = pos(p[p.length - 1]);
+    el("circle", { class: "start " + cls, cx: sx, cy: sy, r: 8 }, marks);
+    el("circle", { class: "stuck " + cls, cx: ex, cy: ey, r: 13 }, marks);
+  });
+  const nodes = el("g", { class: "lines" }, svg);
+  for (let n = 0; n < 36; n++) {
+    const [cx, cy] = pos(n);
+    el("circle", { class: "n" + (deg[n] % 2 ? " odd" : ""), cx, cy, r: 6 }, nodes);
+  }
+  svg.appendChild(marks);                         // markers over the nodes
+}
+document.querySelectorAll(".viz .sq").forEach(squareGraph);
+
+// An arrow along a curved edge (M p0 Q p1 p2) must stop at the edge of the
+// node it points to, and its head must sit on the curve: so the curve itself
+// is cut short (de Casteljau at the t where it is `gap` away from p2), rather
+// than the head being pushed back along a straight line.
+function trimArrow(path, gap) {
+  const n = path.getAttribute("d").match(/-?[\d.]+/g).map(Number);
+  const [x0, y0, x1, y1, x2, y2] = n;
+  const at = t => [(1 - t) ** 2 * x0 + 2 * (1 - t) * t * x1 + t * t * x2,
+                   (1 - t) ** 2 * y0 + 2 * (1 - t) * t * y1 + t * t * y2];
+  let lo = 0, hi = 1;
+  for (let k = 0; k < 40; k++) {
+    const mid = (lo + hi) / 2, [x, y] = at(mid);
+    if (Math.hypot(x - x2, y - y2) > gap) lo = mid; else hi = mid;
+  }
+  const t = lo, [ex, ey] = at(t);
+  const cx = x0 + t * (x1 - x0), cy = y0 + t * (y1 - y0);
+  path.setAttribute("d", `M${x0} ${y0} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
+}
+document.querySelectorAll(".kb path[marker-end]").forEach(p => trimArrow(p, 14));
 
 function show(i, revealAll = false) {
   i = Math.max(0, Math.min(slides.length - 1, i));
@@ -902,6 +1221,7 @@ function show(i, revealAll = false) {
   cur = i;
   const s = slides[cur];
   frags(s).forEach(f => setFrag(f, revealAll));
+  syncViz(s);
   s.classList.add("on");
   history.replaceState(null, "", "#" + (cur + 1));
   const p = +s.dataset.part;
