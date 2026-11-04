@@ -102,6 +102,10 @@ ul.pts.tight{ gap:10px; }
 .grow .viz[data-state=""]{ opacity:0; }
 .viz .pane{ position:absolute; inset:0; width:100%; height:100%; }
 .viz.side{ width:620px; height:640px; flex:none; }
+/* Eulerin lause: the picture at the top, the last paragraph under both columns */
+.euler .cols{ align-items:start; }
+.euler .stack{ gap:18px; }
+.euler .viz.side{ width:540px; height:540px; }
 
 /* Eulerin oivallus: map → river and bridges → graph → what happens at the island */
 .kb .map{ filter:invert(1) brightness(.85); opacity:0; transition:opacity .6s ease; }
@@ -148,6 +152,19 @@ ul.pts.tight{ gap:10px; }
 [data-state~="try1"] .sq .k1, [data-state~="try2"] .sq .k2{ opacity:1; }
 [data-state~="try1"] .sq .trail.k1, [data-state~="try2"] .sq .trail.k2{ stroke-dashoffset:0; transition:stroke-dashoffset 4s linear; }
 [data-state~="try1"] .sq .stuck.k1, [data-state~="try2"] .sq .stuck.k2{ transition:opacity .3s ease 4s; animation:stuck-pulse 1s ease 4.2s 3; }
+/* the changed graph: dropped edges fade to dashes, new ones draw in, odd nodes turn even */
+.sq .e{ transition:opacity .6s ease; }
+.sq .e.add{ stroke-dasharray:1; stroke-dashoffset:1; opacity:0; }
+[data-state~="even"] .sq .e.drop{ opacity:.25; stroke-dasharray:4 6; }
+[data-state~="even"] .sq .e.add{ opacity:1; stroke-dashoffset:0; stroke-width:2.6; transition:stroke-dashoffset .8s ease .4s, opacity .2s ease .4s; }
+.sq .n{ transition:stroke .6s ease, fill .6s ease; }
+[data-state~="even"] .sq .n.odd{ stroke:var(--accent); fill:var(--bg); transition-delay:1s; }
+.sq .home{ fill:none; stroke:var(--gold); stroke-width:3; opacity:0; }
+[data-state~="circ"] .sq .k3{ opacity:1; }
+[data-state~="circ"] .sq .trail.k3{ stroke-dashoffset:0; transition:stroke-dashoffset 9s linear; }
+[data-state~="circ"] .sq .home{ opacity:0; animation:home-pulse 1s ease 9s 3 forwards; }
+@keyframes home-pulse{ 0%{ opacity:0; transform:scale(.6) } 50%{ opacity:1; transform:scale(1.15) } 100%{ opacity:1; transform:none } }
+.sq .home{ transform-box:fill-box; transform-origin:center; }
 @keyframes stuck-pulse{ 50%{ stroke-width:7; } }
 
 /* Eulerin polku: the house */
@@ -156,19 +173,167 @@ s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; he
 .house .lines{ filter:var(--glow-cyan); }
 .house line{ stroke:var(--accent); stroke-width:3; transition:opacity .5s ease, stroke-dashoffset .8s ease; }
 .house circle{ fill:var(--bg); stroke:var(--accent); stroke-width:3; transition:opacity .5s ease, fill .3s ease, stroke .3s ease; }
-.house .low{ opacity:0; }
-.house line.low{ stroke-dasharray:1; stroke-dashoffset:1; }
-[data-state~="roof"] .house .low{ opacity:1; stroke-dashoffset:0; }
 [data-state~="cut"] .house .ceil{ stroke:var(--red); stroke-dasharray:8 8; opacity:.6; }
 [data-state~="deg1"] .house .o1, [data-state~="deg3"] .house .o3{ stroke:var(--magenta); fill:rgba(255,61,242,.45); }
 .house .trails{ filter:drop-shadow(0 0 5px rgba(255,225,77,.7)); }
 .house .trail{ fill:none; stroke:var(--gold); stroke-width:6; stroke-linejoin:round; stroke-linecap:round; stroke-dasharray:1; stroke-dashoffset:1; opacity:0; transition:opacity .3s ease; }
-[data-state~="trail1"] .house .t1, [data-state~="trail2"] .house .t2{ opacity:.9; stroke-dashoffset:0; transition:stroke-dashoffset 3.5s linear; }
+[data-state~="trail1"] .house .t1{ opacity:.9; stroke-dashoffset:0; transition:stroke-dashoffset 3.5s linear; }
 .house .dl{ opacity:0; transition:opacity .4s ease; }
 .house .dl text{ fill:var(--ink); font:700 24px var(--ui); text-anchor:middle; dominant-baseline:central; }
 .house .dl text.odd{ fill:var(--magenta-ink); }
-[data-state~="deg1"] .house .d1, [data-state~="deg2"] .house .d2, [data-state~="deg3"] .house .d3{ opacity:1; }
+[data-state~="deg1"] .house .d1, [data-state~="deg3"] .house .d3{ opacity:1; }
 
+
+/* Yhä syvemmälle: an upside-down pyramid, the dot (me) goes down and out */
+.tower-cols{ grid-template-columns:auto 1fr; gap:40px; align-items:center; }
+.tower-cols > .stack{ justify-content:center; }
+.book .pics{ display:flex; gap:16px; align-items:flex-end; }
+.book img{ display:block; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
+.book .cover{ height:300px; }
+.book .photo{ height:300px; width:300px; object-fit:cover; }
+.book .photo.bw{ width:340px; object-position:30% 50%; filter:grayscale(1) contrast(1.05); }
+.book .photo.wide{ width:420px; }
+.book .photo.tall{ width:250px; }
+.book.p3b .cover, .book.p3b .photo{ height:375px; }   /* the new book and its launch, 25 % bigger */
+.book.p3b .photo{ width:304px; }
+.tower-pics{ display:grid; width:660px; flex:none; }
+.tower-pics .book{ grid-area:1 / 1; margin:0; opacity:0; transform:translateY(12px); transition:opacity .5s ease, transform .5s ease; }
+.tower-pics:not([data-state*="at"]) .p0, .tower-pics[data-state~="at1"] .p1, .tower-pics[data-state~="at2"] .p2,
+.tower-pics[data-state~="at3"]:not([data-state~="j2"]) .p3, .tower-pics[data-state~="j2"] .p3b, .tower-pics[data-state~="at4"] .p4{ opacity:1; transform:none; transition-delay:.25s; }
+.tower-cols > .steps{ display:none; }
+.book figcaption{ margin-top:14px; font-size:24px; line-height:1.3; }
+.book figcaption .facts{ margin:8px 0 0; padding:0; list-style:none; font-size:21px; line-height:1.3; color:var(--muted); }
+.book figcaption .facts li{ padding-left:22px; position:relative; margin-top:4px; }
+.book figcaption .facts li::before{ content:"▸"; position:absolute; left:0; color:var(--accent); }
+.book figcaption .suom{ display:block; font-size:21px; color:var(--muted); }
+.book figcaption small{ display:block; font-size:22px; color:var(--magenta-ink); margin-top:4px; }
+.tower-viz{ height:600px; }
+.tower .fl{ opacity:0; transition:opacity .6s ease, filter .6s ease; filter:var(--glow-cyan); }
+.tower .fl0, [data-state~="f1"] .tower .fl1, [data-state~="f2"] .tower .fl2, [data-state~="f3"] .tower .fl3{ opacity:1; }
+.tower polygon{ fill:rgba(0,229,255,.07); stroke:var(--accent); stroke-width:2.5; transition:stroke .6s ease, fill .6s ease; }
+.tower text{ text-anchor:middle; }
+.tower text.t{ fill:var(--accent-ink); font:800 30px var(--display); letter-spacing:.06em; text-transform:uppercase; transition:fill .6s ease; }
+.tower text.s{ fill:var(--muted); font:400 21px var(--ui); }
+[data-state~="cold"] .tower .fl3{ filter:none; }
+[data-state~="cold"] .tower .fl3 polygon{ stroke:var(--muted); fill:rgba(255,255,255,.03); stroke-dasharray:6 6; }
+[data-state~="cold"] .tower .fl3 text.t{ fill:var(--muted); }
+.tower .abstract{ fill:var(--muted); font:italic 400 24px var(--ui); opacity:0; transition:opacity .6s ease; }
+[data-state~="cold"] .tower .abstract{ opacity:1; }
+.tower .cog{ opacity:0; transition:opacity .6s ease .5s; filter:var(--glow-magenta); }
+.tower .cog rect{ fill:rgba(255,61,242,.08); stroke:var(--magenta); stroke-width:2.5; }
+.tower .cog text.t{ fill:var(--magenta-ink); font-size:24px; }
+[data-state~="at4"] .tower .cog{ opacity:1; }
+.tower .trail line{ stroke:var(--magenta); stroke-width:3; stroke-dasharray:1; stroke-dashoffset:1; opacity:.8; transition:stroke-dashoffset .9s ease; }
+[data-state~="at1"] .tower .t1, [data-state~="at2"] .tower .t1, [data-state~="at2"] .tower .t2,
+[data-state~="at3"] .tower .t1, [data-state~="at3"] .tower .t2, [data-state~="at3"] .tower .t3,
+[data-state~="at4"] .tower line{ stroke-dashoffset:0; }
+.tower .me{ fill:var(--magenta); filter:var(--glow-magenta); transform:translate(685px,85px); transition:transform .9s ease; }
+[data-state~="at1"] .tower .me{ transform:translate(625px,215px); }
+[data-state~="at2"] .tower .me{ transform:translate(565px,345px); }
+[data-state~="at3"] .tower .me{ transform:translate(505px,475px); }
+[data-state~="at4"] .tower .me{ transform:translate(590px,475px); }
+
+/* Verkkoteoria ja topologia: the metro as a map and as a line map */
+.metro{ padding:84px 110px 50px; gap:18px; }
+.metro figure{ margin:0; }
+.metro img{ display:block; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
+.metro figcaption{ font-size:22px; color:var(--muted); margin-top:6px; }
+.metro-top{ display:flex; gap:44px; align-items:center; }
+.metro-top img{ height:400px; }
+.metro-top p{ font-size:36px; }
+.metro > figure img{ width:100%; }
+
+/* a slide that is one big photo with a caption */
+.photo-slide{ padding:78px 60px 40px; gap:0; }
+.photo-slide figure{ margin:0; flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:10px; }
+.photo-slide img{ max-width:100%; min-height:0; flex:0 1 auto; object-fit:contain; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
+.photo-slide figcaption{ font-size:30px; text-align:center; line-height:1.25; }
+.photo-slide figcaption small{ display:block; font-size:24px; color:var(--muted); margin-top:1px; }
+
+/* Mitä ajattelu on: a line (logic) against a loop (enactivism) */
+.mind .card{ display:flex; flex-direction:column; gap:10px; }
+.mind .card p{ font-size:26px; }
+.mind .mag-card{ border-color:rgba(255,61,242,.5); }
+.mind .mag-card b{ color:var(--magenta-ink); }
+.mindpic{ width:100%; height:300px; }
+.mindpic .lines{ filter:var(--glow-cyan); }
+.mindpic text{ fill:var(--ink); font:600 22px var(--ui); text-anchor:middle; }
+.mindpic text.fm{ fill:var(--accent-ink); font:400 24px var(--ui); }
+.mindpic text.lbl{ fill:var(--muted); font-weight:400; }
+.mindpic .box, .mindpic .head, .mindpic .body, .mindpic .world{ fill:rgba(0,229,255,.06); stroke:var(--accent); stroke-width:2.5; }
+.mindpic .rule{ stroke:var(--accent); stroke-width:2; }
+.mindpic .arr, .mindpic .loop{ fill:none; stroke:var(--accent); stroke-width:3; }
+.mag-card .mindpic .lines{ filter:var(--glow-magenta); }
+.mag-card .mindpic .body, .mag-card .mindpic .world{ fill:rgba(255,61,242,.07); stroke:var(--magenta); }
+.mag-card .mindpic .loop{ stroke:var(--magenta); }
+.mindpic .pulse{ fill:var(--gold); filter:drop-shadow(0 0 6px rgba(255,225,77,.9)); }
+
+/* Kahden maailman välissä: a Venn diagram */
+.venn text{ text-anchor:middle; }
+.venn text.t{ font:600 34px var(--ui); }
+.venn text.s{ font:400 24px var(--ui); fill:var(--muted); }
+.venn .vc circle{ stroke-width:3; transition:fill .6s ease; }
+.venn .vl circle{ fill:rgba(0,229,255,.06); stroke:var(--accent); }
+.venn .vl text.t{ fill:var(--accent-ink); }
+.venn .vl{ filter:var(--glow-cyan); }
+.venn .vr circle{ fill:rgba(255,61,242,.06); stroke:var(--magenta); }
+.venn .vr text.t{ fill:var(--magenta-ink); }
+.venn .vr{ filter:var(--glow-magenta); opacity:0; transition:opacity .6s ease; }
+[data-state~="r"] .venn .vr{ opacity:1; }
+.venn .vx{ opacity:0; transition:opacity .8s ease; }
+.venn .vx circle{ fill:rgba(255,225,77,.16); stroke:none; }
+.venn .vx text.t{ fill:var(--gold); font-family:var(--display); font-weight:800; font-size:30px; letter-spacing:.06em; text-transform:uppercase; }
+.venn .vx text.s{ fill:var(--ink); }
+[data-state~="x"] .venn .vx{ opacity:1; }
+[data-state~="x"] .venn .vl text.s, [data-state~="x"] .venn .vr text.s{ opacity:.5; }
+.venn .me{ fill:var(--magenta); filter:var(--glow-magenta); opacity:0; transition:opacity .6s ease .4s; }
+[data-state~="x"] .venn .me{ opacity:1; }
+
+/* Robotti labyrintissa and the morph: built by the script */
+.maze-viz, .morph-viz, .cover-viz{ flex:1; min-height:0; }
+.maze .walls, .morph .walls{ filter:var(--glow-cyan); }
+.maze .walls path, .morph .walls path{ fill:none; stroke:var(--accent); stroke-width:4; stroke-linecap:square; }
+.maze .isl path{ transition:stroke .6s ease; }
+[data-state~="isl"] .maze .isl path{ stroke:var(--magenta); }
+[data-state~="isl"] .maze .isl{ filter:var(--glow-magenta); }
+.maze .gone{ fill:none; stroke:var(--magenta); stroke-width:2.5; stroke-dasharray:5 5; opacity:.8; }
+.maze .exit, .morph .exit{ fill:var(--gold); font:700 22px var(--ui); letter-spacing:.1em; }
+.maze .cap, .morph .cap{ fill:var(--muted); font:400 24px var(--ui); text-anchor:middle; }
+.maze .trail, .morph .trail{ fill:none; stroke:var(--gold); stroke-width:4; stroke-linejoin:round; stroke-linecap:round; opacity:.75; }
+.maze .door{ fill:none; stroke:var(--green); stroke-width:4; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 5px rgba(57,255,158,.7)); }
+.maze .robot, .morph .robot{ fill:var(--gold); filter:drop-shadow(0 0 6px rgba(255,225,77,.9)); }
+.maze .out{ fill:var(--gold); font:800 30px var(--display); letter-spacing:.08em; opacity:0; transition:opacity .4s ease; }
+.maze .out.on{ opacity:1; }
+.maze .forever{ fill:var(--magenta-ink); font:600 26px var(--ui); opacity:0; transition:opacity .4s ease; }
+.maze .forever.on{ opacity:1; }
+.morph .walls{ opacity:.45; transition:opacity 1s ease; }
+[data-state~="morph"] .morph .walls{ opacity:0; }
+.morph .region{ fill:rgba(0,229,255,.12); stroke:none; }
+.morph .edge{ fill:none; stroke:var(--accent); stroke-width:3; stroke-linejoin:round; }
+.morph .edge.isl{ stroke:var(--magenta); }
+.morph .lines{ filter:var(--glow-cyan); }
+.morph .gap{ fill:none; stroke:var(--green); stroke-width:7; stroke-linecap:round; stroke-dasharray:2 12; filter:drop-shadow(0 0 5px rgba(57,255,158,.8)); }
+.morph .cap{ opacity:0; transition:opacity .6s ease; }
+[data-state~="morph"] .morph .cap{ opacity:1; transition-delay:4.6s; }
+.morph-txt{ gap:70px; }
+
+/* Topology and AI */
+.book-cols{ grid-template-columns:auto 1fr; gap:50px; }
+.bookcover{ height:600px; display:block; border-radius:var(--radius); box-shadow:0 0 26px rgba(0,229,255,.3); }
+.paper{ width:100%; max-width:620px; display:block; background:#fff; border-radius:var(--radius); padding:6px; }
+
+/* Neljä maailmaa: four covers of the figure eight */
+.cover .a{ stroke:var(--accent); }
+.cover .b{ stroke:var(--magenta); }
+.cover path, .cover line{ fill:none; stroke-linecap:round; }
+.cover circle.a, .cover circle.b{ stroke-width:2.5; }
+.cover .ga{ filter:var(--glow-cyan); }
+.cover .gb{ filter:var(--glow-magenta); }
+.cover .v{ fill:var(--ink); }
+.cover .cap{ fill:var(--muted); font:400 24px var(--ui); text-anchor:middle; }
+.cover .dots{ fill:var(--muted); font:700 24px var(--ui); }
+.cover .robot{ fill:var(--gold); filter:drop-shadow(0 0 6px rgba(255,225,77,.9)); opacity:0; transition:opacity .4s ease; }
+[data-state~="walk"] .cover .robot{ opacity:1; }
 
 .divider{ justify-content:center; gap:18px; }
 .divider .num{
@@ -309,18 +474,220 @@ body.idle{ cursor:none; }
   <p class="sub">Matematiikka tekoälyaikakautena ja matematiikan inhimillinen puoli</p>
   <p class="who">Vadim Weinstein · Ressun lukio · 5.11.2026</p>
   <aside class="notes"><ul>
-    <li>Ei pitkää esittelyä vielä. Suoraan tehtävään.</li>
+    <li>Aloitetaan omasta taustasta: näytetään, ei luetella.</li>
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 1 · KÖNIGSBERG ════════════════════════ -->
-<section class="slide divider" data-part="1">
-  <div class="num">01</div>
+<!-- ════════════════════════ 1 · MINUN MATKANI ════════════════════════ -->
+<section class="slide" data-part="1">
+  <h2>Vadim Weinstein</h2>
+  <ul class="pts">
+    <li>Ressu -02</li>
+    <li>FT 2011 (HY) matematiikasta: logiikka, joukko-oppi, topologia, </li>
+    <li>MSc 2016 (WY) kognitiotieteestä: enaktivismi, mielen filosofia, </li>
+    <li>Tutkimusta & luennointia Wienin, Helsingin ja Aalto-yliopistoissa 2012-2019</li>
+    <li>Matemaattista robotiikkaa Oulun yliopistossa 2020-2026</li>
+    <li>Yritystoimintaa, konsultointia: nettikasinoiden matematiikkaa sekä matematiikan opettaminen <b>tekoälylle</b>, lukiolaisille ja muille. Manifold Solutions Oy, <span class="cyan">matikkapelit.fi</span>, TikTok <span class="cyan">@matikkapelit</span></li>
+  </ul>
+  <aside class="notes"><ul>
+    <li>30 sekuntia. Tarkemmin osassa 9.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="1">
+  <h2>perusteiden perässä</h2>
+  <div class="cols tower-cols">
+    <!-- one picture per floor, cross-fading as the dot goes down (this column
+         is a .viz box too, so it gets the same state as the tower) -->
+    <div class="stack viz tower-pics" data-state="">
+      <figure class="book p0">
+        <div class="pics"><img class="cover" src="img/tiede-2000-1999-1.jpg" alt=""></div>
+        <figcaption><i>Tiede 2000</i> -lehti<small>Yläasteen kirjastosta löytyi...</small></figcaption>
+      </figure>
+      <figure class="book p1">
+        <div class="pics"><img class="cover" src="img/evolution-of-physics.jpg" alt=""><img class="photo bw" src="img/einstein-infeld.jpg" alt=""></div>
+        <figcaption>A. Einstein ja L. Infeld: <i>The Evolution of Physics (1938)</i><span class="suom">suom. <i>Fysiikan kehitys Newtonista kvanttiteoriaan</i>, 1962</span><small>Yleistajuinen kirja fysiikan läpimurroista 1900-luvun alussa</small></figcaption>
+      </figure>
+      <figure class="book p2">
+        <div class="pics"><img class="cover" src="img/knot-book.jpg" alt=""><img class="photo wide" src="img/kauffman.jpg" alt=""></div>
+        <figcaption>Suuri kiinnostuksenkohteeni: solmuteoria. Kuvassa Colin Adamsin kirja ja Luis Kauffman.</figcaption>
+      </figure>
+      <figure class="book p3">
+        <div class="pics"><img class="cover" src="img/dependence-logic.jpg" alt=""><img class="photo" src="img/vaananen.jpg" alt=""></div>
+        <figcaption>Jouko Väänänen
+          <ul class="facts">
+            <li>Helsingin logiikan ryhmän johtava hahmo viimeiset 30 vuotta</li>
+            <li>Riippuvuuslogiikan kehittäjä</li>
+            <li>Matematiikan perusteiden ja joukko-opin edelläkävijä Suomessa</li>
+            <li>Julkaisi yleistajuisen kirjan v. 2026 <i>Matematiikka – epätäydellisyyden valtakunta</i></li>
+          </ul></figcaption>
+      </figure>
+      <figure class="book p3b">
+        <div class="pics"><img class="cover" src="img/vaananen-kirja.jpg" alt=""><img class="photo" src="img/vaananen-julkistus.jpg" alt=""></div>
+        <figcaption><i>Matematiikka – epätäydellisyyden valtakunta</i><small>Suomen Tiedeseura 2026 · julkistamistilaisuus<br>Mats Gyllenberg (oik.)</small></figcaption>
+      </figure>
+      <figure class="book p4">
+        <div class="pics"><img class="photo tall" src="img/vadim-hutto.jpg" alt=""><img class="photo tall" src="img/vadim-noe.jpg" alt=""></div>
+        <figcaption>Daniel Hutto ja Alva Noë<small>Mielenfilosofian konferenssi Granadassa 2024</small></figcaption>
+      </figure>
+    </div>
+    <div class="steps">
+      <i class="f step" data-viz="f1 at1"></i>
+      <i class="f step" data-viz="f1 f2 at2"></i>
+      <i class="f step" data-viz="f1 f2 f3 at3"></i>
+      <i class="f step" data-viz="f1 f2 f3 at3 j2"></i>
+      <i class="f step" data-viz="f1 f2 f3 cold at3 j2"></i>
+      <i class="f step" data-viz="f1 f2 f3 cold at4"></i>
+    </div>
+    <!-- An upside-down pyramid: each floor is what the one above stands on.
+         The magenta dot (me) goes down a floor at a time, then out sideways. -->
+    <div class="viz tower-viz" data-state="">
+      <svg class="pane tower" viewBox="0 20 860 580" preserveAspectRatio="xMidYMid meet">
+        <g class="trail">
+          <line class="t1" pathLength="1" x1="685" y1="85" x2="625" y2="215"/>
+          <line class="t2" pathLength="1" x1="625" y1="215" x2="565" y2="345"/>
+          <line class="t3" pathLength="1" x1="565" y1="345" x2="505" y2="475"/>
+          <line class="t4" pathLength="1" x1="505" y1="475" x2="600" y2="475"/>
+        </g>
+        <g class="fl fl0">
+          <polygon points="0,30 680,30 630,140 50,140"/>
+          <text class="t" x="340" y="80">Maailmankaikkeus, tähtitiede</text><text class="s" x="340" y="116">Miten maailma toimii?</text>
+        </g>
+        <g class="fl fl1">
+          <polygon points="60,160 620,160 570,270 110,270"/>
+          <text class="t" x="340" y="210">Fysiikka</text><text class="s" x="340" y="246">Einstein &amp; Infeld</text>
+        </g>
+        <g class="fl fl2">
+          <polygon points="120,290 560,290 510,400 170,400"/>
+          <text class="t" x="340" y="340">Matematiikka</text><text class="s" x="340" y="376">fysiikan kieli</text>
+        </g>
+        <g class="fl fl3">
+          <polygon points="180,420 500,420 450,530 230,530"/>
+          <text class="t" x="340" y="470">Logiikka</text><text class="s" x="340" y="506">joukko-oppi · malliteoria</text>
+        </g>
+        <text class="abstract" x="340" y="580">Norsunluutorni</text>
+        <g class="cog">
+          <rect x="590" y="425" width="270" height="100" rx="6"/>
+          <text class="t" x="725" y="468">Kognitiotiede</text><text class="s" x="725" y="502">keho ja toiminta</text>
+        </g>
+        <circle class="me" r="14"/>
+      </svg>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>16-vuotiaana Einstein &amp; Infeld: halusin ymmärtää, miten maailma toimii.</li>
+    <li>Fysiikan ymmärtämiseen tarvitaan matematiikkaa, matematiikan ymmärtämiseen logiikkaa: väitöskirja joukko-opista ja malliteoriasta.</li>
+    <li>Pohjalla tuntui liian abstraktilta. Sivuttain: kognitiotieteen maisteri.</li>
+    <li>Kuvat kerros kerrallaan: Tiede 2000 1/1999; Einstein ja Infeld (Lotte Jacobi, Princeton 1938, kirjaa kirjoitettaessa); Adams: The Knot Book ja Louis Kauffman; Väänänen: Dependence Logic, sitten hänen uusi kirjansa ja sen julkistus (2026); Alva Noë ja Daniel Hutto, Granada 2024.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="1">
+  <h2>Kognitivismi ja enaktivismi</h2>
+  <div class="cols even mind">
+    <div class="card f">
+      <b>Kognitivismi (kognitio on loogista)</b>
+      <p>Ajattelu on säännönmukaista symbolista loogista päättelyä, joka pohjautuu pään "sisällä" olevaan todellisuuden malliin.</p>
+      <!-- a straight line: sense → reason → act, a pulse runs along it -->
+      <svg class="mindpic" viewBox="0 0 560 300">
+        <g class="lines">
+          <rect class="box" x="10" y="115" width="120" height="70" rx="6"/>
+          <text x="70" y="157">havainto</text>
+          <rect class="head" x="175" y="40" width="210" height="220" rx="16"/>
+          <text class="fm" x="280" y="95">∀x (P(x) → Q(x))</text>
+          <text class="fm" x="280" y="135">P(a)</text>
+          <line class="rule" x1="225" y1="152" x2="335" y2="152"/>
+          <text class="fm" x="280" y="182">Q(a)</text>
+          <text class="lbl" x="280" y="236">päättely</text>
+          <rect class="box" x="430" y="115" width="120" height="70" rx="6"/>
+          <text x="490" y="157">toiminta</text>
+          <path class="arr" d="M130 150 H175 M385 150 H430"/>
+        </g>
+        <path id="mind-line" d="M70 150 H490" fill="none"/>
+        <circle class="pulse" r="8"><animateMotion dur="3s" repeatCount="indefinite"><mpath href="#mind-line"/></animateMotion></circle>
+      </svg>
+    </div>
+    <div class="card f mag-card">
+      <b>Enaktivismi (kognitio on dynaamista)</b>
+      <p>Ajattelua, havaitsemista ja toimintaa ei pysty erottamaan toisistaan. Keho, liike ja ympäristö muodostavat dynaamisen systeemin.</p>
+      <!-- a loop: the agent acts on the world, the world answers -->
+      <svg class="mindpic" viewBox="0 0 560 300">
+        <g class="lines">
+          <circle class="body" cx="120" cy="150" r="54"/>
+          <text x="120" y="157">keho</text>
+          <path class="world" d="M380 70 Q440 40 500 80 Q545 120 510 175 Q490 230 430 235 Q370 240 375 180 Q330 130 380 70 Z"/>
+          <text x="445" y="157">ympäristö</text>
+          <path class="loop" d="M160 112 Q280 20 385 92"/>
+          <path class="loop" d="M392 220 Q280 290 158 190"/>
+          <text class="lbl" x="275" y="52">liike</text>
+          <text class="lbl" x="275" y="282">aistimus</text>
+        </g>
+        <path id="mind-loop" d="M160 112 Q280 20 385 92 L392 220 Q280 290 158 190 Z" fill="none"/>
+        <circle class="pulse" r="8"><animateMotion dur="4s" repeatCount="indefinite"><mpath href="#mind-loop"/></animateMotion></circle>
+        <circle class="pulse" r="8"><animateMotion dur="4s" begin="-2s" repeatCount="indefinite"><mpath href="#mind-loop"/></animateMotion></circle>
+      </svg>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Klassinen kognitiotiede: mieli on tietokone, joka päättelee symboleilla. Logiikka on sen luonteva kieli.</li>
+    <li>Enaktivismi (Varela, Thompson, Rosch: <i>The Embodied Mind</i>, 1991): mieli syntyy kehon ja ympäristön vuorovaikutuksesta.</li>
+    <li>O'Regan &amp; Noë: näkeminen on sensorimotoristen kontingenssien hallintaa.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="1">
+  <h2>Robotiikka</h2>
+  <div class="viz venn-viz" data-state="">
+    <svg class="pane venn" viewBox="0 -30 1380 620" preserveAspectRatio="xMidYMid meet">
+      <defs><clipPath id="venn-l"><circle cx="560" cy="280" r="300"/></clipPath></defs>
+      <g class="vc vl"><circle cx="560" cy="280" r="300"/>
+        <text class="t" x="390" y="270">Matematiikka</text><text class="s" x="390" y="310">logiikka · joukko-oppi</text><text class="s" x="390" y="342">malliteoria</text></g>
+      <g class="vc vr"><circle cx="820" cy="280" r="300"/>
+        <text class="t" x="985" y="235">Enaktivistinen</text><text class="t" x="985" y="275">(kehollinen)</text><text class="t" x="985" y="315">kognitiotiede</text>
+        <text class="s" x="985" y="357">keho · liike · aistimus</text></g>
+      <g class="vx"><circle clip-path="url(#venn-l)" cx="820" cy="280" r="300"/>
+        <text class="t" x="690" y="270">Robotiikka</text><text class="s" x="690" y="310">Oulun yliopisto</text><text class="s" x="690" y="342">Steven LaVallen ryhmä</text></g>
+      <circle class="me" cx="690" cy="200" r="13"/>
+    </svg>
+  </div>
+  <i class="f step" data-viz="r"></i>
+  <p class="f small" data-viz="r x">Robotiikan inspiroimia matemaattisia malleja ja teorioita.</p>
+  <aside class="notes"><ul>
+    <li>Oulun yliopisto, Steven LaVallen ryhmä: robotin aistimukset ja liikkeet matemaattisena teoriana.</li>
+  </ul></aside>
+</section>
+
+<section class="slide photo-slide" data-part="1">
+  <figure>
+    <img src="img/pamosa-2026.jpg" alt="PaMoSA-konferenssin paneeli Oulussa 2026">
+    <figcaption>PaMoSA Oulu 2026<small>Philosophy and Mathematics of Situated Agency</small><small>Järjestäjät: Kalle Timperi, Vadim Weinstein ja Adrian Wieczorek</small><small>Kutsutut puhujat: D. Hutto, K. O'Regan, T. Froese, D. Kirsh, E. Del Dottore, S. M. LaValle</small></figcaption>
+  </figure>
+  <aside class="notes"><ul>
+    <li>Philosophy and Mathematics of Situated Agency, Oulu 22.–24.6.2026.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="1">
+  <h2>Tänä päivänä</h2>
+  <ul class="pts">
+    <li>Tekoälymallien kouluttaminen paremmiksi matematiikassa (konsulttina)</li>
+    <li>Matematiikan opetusta ja oppimateriaalin kehittämistä eri tasoilla (oma yritys & konsultointi)</li>
+    <li>Oma sivu: <span class="cyan">matikkapelit.fi</span></li>
+    <li>TikTok: <span class="cyan">@matikkapelit</span></li>
+    <li>Asiakas: <span class="cyan">lääkisvalmennus.fi</span> <span class="muted">(perustaja Sampo Tiensuu myös Ressu)</span></li>
+    <li>Edelleen aktiivinen tutkimuksessa, mutta lähinnä harrastuksena</li>
+    <li>Harkitsen robotiikkayrityksen perustamista</li>
+  </ul>
+</section>
+
+<!-- ════════════════════════ 2 · KÖNIGSBERG ════════════════════════ -->
+<section class="slide divider" data-part="2">
+  <div class="num">02</div>
   <h2>Königsbergin sillat</h2>
   <aside class="notes"><ul><li>5 min.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="1">
+<section class="slide" data-part="2">
   <h2>Königsbergin sillat</h2>
   <p>Voiko kaupungin läpi kävellä niin, että ylittää jokaisen sillan <span class="gold">tasan kerran</span>?</p>
   <div class="demo">
@@ -334,7 +701,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide grow" data-part="1">
+<section class="slide grow" data-part="2">
   <div class="cols top">
     <div class="stack fill">
       <h2>Eulerin oivallus</h2>
@@ -421,47 +788,46 @@ body.idle{ cursor:none; }
   <aside class="notes"><ul>
     <li>Kartta: Merian-Erben 1652. Sillat korostettuina, sitten pelkkä joki ja sillat, sitten verkko: maa-alueet ovat solmuja, sillat särmiä.</li>
     <li>Saari: viisi siltaa. Kaksi paria (sisään–ulos), yksi jää yli.</li>
-    <li>Paikallinen tieto (yhden solmun aste) ratkaisee globaalin kysymyksen (koko kierros). Tähän palataan osassa 5.</li>
+    <li>Paikallinen tieto (yhden solmun aste) ratkaisee globaalin kysymyksen (koko kierros). Tähän palataan osassa 7.</li>
     <li>Verkkoteorian syntymä.</li>
   </ul></aside>
 </section>
 
-<section class="slide" data-part="1">
+<section class="slide euler" data-part="2">
   <div class="cols">
     <div class="stack">
       <h2>Eulerin lause</h2>
       <p>Tämä pätee kaikille yhtenäisille verkoille: Eulerin kierros on olemassa <span class="gold">jos ja vain jos</span> kaikki asteet ovat parillisia.</p>
       <p class="small muted">Parittomat solmut <span class="mag">magentalla</span>.</p>
       <p class="f" data-viz="try1">Yritetään kierrosta: polku juuttuu <span class="mag">parittomaan solmuun</span>.</p>
-      <p class="f" data-viz="try2"></p>
-      <p class="f">Solmujen parillisuus on siis hyödyllinen <span class="cyan">invariantti</span>.</p>
+      <i class="f step" data-viz="try2"></i>
+      <p class="f" data-viz="even">Muutetaan verkkoa niin, että kaikki asteet ovat parillisia.</p>
+      <p class="f" data-viz="even circ">Nyt kierros onnistuu: jokainen särmä kuljetaan kerran, ja polku palaa alkuun.</p>
     </div>
     <!-- three nested squares of 12 nodes, built by the script (squareGraph) -->
     <div class="viz side"><svg class="pane sq" viewBox="-10 -10 440 440" preserveAspectRatio="xMidYMid meet"></svg></div>
   </div>
+  <p class="f">Solmujen parillisuus on siis hyödyllinen <span class="cyan">invariantti</span>. Solmujen asteiden parillisuus on yleensä huomattavasti helpompi määrittää kuin kokeilla kaikki mahdolliset kierrokset.</p>
   <aside class="notes"><ul>
     <li>Polku, joka ei ole jo palannut alkuun, voi juuttua vain parittomaan solmuun: jokainen läpikulku käyttää kaksi särmää.</li>
     <li>Yhtenäisyys tarvitaan: kaksi erillistä kolmiota ovat parillisia, mutta niitä ei kierretä yhdellä kertaa.</li>
   </ul></aside>
 </section>
 
-<section class="slide" data-part="1">
+<section class="slide" data-part="2">
   <div class="cols">
     <div class="stack">
       <h2>Eulerin <s class="strike">kierros</s> polku</h2>
+      <p>Toinen Eulerin lause: yhtenäisessä verkossa Eulerin polku on olemassa <span class="gold">jos ja vain jos</span> paritonasteisia solmuja on 0 tai 2.</p>
       <ul class="pts">
-        <li class="f" data-viz="trail1">Talon voi piirtää yhdellä vedolla: <span class="gold">Eulerin polku</span>.</li>
+        <li class="f" data-viz="trail1">"Talon" voi piirtää yhdellä vedolla: <span class="gold">Eulerin polku</span>.</li>
         <li class="f" data-viz="trail1 deg1">Parittomia solmuja on tasan kaksi. Polku alkaa toisesta ja päättyy toiseen.</li>
-        <li class="f" data-viz="roof deg2">Toinen "katto" alas: kaikki asteet ovat nyt parillisia.</li>
-        <li class="f" data-viz="roof deg2 trail2">Nyt polku on jopa kierros: se palaa alkuun.</li>
         <li class="f" data-viz="cut deg3">Nyt verkossa on neljä paritonta solmua ⇒ <span class="mag">mahdotonta</span>.</li>
-        <li class="f muted">Parittomia solmuja on aina parillinen määrä (kättelylemma).</li>
       </ul>
     </div>
-    <!-- K4 + a roof. BL (60,320) BR (240,320) TL (60,140) TR (240,140),
-         roof A (150,50), the second roof L (150,410) -->
+    <!-- K4 + a roof. BL (60,320) BR (240,320) TL (60,140) TR (240,140), roof A (150,50) -->
     <div class="viz side house-viz">
-      <svg class="pane house" viewBox="0 0 300 450" preserveAspectRatio="xMidYMid meet">
+      <svg class="pane house" viewBox="0 0 300 370" preserveAspectRatio="xMidYMid meet">
         <g class="lines">
           <line x1="60" y1="320" x2="240" y2="320"/>
           <line x1="60" y1="320" x2="60" y2="140"/>
@@ -471,20 +837,16 @@ body.idle{ cursor:none; }
           <line x1="240" y1="320" x2="60" y2="140"/>
           <line x1="60" y1="140" x2="150" y2="50"/>
           <line x1="240" y1="140" x2="150" y2="50"/>
-          <line class="low" pathLength="1" x1="60" y1="320" x2="150" y2="410"/>
-          <line class="low" pathLength="1" x1="240" y1="320" x2="150" y2="410"/>
         </g>
         <g class="trails">
           <polyline class="trail t1" pathLength="1" points="60,320 60,140 240,140 60,320 240,320 60,140 150,50 240,140 240,320"/>
-          <polyline class="trail t2" pathLength="1" points="60,320 60,140 240,140 60,320 240,320 60,140 150,50 240,140 240,320 150,410 60,320"/>
         </g>
         <g class="lines">
           <circle class="o1 o3" cx="60" cy="320" r="8"/><circle class="o1 o3" cx="240" cy="320" r="8"/>
           <circle class="o3" cx="60" cy="140" r="8"/><circle class="o3" cx="240" cy="140" r="8"/>
-          <circle cx="150" cy="50" r="8"/><circle class="low" cx="150" cy="410" r="8"/>
+          <circle cx="150" cy="50" r="8"/>
         </g>
         <g class="dl d1"><text class="odd" x="34" y="346">3</text><text class="odd" x="266" y="346">3</text><text x="34" y="128">4</text><text x="266" y="128">4</text><text x="150" y="24">2</text></g>
-        <g class="dl d2"><text x="34" y="346">4</text><text x="266" y="346">4</text><text x="34" y="128">4</text><text x="266" y="128">4</text><text x="150" y="24">2</text><text x="178" y="428">2</text></g>
         <g class="dl d3"><text class="odd" x="34" y="346">3</text><text class="odd" x="266" y="346">3</text><text class="odd" x="34" y="128">3</text><text class="odd" x="266" y="128">3</text><text x="150" y="24">2</text></g>
       </svg>
     </div>
@@ -495,32 +857,95 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="1">
-  <div class="cols">
-    <div class="stack">
-      <h2>Kuka olen</h2>
-      <ul class="pts">
-        <li>Matemaatikko: logiikka, joukko-oppi, topologia</li>
-        <li>Nyt robotiikkaa (sensorimotoriset kontingenssit)</li>
-        <li>ja työtä tekoälymallien parantamiseksi</li>
-        <li>Harrastus: <span class="cyan">matikkapelit.fi</span></li>
-      </ul>
-    </div>
-    <figure class="face missing"><div class="ph">Vadimin kuva</div></figure>
+<section class="slide metro" data-part="2">
+  <h2>Verkkoteoria ja topologia</h2>
+  <div class="metro-top">
+    <figure><img src="img/metro-kartta.jpg" alt="Helsingin metro kartalla"><figcaption>Kartta: etäisyydet ja muodot</figcaption></figure>
+    <p>Eulerin havainto synnytti <span class="cyan">verkkoteorian</span> ja loi myös perustan <span class="gold">topologialle</span>.</p>
   </div>
+  <figure class="f"><img src="img/metro-linjakartta.jpg" alt="Helsingin metron linjakartta"><figcaption>Linjakartta: vain se, mikä on yhteydessä mihinkin</figcaption></figure>
   <aside class="notes"><ul>
-    <li>30 sekuntia. Tarkemmin osassa 7.</li>
+    <li>Sama metro kahdesti. Kartalla etäisyydet ja mutkat ovat oikein. Linjakartta heittää ne pois ja säilyttää vain järjestyksen ja haarautumisen Itäkeskuksessa: se on verkko.</li>
+    <li>Matkustajalle linjakartta riittää: missä vaihdetaan, monesko asema.</li>
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 2 · TULOS VAI KOKEMUS ════════════════════════ -->
-<section class="slide divider" data-part="2">
-  <div class="num">02</div>
+<!-- ════════════════════════ 3 · ROBOTIT JA TOPOLOGIA ════════════════════════ -->
+<section class="slide divider" data-part="3">
+  <div class="num">03</div>
+  <h2>Robotit ja topologia</h2>
+</section>
+
+<section class="slide" data-part="3">
+  <h2>Robotti labyrintissa</h2>
+  <p>Sääntö: pidä <span class="gold">oikea käsi seinässä</span>.</p>
+  <!-- two copies of one maze (built by the script, mazeSlide); the second has
+       one wall less, which leaves an island of walls in the middle -->
+  <div class="viz maze-viz" data-state=""><svg class="pane maze" viewBox="0 0 1240 470" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <i class="f step" data-viz="run1"></i>
+  <i class="f step" data-viz="run1 run2"></i>
+  <p class="f" data-viz="run1 run2 isl">Oikealla seinät eivät ole yhtä kappaletta: keskellä on <span class="mag">saareke</span>, jota robotti kiertää ikuisesti.</p>
+  <aside class="notes"><ul>
+    <li>Sama labyrintti, sama lähtöpaikka, sama sääntö. Oikealta on poistettu yksi seinä (katkoviiva).</li>
+    <li>Vasemmalla robotti pääsee aina ulos, lähti se mistä tahansa. Miksi?</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="3">
+  <h2>Topologia: matematiikkaa jatkuvaa muunnosta vaille</h2>
+  <!-- the free space of both mazes, flowed smoothly into a disc and a ring (mazeMorph) -->
+  <div class="viz morph-viz" data-state=""><svg class="pane morph" viewBox="0 0 1240 470" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <i class="f step" data-viz="morph"></i>
+  <div class="cols even morph-txt">
+    <p class="f small" data-viz="morph run">Kiekko, jonka reunassa on <span class="green">aukko</span>: reunaa kiertämällä tulee aina aukolle.</p>
+    <p class="f small" data-viz="morph run">Rengas: saarekkeen reuna on oma ympyränsä. Sitä kiertävä robotti ei koskaan pääse ulkoreunalle.</p>
+  </div>
+  <aside class="notes"><ul>
+    <li>Labyrintin käytävät venytetään sileästi ympyräksi. Seinää seuraava robotti kulkee reunaa pitkin: reuna on yksi ympyrä, ja aukko on sillä.</li>
+    <li>Oikeanpuoleinen on rengas: kaksi reunaympyrää. Topologia erottaa ne: kiekossa jokaisen silmukan voi kutistaa pisteeksi, renkaassa ei.</li>
+    <li>Animaatio: reunakäyrän Fourier-kertoimia vaimennetaan (lämpöyhtälö), lopuksi ympyräksi.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="3">
+  <div class="cols book-cols">
+    <img class="bookcover" src="img/topology-and-ai.jpg" alt="Topology and AI">
+    <div class="stack">
+      <h2>Topology and AI</h2>
+      <img class="paper" src="img/weinstein-lavalle-2024.png" alt="Equivalent Environments and Covering Spaces for Robots">
+      <p class="f">Kysymys: milloin robotti <span class="gold">ei voi erottaa</span> kahta ympäristöä toisistaan?</p>
+      <p class="f">Topologinen analyysi.</p>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Kirjan toinen artikkeli on Stevenin ja minun.</li>
+    <li>Peitekuvaus: jokaisen pisteen ympäristö näyttää täsmälleen samalta kuin sen kuvan ympäristö.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="3">
+  <h2>Neljä maailmaa, yksi kokemus</h2>
+  <p>Jokaisessa risteyksessä on neljä haaraa: kaksi <span class="cyan">syaania</span> ja kaksi <span class="mag">magentaa</span>.</p>
+  <!-- four graphs that cover the figure eight (graphSlide). After Hatcher's
+       list of the covering spaces of S¹ ∨ S¹ -->
+  <div class="viz cover-viz" data-state=""><svg class="pane cover" viewBox="0 0 1380 430" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <p class="f" data-viz="walk">Robotti tekee saman liikesarjan kaikissa neljässä.</p>
+  <p class="f" data-viz="walk">Se ei voi tietää, missä niistä se on. <span class="muted">Topologinen teoria tämän takana on ns. <span>peiteavaruuksien</span> teoria.</span></p>
+  <aside class="notes"><ul>
+    <li>Robotti aistii vain risteykset (montako haaraa, mikä väri), ei pituuksia eikä voi jättää merkkejä.</li>
+    <li>Puu on kahdeksikon universaali peite: siinä ei ole yhtään silmukkaa.</li>
+    <li>Kuvat Weinsteinin ja LaVallen artikkelin kuvan 2 mukaan (alun perin Hatcher, <i>Algebraic Topology</i>).</li>
+  </ul></aside>
+</section>
+
+<!-- ════════════════════════ 4 · TULOS VAI KOKEMUS ════════════════════════ -->
+<section class="slide divider" data-part="4">
+  <div class="num">04</div>
   <h2>Tulos vai kokemus</h2>
   <aside class="notes"><ul><li>5 min.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="2">
+<section class="slide" data-part="4">
   <h2>Matematiikka työkaluna</h2>
   <div class="cards">
     <div class="card f"><b>Lentokone</b>Aerodynamiikka: miten ilma virtaa siiven ympäri</div>
@@ -535,7 +960,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="2">
+<section class="slide" data-part="4">
   <div class="cols">
     <div class="stack">
       <h2>Volterran kalat</h2>
@@ -555,7 +980,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide center" data-part="2">
+<section class="slide center" data-part="4">
   <p class="big">Ennen tulokseen ei päässyt ymmärtämättä.</p>
   <div class="pair"><div class="chip res">TULOS</div><div class="link"></div><div class="chip exp">KOKEMUS</div></div>
   <p class="big f" data-slide-class="split">Tekoäly erottaa ne <span class="mag">ensimmäistä kertaa</span>.</p>
@@ -566,14 +991,14 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 3 · HISTORIA ════════════════════════ -->
-<section class="slide divider" data-part="3">
-  <div class="num">03</div>
+<!-- ════════════════════════ 5 · HISTORIA ════════════════════════ -->
+<section class="slide divider" data-part="5">
+  <div class="num">05</div>
   <h2>5000 vuotta ulkoistamista</h2>
   <aside class="notes"><ul><li>5 min.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="3">
+<section class="slide" data-part="5">
   <h2>Tieto lähtee päästä</h2>
   <div class="timeline">
     <div class="ev f"><b>n. 3000 eaa.</b>Maanviljely: jokainen saa erikoistua</div>
@@ -590,7 +1015,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="3">
+<section class="slide" data-part="5">
   <h2>Suullinen perinne</h2>
   <div class="cols">
     <div class="cards two" style="align-self:center">
@@ -604,7 +1029,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="3">
+<section class="slide" data-part="5">
   <div class="cols">
     <div class="stack">
       <p class="muted small">Sokrates kertoo tarinan, jossa kuningas Thamus sanoo kirjoituksen keksijälle:</p>
@@ -622,7 +1047,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide center" data-part="3">
+<section class="slide center" data-part="5">
   <p class="big">Isoäitini opetteli koulussa runoja ulkoa, monella kielellä.</p>
   <p class="big cyan f">Montako puhelinnumeroa te osaatte ulkoa?</p>
   <aside class="notes"><ul>
@@ -630,7 +1055,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="3">
+<section class="slide" data-part="5">
   <h2>Kuinka paljon tietoa on päiden ulkopuolella?</h2>
   <div class="demo">
     <div class="tag">▶ DEMO</div>
@@ -643,7 +1068,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide center" data-part="3">
+<section class="slide center" data-part="5">
   <p class="big">Tähän asti kaikki saatavilla oleva tieto oli <span class="gold">jonkun ihmisen kirjoittamaa</span>.</p>
   <p class="big mag f">Nyt ei enää.</p>
   <p class="f muted small">Konekin on tuottanut matematiikkaa ennenkin, esim. neliväriteoreema 1976. Uutta on, että nyt kone tuottaa ideoita ja kieltä massoittain.</p>
@@ -652,14 +1077,14 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 4 · INHIMILLISTÄ ════════════════════════ -->
-<section class="slide divider" data-part="4">
-  <div class="num">04</div>
+<!-- ════════════════════════ 6 · INHIMILLISTÄ ════════════════════════ -->
+<section class="slide divider" data-part="6">
+  <div class="num">06</div>
   <h2>Mikä matematiikassa on inhimillistä</h2>
   <aside class="notes"><ul><li>7 min.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="4">
+<section class="slide" data-part="6">
   <div class="cols">
     <div class="stack">
       <p class="big left">"Haluan ymmärtää tämän."</p>
@@ -695,7 +1120,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="4">
+<section class="slide" data-part="6">
   <h2>Konsertti ja konferenssi</h2>
   <div class="cols even">
     <div class="card"><b>Musiikki</b>Äänitteitä on voinut kuunnella kotona halvalla vuosikymmeniä. Livestriimissä kuva ja ääni ovat usein parempia.<br><br><span class="gold">Silti konsertit myydään loppuun.</span> Klassinen, pop, rock.</div>
@@ -708,7 +1133,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="4">
+<section class="slide" data-part="6">
   <div class="cols">
     <div class="stack">
       <h2>Shakki</h2>
@@ -728,7 +1153,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="4">
+<section class="slide" data-part="6">
   <h2>Ego ja kilpailu</h2>
   <ul class="pts">
     <li>Päteminen, ego ja kilpailu ovat aina olleet iso osa matemaatikon motivaatiota.</li>
@@ -740,7 +1165,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="4">
+<section class="slide" data-part="6">
   <h2>Kuka maksaa matemaatikolle?</h2>
   <p>Shakista ei ole koskaan maksettu siksi, että se olisi hyödyllistä. Ammattilaisille maksavat <span class="gold">katsojat</span>.</p>
   <p class="f">Kiinnostaako valtioita ja yrityksiä enää maksaa matemaatikoille? Millä insentiivillä?</p>
@@ -755,15 +1180,15 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 5 · PAIKALLINEN → GLOBAALI ════════════════════════ -->
-<section class="slide divider" data-part="5">
-  <div class="num">05</div>
+<!-- ════════════════════════ 7 · PAIKALLINEN → GLOBAALI ════════════════════════ -->
+<section class="slide divider" data-part="7">
+  <div class="num">07</div>
   <h2>Paikallinen sääntö, globaali rakenne</h2>
   <p class="sub">Kokeillaan, miltä matematiikka tuntuu.</p>
   <aside class="notes"><ul><li>13 min: elämäpeli 3, Hopfield 6, grid cellit ja kenno 4.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="5">
+<section class="slide" data-part="7">
   <div class="cols">
     <div class="stack">
       <h2>Elämäpeli</h2>
@@ -786,7 +1211,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="5">
+<section class="slide" data-part="7">
   <div class="demo">
     <div class="tag">▶ DEMO</div>
     <div class="what">Elämäpeli: vilkkuja, liitäjä, liitäjätykki</div>
@@ -801,7 +1226,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="5">
+<section class="slide" data-part="7">
   <div class="cols">
     <div class="stack">
       <h2>Hopfieldin verkko</h2>
@@ -823,7 +1248,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="5">
+<section class="slide" data-part="7">
   <div class="demo">
     <div class="tag">▶ DEMO</div>
     <div class="what">Hopfieldin verkko: piirrä, tallenna, sotke, muista</div>
@@ -835,7 +1260,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="5">
+<section class="slide" data-part="7">
   <div class="cols">
     <div class="stack">
       <h2>Kuusikulmiot aivoissa</h2>
@@ -855,7 +1280,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="5">
+<section class="slide" data-part="7">
   <div class="demo">
     <div class="tag">▶ DEMO</div>
     <div class="what">Kuusikulmiohila syntyy silmien edessä</div>
@@ -870,7 +1295,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="5">
+<section class="slide" data-part="7">
   <div class="cols">
     <div class="stack">
       <h2>Mehiläiskenno</h2>
@@ -886,19 +1311,19 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide center" data-part="5">
+<section class="slide center" data-part="7">
   <p class="big">Nykyiset kielimallit ovat Hopfieldin verkkojen kaukaisia jälkeläisiä.</p>
   <p class="big cyan f">Mitä ne tekevät nyt matematiikalle?</p>
 </section>
 
-<!-- ════════════════════════ 6 · MATH 2.0 ════════════════════════ -->
-<section class="slide divider" data-part="6">
-  <div class="num">06</div>
+<!-- ════════════════════════ 8 · MATH 2.0 ════════════════════════ -->
+<section class="slide divider" data-part="8">
+  <div class="num">08</div>
   <h2>Math 2.0</h2>
   <aside class="notes"><ul><li>10 min: käytäntö 2, Tao 8.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="6">
+<section class="slide" data-part="8">
   <h2>Miten se toimii käytännössä</h2>
   <div class="flow">
     <div class="box f"><b>MALLI</b>ehdottaa todistusta</div>
@@ -915,7 +1340,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="6">
+<section class="slide" data-part="8">
   <div class="cols">
     <div class="stack">
       <h2>Terence Tao</h2>
@@ -926,7 +1351,7 @@ body.idle{ cursor:none; }
   </div>
 </section>
 
-<section class="slide center" data-part="6">
+<section class="slide center" data-part="8">
   <p class="big">"Todistusten niukkuus" on loppunut.</p>
   <p class="f">Tekoälyn avulla on julkaistu todistuksia <span class="gold">satoihin</span> vanhoihin ongelmiin.</p>
   <p class="f">6.10.2026 OpenAI julkaisi kerralla satoja ratkaisuja. <span class="mag">Lukemattomat tutkimusohjelmat sekosivat yhdessä yössä.</span></p>
@@ -935,7 +1360,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="6">
+<section class="slide" data-part="8">
   <h2>Ongelmat Taon mukaan</h2>
   <ul class="pts">
     <li class="f"><span class="gold">Todistusähky</span> (proof indigestion): tuloksia tulee nopeammin kuin ihmiset ehtivät sulattaa niitä. Ihmisten ymmärrys jää jälkeen.</li>
@@ -949,7 +1374,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="6">
+<section class="slide" data-part="8">
   <h2>Taon Maths 2.0</h2>
   <div class="cards two">
     <div class="card f"><b>Kannustimet uusiksi</b>Palkitaan prosessia ja oivalluksia, ei vain sitä, joka ratkaisee ensimmäisenä. Suuria kansainvälisiä yhteistöitä.</div>
@@ -959,7 +1384,7 @@ body.idle{ cursor:none; }
   </div>
 </section>
 
-<section class="slide" data-part="6">
+<section class="slide" data-part="8">
   <h2>Mihin tämä vie</h2>
   <div class="cols even">
     <div class="card"><b>Tuloksen saaminen</b><span class="gold">Räjähtää</span>: nopeaa ja halpaa.</div>
@@ -969,7 +1394,7 @@ body.idle{ cursor:none; }
   <p class="f muted">Paine vie silti kohti sitä, että ohjat ovat tekoälyllä.</p>
 </section>
 
-<section class="slide center" data-part="6">
+<section class="slide center" data-part="8">
   <p class="big">Valvominen vaatii ymmärrystä.</p>
   <p class="f" style="font-size:40px">Ymmärrys oli ennen keino saada tulos.</p>
   <p class="f cyan" style="font-size:40px">Nyt se on keino pitää ohjat.</p>
@@ -978,14 +1403,14 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 7 · OMA TARINA ════════════════════════ -->
-<section class="slide divider" data-part="7">
-  <div class="num">07</div>
+<!-- ════════════════════════ 9 · OMA TARINA ════════════════════════ -->
+<section class="slide divider" data-part="9">
+  <div class="num">09</div>
   <h2>Oma tarina</h2>
   <aside class="notes"><ul><li>4 min.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <div class="cols">
     <div class="stack">
       <h2>Miksi logiikka</h2>
@@ -1002,7 +1427,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <h2>Nyt teen sitä, mistä olen unelmoinut</h2>
   <p>Interaktiivisia visualisointeja ja pelejä matematiikan opettamiseen. Harrastuksena.</p>
   <div class="demo">
@@ -1011,24 +1436,24 @@ body.idle{ cursor:none; }
   </div>
 </section>
 
-<section class="slide center" data-part="7">
+<section class="slide center" data-part="9">
   <p class="big">Tämäkin esitelmä on tehty tekoälyn kanssa.</p>
   <p class="f" style="font-size:44px">Kaikki demot löytyvät: <span class="cyan">matikkapelit.fi</span></p>
   <p class="f muted">Tekoäly teki työkalun. Ymmärryksen haluan jakaa itse.</p>
 </section>
 
-<!-- ════════════════════════ 8 · LOPETUS ════════════════════════ -->
-<section class="slide center" data-part="8">
+<!-- ════════════════════════ 10 · LOPETUS ════════════════════════ -->
+<section class="slide center" data-part="10">
   <p class="big">Siksi olen täällä enkä lähettänyt videota.</p>
   <p class="f" style="font-size:40px">Ensimmäisessä tehtävässä kukaan ei tarvinnut vastausta, <span class="gold">mutta jokainen halusi sen itse</span>.</p>
   <p class="f big cyan">Keskustellaan.</p>
   <aside class="notes"><ul>
-    <li>Paluu konserttiin (osa 4) ja Königsbergiin (osa 1).</li>
+    <li>Paluu konserttiin (osa 6) ja Königsbergiin (osa 2).</li>
     <li>Keskustelukysymyksiä varalle: kuka maksaa matemaatikolle? Mikä teille on matematiikassa tulosta, mikä kokemusta?</li>
   </ul></aside>
 </section>
 
-<section class="slide" data-part="8">
+<section class="slide" data-part="10">
   <h2 style="font-size:36px">Kuvat</h2>
   <ul class="credits">
     <li>Leonhard Euler: Jakob Emanuel Handmann, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Leonhard_Euler_-_Jakob_Emanuel_Handmann_(Kunstmuseum_Basel).jpg">Wikimedia Commons</a></li>
@@ -1048,6 +1473,13 @@ body.idle{ cursor:none; }
     <li>Thomas Hales: Slawekb, CC BY-SA 3.0, <a href="https://commons.wikimedia.org/wiki/File:Halescropped.jpg">Wikimedia Commons</a></li>
     <li>Alan Turing: Elliott &amp; Fry, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Alan_turing_header.jpg">Wikimedia Commons</a></li>
     <li>Königsbergin kartta: Merian-Erben 1652, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Image-Koenigsberg,_Map_by_Merian-Erben_1652.jpg">Wikimedia Commons</a></li>
+    <li>Albert Einstein ja Leopold Infeld: Lotte Jacobi, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Alberteinsteinbi0000cath_0058.jpg">Wikimedia Commons</a></li>
+    <li>Louis H. Kauffman: Gallusgallus, CC BY-SA 3.0, <a href="https://commons.wikimedia.org/wiki/File:Louis_H._Kauffman,_Oct_2014.jpg">Wikimedia Commons</a></li>
+    <li>Jouko Väänänen: Mirnadza, CC0, <a href="https://commons.wikimedia.org/wiki/File:Jouko_Vaananen2014.jpg">Wikimedia Commons</a></li>
+    <li>Kirjojen kannet: <i>The Evolution of Physics</i> (Simon &amp; Schuster 1938), <i>The Knot Book</i> (AMS 2004), <i>Dependence Logic</i> (Cambridge University Press 2007), <i>Topology and AI</i> (EMS Press)</li>
+    <li>Metro kartalla: Google Maps -kuvakaappauksista yhdistetty ja muokattu, karttatiedot © Google</li>
+    <li>Metron linjakartta: HSL (10/2023)</li>
+    <li>Lehden kansi: <i>Tiede 2000</i> 1/1999 (Sanoma), kuva <a href="https://www.antikvaari.fi/">Antikvaari.fi</a>:n myynti-ilmoituksesta</li>
   </ul>
   <p class="muted small">Kuvat on rajattu. CC BY-SA -kuvien rajaukset ovat samalla lisenssillä.</p>
 </section>
@@ -1075,7 +1507,7 @@ body.idle{ cursor:none; }
 // Keys: → ↓ PageDown space Enter = next, ← ↑ PageUp = back, Home/End,
 // F full screen, N speaker notes, B or . black screen (presentation clickers).
 // The slide number is kept in the URL (#12), so a reload stays put.
-const PARTS = ["", "Königsberg", "Tulos vai kokemus", "5000 vuotta ulkoistamista",
+const PARTS = ["", "Minun matkani", "Königsberg", "Robotit ja topologia", "Tulos vai kokemus", "5000 vuotta ulkoistamista",
   "Mikä matematiikassa on inhimillistä", "Paikallinen sääntö, globaali rakenne",
   "Math 2.0", "Oma tarina", "Lopetus"];
 
@@ -1113,17 +1545,19 @@ function setFrag(f, on) {
 
 // a .viz box shows the picture named by the last shown fragment with data-viz
 function syncViz(s) {
-  const box = s.querySelector(".viz");
-  if (!box) return;
   const on = [...s.querySelectorAll(".f.shown[data-viz]")];
-  box.dataset.state = on.length ? on[on.length - 1].dataset.viz : "";
+  const state = on.length ? on[on.length - 1].dataset.viz : "";
+  s.querySelectorAll(".viz").forEach(box => box.dataset.state = state);
 }
 
 // "Eulerin lause": three nested squares, each a cycle of 12 nodes (4 on every
 // side), joined ring to ring at random but without crossings (a fixed seed, so
 // it is the same every time). Odd nodes are magenta. Two attempts at a circuit
 // start from even nodes and run until no unused edge is left; a trail that
-// started at an even node can only get stuck at an odd one.
+// started at an even node can only get stuck at an odd one. Then the graph
+// changes a little (EVEN: 5 edges go, 4 come; found offline as the fewest
+// changes that keep it connected and crossing-free) so that every degree is
+// even, and an Euler circuit (Hierholzer) is drawn.
 function squareGraph(svg) {
   const NS = "http://www.w3.org/2000/svg", C = 210, HALF = [180, 120, 60];
   let seed = 7;
@@ -1148,6 +1582,25 @@ function squareGraph(svg) {
   }
   const deg = Array(36).fill(0);
   for (const [a, b] of edges) { deg[a]++; deg[b]++; }
+  const EVEN = { drop: [[0, 1], [3, 4], [6, 7], [18, 19], [13, 25]], add: [[2, 13], [5, 16], [9, 22], [23, 34]] };
+  const same = (e, [a, b]) => (e[0] === a && e[1] === b) || (e[0] === b && e[1] === a);
+  const dropped = edges.map(e => EVEN.drop.some(d => same(e, d)));
+  const edges2 = [...edges.filter((e, k) => !dropped[k]), ...EVEN.add];
+  const deg2 = Array(36).fill(0);
+  for (const [a, b] of edges2) { deg2[a]++; deg2[b]++; }
+  if (deg2.some(d => d % 2)) console.warn("squareGraph: EVEN no longer fits the graph");
+
+  // an Euler circuit of the changed graph (Hierholzer), from node 0
+  function circuit(es, start) {
+    const used = new Set(), stack = [start], out = [];
+    while (stack.length) {
+      const at = stack[stack.length - 1];
+      const k = es.findIndex((e, j) => !used.has(j) && e.includes(at));
+      if (k < 0) { out.push(stack.pop()); continue; }
+      used.add(k); stack.push(es[k][0] === at ? es[k][1] : es[k][0]);
+    }
+    return out;
+  }
 
   // a longest trail (of 400 random ones) from `start` that gets stuck at an odd node
   function trail(start) {
@@ -1172,9 +1625,13 @@ function squareGraph(svg) {
     parent.appendChild(e); return e;
   };
   const lines = el("g", { class: "lines" }, svg);
-  for (const [a, b] of edges) {
+  edges.forEach(([a, b], k) => {
     const [x1, y1] = pos(a), [x2, y2] = pos(b);
-    el("line", { class: "e", x1, y1, x2, y2 }, lines);
+    el("line", { class: "e" + (dropped[k] ? " drop" : ""), x1, y1, x2, y2 }, lines);
+  });
+  for (const [a, b] of EVEN.add) {
+    const [x1, y1] = pos(a), [x2, y2] = pos(b);
+    el("line", { class: "e add", pathLength: 1, x1, y1, x2, y2 }, lines);
   }
   const trails = el("g", { class: "trails" }, svg);
   const marks = el("g", {}, svg);
@@ -1186,6 +1643,11 @@ function squareGraph(svg) {
     el("circle", { class: "start " + cls, cx: sx, cy: sy, r: 8 }, marks);
     el("circle", { class: "stuck " + cls, cx: ex, cy: ey, r: 13 }, marks);
   });
+  const c = circuit(edges2, 0);
+  el("polyline", { class: "trail k3", pathLength: 1, points: c.map(n => pos(n).join(",")).join(" ") }, trails);
+  const [hx, hy] = pos(c[0]);
+  el("circle", { class: "start k3", cx: hx, cy: hy, r: 8 }, marks);
+  el("circle", { class: "home k3", cx: hx, cy: hy, r: 14 }, marks);
   const nodes = el("g", { class: "lines" }, svg);
   for (let n = 0; n < 36; n++) {
     const [cx, cy] = pos(n);
@@ -1214,6 +1676,474 @@ function trimArrow(path, gap) {
   path.setAttribute("d", `M${x0} ${y0} Q${cx.toFixed(1)} ${cy.toFixed(1)} ${ex.toFixed(1)} ${ey.toFixed(1)}`);
 }
 document.querySelectorAll(".kb path[marker-end]").forEach(p => trimArrow(p, 14));
+
+// ── Pictures that move ──
+// mover(box, tick) calls tick(now, since) every frame while the box's slide is
+// on; since[word] is when that word of the box's data-state came. Leaving the
+// slide forgets it all, so coming back starts the pictures over.
+const movers = [];
+function mover(box, tick) { movers.push({ box, tick, since: {}, state: null }); }
+function moveFrame(now) {
+  for (const m of movers) {
+    if (!m.box.closest(".slide").classList.contains("on")) { m.state = null; continue; }
+    const st = m.box.dataset.state || "";
+    if (st !== m.state) {
+      const old = m.state === null ? {} : m.since;
+      m.since = {};
+      for (const w of st.split(/\s+/).filter(Boolean)) m.since[w] = w in old ? old[w] : now;
+      m.state = st;
+    }
+    m.tick(now, m.since);
+  }
+  requestAnimationFrame(moveFrame);
+}
+requestAnimationFrame(moveFrame);
+
+const SVGNS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs, parent) {
+  const e = document.createElementNS(SVGNS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+const ptsAttr = p => p.map(([x, y]) => x.toFixed(1) + "," + y.toFixed(1)).join(" ");
+const ease = t => t < .5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+
+// ── The maze ──
+// A perfect maze (seeded depth-first search): every cell reachable in exactly
+// one way, so all walls hang together with the outer wall. MAZE.cut is the wall
+// whose removal leaves an island of walls in the middle; both robots start on
+// the island's wall (MAZE.start: lattice point and direction).
+const MAZE = { W: 10, H: 7, seed: 4, exit: 3, cut: [5, 4], start: [6, 4, 2], cs: 46, off: .3 };
+function makeMaze(W, H, seed, exitRow) {
+  let s = seed;
+  const rnd = () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
+  // h[y][x]: wall on top of cell (x, y), y = 0…H; v[y][x]: wall left of cell (x, y), x = 0…W
+  const h = Array.from({ length: H + 1 }, () => Array(W).fill(true));
+  const v = Array.from({ length: H }, () => Array(W + 1).fill(true));
+  const seen = Array.from({ length: H }, () => Array(W).fill(false));
+  const stack = [[0, 0]]; seen[0][0] = true;
+  while (stack.length) {
+    const [x, y] = stack[stack.length - 1];
+    const opts = [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => {
+      const nx = x + dx, ny = y + dy;
+      return nx >= 0 && ny >= 0 && nx < W && ny < H && !seen[ny][nx];
+    });
+    if (!opts.length) { stack.pop(); continue; }
+    const [dx, dy] = opts[Math.floor(rnd() * opts.length)];
+    const nx = x + dx, ny = y + dy;
+    if (dx === 1) v[y][x + 1] = false; else if (dx === -1) v[y][x] = false;
+    else if (dy === 1) h[y + 1][x] = false; else h[y][x] = false;
+    seen[ny][nx] = true; stack.push([nx, ny]);
+  }
+  v[exitRow][W] = false;                         // the way out, on the right
+  return { W, H, h, v, exitRow };
+}
+function mazePair() {
+  const m1 = makeMaze(MAZE.W, MAZE.H, MAZE.seed, MAZE.exit);
+  const m2 = { ...m1, h: m1.h.map(r => r.slice()), v: m1.v.map(r => r.slice()) };
+  m2.h[MAZE.cut[0]][MAZE.cut[1]] = false;
+  return [m1, m2];
+}
+
+const DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]];   // E S W N: clockwise on screen
+function wallAt(m, x, y, d) {                     // a wall from lattice point (x, y) towards d?
+  const [dx, dy] = DIRS[d];
+  if (dx === 1) return x < m.W && m.h[y][x];
+  if (dx === -1) return x > 0 && m.h[y][x - 1];
+  if (dy === 1) return y < m.H && m.v[y][x];
+  return y > 0 && m.v[y - 1][x];
+}
+
+// Walk with the wall on the right hand, `off` from it, starting on the segment
+// from (x, y) towards d. At each lattice point the next wall is the first one
+// clockwise from where we came; with none, round the end of the wall.
+// Returns the corner points; end "out" (would leave the maze) or "loop"
+// (a state came again: the cycle starts at loopFrom).
+function wallWalk(m, x, y, d, off) {
+  const L = d => [DIRS[d][1], -DIRS[d][0]];       // left of d on screen
+  const [lx, ly] = L(d), pts = [[x + DIRS[d][0] / 2 + off * lx, y + DIRS[d][1] / 2 + off * ly]];
+  const seenAt = new Map();
+  for (let k = 0; k < 4000; k++) {
+    const key = x + "," + y + "," + d;
+    if (seenAt.has(key)) return { pts, end: "loop", loopFrom: seenAt.get(key) };
+    seenAt.set(key, pts.length);
+    x += DIRS[d][0]; y += DIRS[d][1];
+    let nd = (d + 2) % 4;
+    for (let r = 1; r <= 3; r++) { const c = (d + 2 + r) % 4; if (wallAt(m, x, y, c)) { nd = c; break; } }
+    const [a, b] = L(d), [c, e] = L(nd), before = pts.length;
+    if (nd === (d + 2) % 4) {
+      pts.push([x + off * (a + DIRS[d][0]), y + off * (b + DIRS[d][1])]);
+      pts.push([x + off * (c + DIRS[d][0]), y + off * (e + DIRS[d][1])]);
+    } else if (nd !== d) pts.push([x + off * (a + c), y + off * (b + e)]);
+    const mx = x + DIRS[nd][0] / 2 + off * c, my = y + DIRS[nd][1] / 2 + off * e;
+    if (mx < 0 || my < 0 || mx > m.W || my > m.H) {
+      pts.length = before;
+      pts.push([x + off * a, y + off * b]);
+      return { pts, end: "out" };
+    }
+    d = nd;
+  }
+  return { pts, end: "max" };
+}
+
+// lattice points tied to the outer wall through walls
+function attached(m) {
+  const ok = new Set(["0,0"]), q = [[0, 0]];
+  while (q.length) {
+    const [x, y] = q.pop();
+    for (let d = 0; d < 4; d++) if (wallAt(m, x, y, d)) {
+      const nx = x + DIRS[d][0], ny = y + DIRS[d][1], k = nx + "," + ny;
+      if (!ok.has(k)) { ok.add(k); q.push([nx, ny]); }
+    }
+  }
+  return ok;
+}
+
+// the walls as two paths: tied to the outer wall, and the island
+function drawWalls(m, g, cs) {
+  const ok = attached(m);
+  let main = "", isl = "";
+  const add = (x, y, s) => { if (ok.has(x + "," + y)) main += s; else isl += s; };
+  for (let y = 0; y <= m.H; y++) for (let x = 0; x < m.W; x++) if (m.h[y][x]) add(x, y, `M${x * cs} ${y * cs}h${cs}`);
+  for (let y = 0; y < m.H; y++) for (let x = 0; x <= m.W; x++) if (m.v[y][x]) add(x, y, `M${x * cs} ${y * cs}v${cs}`);
+  const w = svgEl("g", { class: "walls" }, g);
+  svgEl("path", { d: main }, w);
+  if (isl) svgEl("path", { d: isl }, svgEl("g", { class: "walls isl" }, g));
+}
+
+// a point that moves along a polyline (looping from loopFrom on, if given)
+function polyWalker(pts, loopFrom = -1) {
+  const cum = [0];
+  for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  let path = pts, all = cum;
+  if (loopFrom >= 0) {                            // close the cycle
+    path = [...pts, pts[loopFrom]];
+    const last = pts[pts.length - 1];
+    all = [...cum, cum[cum.length - 1] + Math.hypot(last[0] - pts[loopFrom][0], last[1] - pts[loopFrom][1])];
+  }
+  const total = all[all.length - 1], pre = loopFrom >= 0 ? all[loopFrom] : 0, lap = total - pre;
+  const wrap = d => loopFrom < 0 ? Math.min(d, total) : d <= total ? d : pre + (d - pre) % lap;
+  const at = d => {
+    d = wrap(d);
+    let i = 1;
+    while (i < all.length - 1 && all[i] < d) i++;
+    const t = all[i] === all[i - 1] ? 0 : (d - all[i - 1]) / (all[i] - all[i - 1]);
+    return [path[i - 1][0] + t * (path[i][0] - path[i - 1][0]), path[i - 1][1] + t * (path[i][1] - path[i - 1][1])];
+  };
+  const upTo = d => {                             // the trail so far (a whole lap at most)
+    if (loopFrom >= 0 && d > total) return path;
+    d = Math.min(d, total);
+    const out = [];
+    for (let i = 0; i < all.length && all[i] < d; i++) out.push(path[i]);
+    out.push(at(d));
+    return out;
+  };
+  return { at, upTo, total };
+}
+
+// "Robotti labyrintissa": the maze twice, the second with one wall less
+function mazeSlide(svg) {
+  const { cs, off } = MAZE, [m1, m2] = mazePair(), SPEED = 3.5;   // cells a second
+  const OX = [40, 700], OY = 40;
+  const runs = [];
+  [m1, m2].forEach((m, k) => {
+    const g = svgEl("g", { transform: `translate(${OX[k]} ${OY})` }, svg);
+    drawWalls(m, g, cs);
+    if (k === 1) svgEl("path", { class: "gone", d: `M${MAZE.cut[1] * cs} ${MAZE.cut[0] * cs}h${cs}` }, g);
+    const ey = (m.exitRow + .5) * cs;
+    svgEl("path", { class: "door", d: `M${m.W * cs + 14} ${ey}h40m-12 -10l12 10l-12 10` }, g);   // the way out
+    svgEl("text", { class: "cap", x: m.W * cs / 2, y: m.H * cs + 44 }, g).textContent =
+      k ? "Yksi seinä vähemmän" : "Kaikki seinät kiinni ulkoseinässä";
+    const w = wallWalk(m, ...MAZE.start, off);
+    if (w.end === "out") w.pts.push([m.W - .1, m.exitRow + .5], [m.W + 1.4, m.exitRow + .5]);
+    const walker = polyWalker(w.pts.map(([x, y]) => [x * cs, y * cs]), w.end === "loop" ? w.loopFrom : -1);
+    const trail = svgEl("polyline", { class: "trail", points: "" }, g);
+    const robot = svgEl("circle", { class: "robot", r: 10 }, g);
+    const note = k ? svgEl("text", { class: "forever", x: m.W * cs / 2, y: m.H * cs + 82, "text-anchor": "middle" }, g)
+                   : svgEl("text", { class: "out", x: m.W * cs + 16, y: ey - 26 }, g);
+    note.textContent = k ? "Ympäri, ympäri, ikuisesti…" : "ULOS!";
+    runs.push({ walker, trail, robot, note, word: "run" + (k + 1), loop: w.end === "loop" });
+  });
+  mover(svg.closest(".viz"), (now, since) => {
+    for (const r of runs) {
+      const d = r.word in since ? (now - since[r.word]) / 1000 * SPEED * cs : 0;
+      const [x, y] = r.walker.at(d);
+      r.robot.setAttribute("cx", x); r.robot.setAttribute("cy", y);
+      r.trail.setAttribute("points", d ? ptsAttr(r.walker.upTo(d)) : "");
+      r.note.classList.toggle("on", r.loop ? d > r.walker.total : d >= r.walker.total);
+    }
+  });
+}
+document.querySelectorAll(".viz .maze").forEach(mazeSlide);
+
+// ── Venytetään: the maze's free space flows into a disc (and a ring) ──
+// A boundary curve is sampled evenly (N points), taken to Fourier
+// coefficients, and every coefficient but the circle's (k = 0, ±1) is damped
+// by e^(−(k² − 1)τ), as heat would: corners and walls melt first. At the end
+// the ellipse that is left is blended into a round circle.
+function fft(re, im, inv) {
+  const n = re.length;
+  for (let i = 1, j = 0; i < n; i++) {
+    let bit = n >> 1;
+    for (; j & bit; bit >>= 1) j ^= bit;
+    j ^= bit;
+    if (i < j) { [re[i], re[j]] = [re[j], re[i]]; [im[i], im[j]] = [im[j], im[i]]; }
+  }
+  for (let len = 2; len <= n; len <<= 1) {
+    const a = (inv ? 2 : -2) * Math.PI / len, wr = Math.cos(a), wi = Math.sin(a);
+    for (let i = 0; i < n; i += len) {
+      let cr = 1, ci = 0;
+      for (let k = 0; k < len / 2; k++) {
+        const ur = re[i + k], ui = im[i + k];
+        const vr = re[i + k + len / 2] * cr - im[i + k + len / 2] * ci;
+        const vi = re[i + k + len / 2] * ci + im[i + k + len / 2] * cr;
+        re[i + k] = ur + vr; im[i + k] = ui + vi;
+        re[i + k + len / 2] = ur - vr; im[i + k + len / 2] = ui - vi;
+        [cr, ci] = [cr * wr - ci * wi, cr * wi + ci * wr];
+      }
+    }
+  }
+  if (!inv) for (let i = 0; i < n; i++) { re[i] /= n; im[i] /= n; }
+}
+
+// a closed polygon sampled at n evenly spaced points; gapFrom: the first sample
+// on the closing segment (last point → first), the maze's way out. That
+// segment counts `gapWeight` times its length, so it is not lost on the circle.
+function closedSamples(pts, n, gapWeight = 1) {
+  const P = [...pts, pts[0]], cum = [0];
+  for (let i = 1; i < P.length; i++)
+    cum.push(cum[i - 1] + (i === P.length - 1 ? gapWeight : 1) * Math.hypot(P[i][0] - P[i - 1][0], P[i][1] - P[i - 1][1]));
+  const T = cum[cum.length - 1], out = [];
+  let i = 1;
+  for (let j = 0; j < n; j++) {
+    const s = j / n * T;
+    while (cum[i] < s) i++;
+    const t = (s - cum[i - 1]) / (cum[i] - cum[i - 1] || 1);
+    out.push([P[i - 1][0] + t * (P[i][0] - P[i - 1][0]), P[i - 1][1] + t * (P[i][1] - P[i - 1][1])]);
+  }
+  return { pts: out, gapFrom: Math.ceil(cum[cum.length - 2] / T * n) };
+}
+
+// Heat flow on the Fourier coefficients. The centre (k = 0) and the ellipse
+// (k = ±1) slide to the target circle while the rest dies away (ROUND), so a
+// long thin island turns round and central as it smooths, and never pokes
+// through the outer curve (it did as a thin ellipse).
+const ROUND = 10;
+function heatCurve(pts, center, radius) {
+  const n = pts.length, re = pts.map(p => p[0]), im = pts.map(p => p[1]);
+  fft(re, im, false);
+  const k = j => j <= n / 2 ? j : j - n;
+  const s = Math.hypot(re[1], im[1]) >= Math.hypot(re[n - 1], im[n - 1]) ? 1 : n - 1;   // the way round
+  const phase = Math.atan2(im[s], re[s]), sign = s === 1 ? 1 : -1;
+  const target = new Map([[0, center], [s, [radius * Math.cos(phase), radius * Math.sin(phase)]], [n - s, [0, 0]]]);
+  const at = tau => {
+    const r = new Float64Array(n), i = new Float64Array(n), w = 1 - Math.exp(-ROUND * tau);
+    for (let j = 0; j < n; j++) {
+      const tg = target.get(j);
+      if (tg) { r[j] = re[j] + w * (tg[0] - re[j]); i[j] = im[j] + w * (tg[1] - im[j]); continue; }
+      const f = Math.exp(-(k(j) * k(j) - 1) * tau);
+      r[j] = re[j] * f; i[j] = im[j] * f;
+    }
+    fft(r, i, true);
+    return Array.from(r, (x, j) => [x, i[j]]);
+  };
+  const circle = pts.map((_, j) => {
+    const a = sign * 2 * Math.PI * j / n + phase;
+    return [center[0] + radius * Math.cos(a), center[1] + radius * Math.sin(a)];
+  });
+  return { at, circle };
+}
+
+function mazeMorph(svg) {
+  const { cs } = MAZE, [m1, m2] = mazePair(), N = 1024, TMAX = 1.6, DUR = 5000;
+  const OX = [40, 700], OY = 40, C = [m1.W / 2, m1.H / 2];
+  // the boundary of the free space: from the way out round the inside back to it
+  const outer = m => {
+    const w = wallWalk(m, m.W, m.exitRow + 1, 3, .14);
+    w.pts.shift();
+    return closedSamples(w.pts, N, 8);
+  };
+  const island = m => {
+    const ok = attached(m);
+    for (let y = 0; y <= m.H; y++) for (let x = 0; x <= m.W; x++)
+      if (!ok.has(x + "," + y)) for (let d = 0; d < 4; d++) if (wallAt(m, x, y, d)) {
+        const w = wallWalk(m, x, y, d, .14);
+        return closedSamples(w.pts.slice(w.loopFrom), N);
+      }
+  };
+  const curves = [[outer(m1)], [outer(m2), island(m2)]];
+  const px = s => s.map(([x, y]) => [x * cs, y * cs]);
+  const panels = curves.map((cl, k) => {
+    const g = svgEl("g", { transform: `translate(${OX[k]} ${OY})` }, svg);
+    drawWalls([m1, m2][k], g, cs);
+    const region = svgEl("path", { class: "region" }, g);
+    const lines = svgEl("g", { class: "lines" }, g);
+    const parts = cl.map((c, j) => ({
+      ...c, ...heatCurve(c.pts, C, j ? 1.25 : 3.3),
+      edge: svgEl("polyline", { class: "edge" + (j ? " isl" : "") }, lines),
+      gap: j ? null : svgEl("polyline", { class: "gap" }, g),
+    }));
+    parts.forEach(p => p.end = p.at(TMAX));
+    const robot = svgEl("circle", { class: "robot", r: 10 }, g);
+    svgEl("text", { class: "cap", x: m1.W * cs / 2, y: m1.H * cs + 44 }, g).textContent = k ? "Rengas" : "Kiekko";
+    return { region, parts, robot };
+  });
+  const shape = (p, t) => {
+    if (t <= 0) return p.pts;
+    if (t < .8) { const u = t / .8; return p.at(TMAX * (Math.exp(8 * u) - 1) / (Math.exp(8) - 1)); }
+    const b = ease(Math.min(1, (t - .8) / .2));
+    return p.end.map(([x, y], j) => [x + b * (p.circle[j][0] - x), y + b * (p.circle[j][1] - y)]);
+  };
+  let lastT = -1, lastRun = -2;
+  mover(svg.closest(".viz"), (now, since) => {
+    const t = "morph" in since ? Math.min(1, (now - since.morph) / DUR) : 0;
+    const run = "run" in since ? (now - since.run) / 1000 : -1;
+    if (t === lastT && run < 0 && lastRun < 0) return;
+    lastT = t; lastRun = run;
+    panels.forEach((pn, k) => {
+      let d = "";
+      const cur = pn.parts.map(p => {
+        const s = px(shape(p, t));
+        d += "M" + ptsAttr(s).replace(/ /g, "L") + "Z";
+        const g0 = p.gap ? p.gapFrom : N;
+        p.edge.setAttribute("points", ptsAttr(s.slice(0, g0)) + (p.gap ? "" : " " + ptsAttr([s[0]])));
+        if (p.gap) p.gap.setAttribute("points", ptsAttr([...s.slice(g0 - 1), s[0]]));
+        return s;
+      });
+      pn.region.setAttribute("d", d);
+      // the robot keeps to the wall: on the disc it goes round to the way out
+      // (then starts again), on the ring it circles the island for ever
+      pn.robot.style.opacity = run < 0 ? 0 : 1;
+      if (run >= 0) {
+        const p = pn.parts[k ? 1 : 0], s = cur[k ? 1 : 0], n = s.length;
+        let i;
+        if (k) i = (Math.floor(n * .2) + run * 110) % n;
+        else {
+          const from = Math.floor(p.gapFrom * .45), len = p.gapFrom - from + 40;
+          i = from + (run * 110) % (len + 60);
+          pn.robot.style.opacity = i > p.gapFrom + 30 ? 0 : 1;
+          i = Math.min(i, n - 1);
+        }
+        const a = s[Math.floor(i) % n], b = s[(Math.floor(i) + 1) % n], f = i % 1;
+        pn.robot.setAttribute("cx", a[0] + f * (b[0] - a[0]));
+        pn.robot.setAttribute("cy", a[1] + f * (b[1] - a[1]));
+      }
+    });
+  });
+}
+document.querySelectorAll(".viz .morph").forEach(mazeMorph);
+
+// ── Neljä maailmaa: four covering spaces of the figure eight ──
+// Letters 0 = a, 1 = a⁻¹ (cyan), 2 = b, 3 = b⁻¹ (magenta). A place in the tree
+// is a reduced word; the other three are what the tree folds into: (b) folds
+// the a-line through the root into a loop, (f) keeps only the sum of the a's,
+// (e) is a single point. One walk is played in all four at once.
+function graphSlide(svg) {
+  const CX = [132, 517, 862, 1207], CY = 195, L0 = 86, Q = .47, STEP = 800;
+  const inv = g => g ^ 1, col = g => g < 2 ? "a" : "b";
+  const DIR = [[1, 0], [-1, 0], [0, -1], [0, 1]];
+  const reduce = (w, g) => w.length && w[w.length - 1] === inv(g) ? w.slice(0, -1) : [...w, g];
+  const treePos = (o, w) => {
+    let [x, y] = o;
+    w.forEach((g, i) => { x += DIR[g][0] * L0 * Q ** i; y += DIR[g][1] * L0 * Q ** i; });
+    return [x, y];
+  };
+  const arc = (c, r, a0, sgn) => Array.from({ length: 33 }, (_, i) => {
+    const a = a0 + sgn * 2 * Math.PI * i / 32;
+    return [c[0] + r * Math.cos(a), c[1] + r * Math.sin(a)];
+  });
+  const layer = (g, cls) => svgEl("g", { class: cls }, g);
+  const tree = (ga, gb, o, w, depth, max, first) => {          // draw the tree below word w
+    if (depth >= max) return;
+    const from = treePos(o, w);
+    for (const g of first || [0, 1, 2, 3]) {
+      if (w.length && w[w.length - 1] === inv(g)) continue;
+      const to = treePos(o, [...w, g]);
+      svgEl("line", { class: col(g), x1: from[0], y1: from[1], x2: to[0], y2: to[1], "stroke-width": Math.max(1, 2.6 - depth * .35) }, col(g) === "a" ? ga : gb);
+      tree(ga, gb, o, [...w, g], depth + 1, max);
+    }
+  };
+  const worlds = [];
+  // (e) the figure eight
+  {
+    const g = svgEl("g", {}, svg), ga = layer(g, "ga"), gb = layer(g, "gb"), o = [CX[0], CY], r = 72;
+    svgEl("circle", { class: "a", cx: o[0] - r, cy: CY, r, fill: "none" }, ga);
+    svgEl("circle", { class: "b", cx: o[0] + r, cy: CY, r, fill: "none" }, gb);
+    svgEl("circle", { class: "v", cx: o[0], cy: CY, r: 5 }, g);
+    worlds.push({ g, cap: "kahdeksikko", start: 0,
+      step: (s, l) => [s, l < 2 ? arc([o[0] - r, CY], r, 0, l ? -1 : 1) : arc([o[0] + r, CY], r, Math.PI, l === 2 ? 1 : -1)] });
+  }
+  // (f) a line of a's with a b-loop at every point
+  {
+    const g = svgEl("g", {}, svg), ga = layer(g, "ga"), gb = layer(g, "gb"), S = 48, R = 20, x0 = CX[1];
+    svgEl("line", { class: "a", x1: x0 - 3.4 * S, y1: CY, x2: x0 + 3.4 * S, y2: CY, "stroke-width": 2.6 }, ga);
+    for (let n = -3; n <= 3; n++) {
+      svgEl("circle", { class: "b", cx: x0 + n * S, cy: CY - R, r: R, fill: "none" }, gb);
+      svgEl("circle", { class: "v", cx: x0 + n * S, cy: CY, r: 4 }, g);
+    }
+    for (const sx of [-1, 1]) svgEl("text", { class: "dots", x: x0 + sx * 3.75 * S, y: CY + 8, "text-anchor": "middle" }, g).textContent = "⋯";
+    worlds.push({ g, cap: "silmukkajono", start: 0,
+      step: (n, l) => l < 2 ? [n + (l ? -1 : 1), [[x0 + n * S, CY], [x0 + (n + (l ? -1 : 1)) * S, CY]]]
+                            : [n, arc([x0 + n * S, CY - R], R, Math.PI / 2, l === 2 ? 1 : -1)] });
+  }
+  // (b) a loop of a's at the root, trees above and below it
+  {
+    const g = svgEl("g", {}, svg), ga = layer(g, "ga"), gb = layer(g, "gb"), o = [CX[2] + 30, CY], R = 30;
+    svgEl("circle", { class: "a", cx: o[0] - R, cy: CY, r: R, fill: "none" }, ga);
+    tree(ga, gb, o, [], 0, 5, [2, 3]);
+    svgEl("circle", { class: "v", cx: o[0], cy: CY, r: 5 }, g);
+    const rep = w => { let i = 0; while (i < w.length && w[i] < 2) i++; return w.slice(i); };
+    worlds.push({ g, cap: "silmukka ja puita", start: [],
+      step: (w, l) => {
+        const nw = reduce(w, l);
+        if (!rep(w).length && l < 2) return [nw, arc([o[0] - R, CY], R, 0, l ? -1 : 1)];
+        return [nw, [treePos(o, rep(w)), treePos(o, rep(nw))]];
+      } });
+  }
+  // (c) the tree: no loops at all
+  {
+    const g = svgEl("g", {}, svg), ga = layer(g, "ga"), gb = layer(g, "gb"), o = [CX[3], CY];
+    tree(ga, gb, o, [], 0, 5);
+    svgEl("circle", { class: "v", cx: o[0], cy: CY, r: 5 }, g);
+    worlds.push({ g, cap: "puu", start: [], step: (w, l) => { const nw = reduce(w, l); return [nw, [treePos(o, w), treePos(o, nw)]]; } });
+  }
+  worlds.forEach((wd, k) => { svgEl("text", { class: "cap", x: CX[k], y: 410 }, wd.g).textContent = wd.cap; });
+
+  // one walk: wanders (tree depth ≤ 3, at most two a's either way), then goes home
+  let seed = 11;
+  const rnd = () => { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; };
+  const walk = [];
+  let w = [], sum = 0, prev = -1;
+  for (let i = 0; i < 24; i++) {
+    const ok = [0, 1, 2, 3].filter(g => reduce(w, g).length <= 3 && Math.abs(sum + (g === 0) - (g === 1)) <= 2);
+    const fresh = ok.filter(g => g !== inv(prev));
+    const pick = (fresh.length ? fresh : ok)[Math.floor(rnd() * (fresh.length ? fresh : ok).length)];
+    walk.push(pick); w = reduce(w, pick); sum += (pick === 0) - (pick === 1); prev = pick;
+  }
+  for (let i = w.length - 1; i >= 0; i--) walk.push(inv(w[i]));
+  // each world's path for every step
+  const legs = worlds.map(wd => {
+    let s = wd.start;
+    return walk.map(l => { const [ns, p] = wd.step(s, l); s = ns; return p; });
+  });
+  const robots = worlds.map(wd => svgEl("circle", { class: "robot", r: 8 }, wd.g));
+  const along = (p, f) => {
+    const cum = [0];
+    for (let i = 1; i < p.length; i++) cum.push(cum[i - 1] + Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]));
+    const d = f * cum[cum.length - 1];
+    let i = 1;
+    while (i < p.length - 1 && cum[i] < d) i++;
+    const t = cum[i] === cum[i - 1] ? 0 : (d - cum[i - 1]) / (cum[i] - cum[i - 1]);
+    return [p[i - 1][0] + t * (p[i][0] - p[i - 1][0]), p[i - 1][1] + t * (p[i][1] - p[i - 1][1])];
+  };
+  mover(svg.closest(".viz"), (now, since) => {
+    const t = "walk" in since ? (now - since.walk) / STEP : 0;
+    const i = Math.floor(t) % walk.length, f = ease(Math.min(1, (t % 1) * 1.25));
+    robots.forEach((r, k) => { const [x, y] = along(legs[k][i], f); r.setAttribute("cx", x); r.setAttribute("cy", y); });
+  });
+}
+document.querySelectorAll(".viz .cover").forEach(graphSlide);
 
 function show(i, revealAll = false) {
   i = Math.max(0, Math.min(slides.length - 1, i));
