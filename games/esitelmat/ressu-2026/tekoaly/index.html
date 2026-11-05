@@ -113,6 +113,11 @@ ul.pts.tight{ gap:10px; }
 .kb .hl{ opacity:0; transition:opacity .4s ease; filter:drop-shadow(0 0 4px rgba(255,225,77,.7)); }
 [data-state~="map"] .kb .map{ opacity:.9; }
 [data-state~="map"] .kb .hl{ opacity:1; }
+/* Königsbergin sillat: the same map standing still, the river in cyan */
+.kb-still .kb .map{ opacity:.9; }
+.kb-still .kb .hl{ opacity:1; }
+.kb-still .river path{ fill:none; stroke:var(--accent); stroke-opacity:.4; stroke-width:18; stroke-linejoin:round; stroke-linecap:round; }
+.kb-still .river{ filter:drop-shadow(0 0 6px rgba(0,229,255,.6)); }
 .kb .water path{ fill:none; stroke:var(--accent); stroke-opacity:.28; stroke-width:20; stroke-linejoin:round; }
 .kb .water, .kb .bridges{ opacity:0; transition:opacity .6s ease; }
 .kb .bridges line{ stroke:var(--gold); stroke-width:8; stroke-linecap:round; }
@@ -233,6 +238,65 @@ s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; he
 [data-state~="at3"] .tower .me{ transform:translate(505px,475px); }
 [data-state~="at4"] .tower .me{ transform:translate(590px,475px); }
 
+/* DNA:n sekvensointi: reads fly onto the edges of their graph, then the Euler path spells the genome */
+.dna .viz.side{ width:680px; height:520px; }
+.dna .net{ filter:var(--glow-cyan); }
+.dna .edge{ fill:none; stroke:var(--accent); stroke-width:3; }
+.dna .node circle{ fill:var(--bg); stroke:var(--accent); stroke-width:3; }
+.dna .node text, .dna .card text, .dna .gen text{ font:700 24px var(--ui); letter-spacing:.06em; text-anchor:middle; dominant-baseline:central; }
+.dna .node text{ fill:var(--ink); }
+.dna .card rect{ fill:var(--bg); stroke:var(--muted); stroke-width:2; transition:stroke .3s ease; }
+.dna .card text{ fill:var(--ink); transition:fill .3s ease; }
+.dna .card.used rect{ stroke:var(--gold); }
+.dna .card.used text{ fill:var(--gold); }
+.dna .trail{ fill:none; stroke:var(--gold); stroke-width:6; stroke-linejoin:round; stroke-linecap:round; opacity:.8; filter:drop-shadow(0 0 5px rgba(255,225,77,.7)); }
+.dna .gen text{ fill:var(--gold); font-size:34px; }
+.dna .gen .lab{ fill:var(--muted); font:400 24px var(--ui); text-anchor:end; letter-spacing:0; }
+
+/* Hamiltonin polku: the dodecahedron of Hamilton's Icosian game, a cycle through its 20 corners */
+.dodg .lines{ filter:var(--glow-cyan); }
+.dodg line{ stroke:var(--accent); stroke-width:3; }
+.dodg circle{ fill:var(--bg); stroke:var(--accent); stroke-width:3; transition:fill .25s ease, stroke .25s ease; }
+.dodg circle.seen{ fill:var(--gold); stroke:var(--gold); }
+.dodg .trail{ fill:none; stroke:var(--gold); stroke-width:7; stroke-linejoin:round; stroke-linecap:round; opacity:.85; filter:drop-shadow(0 0 5px rgba(255,225,77,.7)); }
+
+/* Onko olemassa Hamiltonin polkua: two graphs side by side */
+.hamq{ gap:24px; }
+.hq-pair{ display:flex; gap:120px; justify-content:center; }
+.hq{ width:430px; height:430px; overflow:visible; }
+.hq .lines{ filter:var(--glow-cyan); }
+.hq line{ stroke:var(--accent); stroke-width:3; }
+.hq circle{ fill:var(--bg); stroke:var(--accent); stroke-width:3; transition:fill .2s ease, stroke .2s ease; }
+.hq circle.seen{ fill:var(--gold); stroke:var(--gold); }
+.hq circle.miss{ fill:var(--magenta); stroke:var(--magenta); }
+.hq .trail{ fill:none; stroke:var(--gold); stroke-width:7; stroke-linejoin:round; stroke-linecap:round; opacity:.85; filter:drop-shadow(0 0 5px rgba(255,225,77,.7)); }
+.hq-viz{ flex:none; }
+.hamq .f{ display:flex; flex-direction:column; gap:14px; }
+/* Pölynimurirobotti: a flat with a robot vacuum; rooms are nodes, doors edges */
+.ham{ gap:22px; }
+.ham .cols{ gap:50px; }
+.ham .stack{ gap:20px; }
+.ham .viz.side{ width:580px; height:420px; }
+.ham .walls{ filter:var(--glow-cyan); }
+.ham .walls path{ fill:none; stroke:var(--accent); stroke-width:5; stroke-linecap:square; }
+.ham .room{ fill:transparent; transition:fill .4s ease; }
+.ham .room.seen{ fill:rgba(255,225,77,.13); }
+.ham .room.miss{ fill:rgba(255,61,242,.2); }
+.ham .rname{ fill:var(--muted); font:400 19px var(--ui); }
+.ham .net{ opacity:0; transition:opacity .5s ease; }
+.ham [data-state~="graph"] .net{ opacity:1; }
+.ham .net polyline{ fill:none; stroke:var(--accent); stroke-width:2.5; stroke-dasharray:6 6; opacity:.7; }
+.ham .net circle{ fill:var(--bg); stroke:var(--accent); stroke-width:3; }
+.ham .trail{ fill:none; stroke:var(--gold); stroke-width:6; stroke-linejoin:round; stroke-linecap:round; opacity:.8; filter:drop-shadow(0 0 5px rgba(255,225,77,.7)); }
+.ham .dock{ filter:drop-shadow(0 0 5px rgba(255,154,61,.7)); }
+.ham .dock rect{ fill:rgba(255,154,61,.15); stroke:var(--orange); stroke-width:2.5; }
+.ham .dock path{ fill:var(--orange); }
+.ham .vac circle{ fill:var(--gold); }
+.ham .vac{ filter:drop-shadow(0 0 6px rgba(255,225,77,.9)); }
+.ham .vac .eye{ fill:var(--bg); }
+.ham .stuck{ fill:var(--magenta-ink); font:600 22px var(--ui); text-anchor:middle; opacity:0; transition:opacity .4s ease; }
+.ham .stuck.on{ opacity:1; }
+
 /* Verkkoteoria ja topologia: the metro as a map and as a line map */
 .metro{ padding:84px 110px 50px; gap:18px; }
 .metro figure{ margin:0; }
@@ -243,30 +307,97 @@ s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; he
 .metro-top p{ font-size:36px; }
 .metro > figure img{ width:100%; }
 
+.red{ color:var(--red); }
+
+/* Tekoälymallit ovat universaaleja: a Turing machine counting in binary */
+.tape .cell rect{ fill:rgba(0,229,255,.05); stroke:var(--accent); stroke-width:2; transition:fill .3s ease; }
+.tape .cell.w rect{ fill:rgba(255,225,77,.4); transition:none; }
+.tape .cell text{ fill:var(--ink); font:600 34px var(--ui); text-anchor:middle; dominant-baseline:central; }
+.tape .cells{ filter:var(--glow-cyan); }
+.tape .head path{ fill:rgba(255,225,77,.12); stroke:var(--gold); stroke-width:3; stroke-linejoin:round; }
+.tape .head text{ fill:var(--gold); font:700 24px var(--ui); text-anchor:middle; }
+.tape .head{ filter:drop-shadow(0 0 6px rgba(255,225,77,.6)); }
+.tape .lbl{ fill:var(--muted); font:400 22px var(--ui); text-anchor:middle; }
+.tape-col{ align-items:center; gap:10px; }
+.tape-col .viz.side{ height:400px; }
+.face.turing{ width:340px; }
+.face.turing img{ margin:0 auto; width:184px; height:230px; }
+.tape .num{ fill:var(--accent-ink); font:600 30px var(--ui); text-anchor:middle; }
+
+/* Punainen nappi and Häirikkö H: boxes, wires, lamps, the button */
+.rbtn text, .dgm text{ text-anchor:middle; }
+.rbtn .box, .dgm .box{ fill:rgba(0,229,255,.06); stroke:var(--accent); stroke-width:2.5; }
+.rbtn .big, .dgm .big{ fill:var(--accent-ink); font:700 30px var(--ui); }
+.rbtn .io, .dgm .io{ fill:var(--ink); font:italic 600 28px var(--ui); }
+.rbtn .wire, .dgm .wire{ fill:none; stroke:var(--accent); stroke-width:3; opacity:.8; }
+.rbtn .mach, .rbtn .checker, .dgm .dbody{ filter:var(--glow-cyan); }
+.rbtn .lt, .dgm .lt{ fill:var(--muted); font:400 22px var(--ui); text-anchor:start; }
+.lamp{ stroke-width:3; transition:fill .4s ease, filter .4s ease; }
+.lamp.g{ stroke:var(--green); fill:rgba(57,255,158,.08); }
+.lamp.r{ stroke:var(--red); fill:rgba(255,61,110,.08); }
+.redbtn .base{ fill:#3a0d1c; stroke:var(--red); stroke-width:2; }
+.redbtn .cap{ fill:var(--red); filter:drop-shadow(0 0 12px rgba(255,61,110,.75)); transition:transform .25s ease, filter .25s ease; }
+.redbtn .lbl{ fill:var(--muted); font:400 22px var(--ui); }
+.rbtn .checker{ opacity:0; transition:opacity .6s ease; }
+[data-state~="s"] .rbtn .checker{ opacity:1; }
+.rbtn .sight{ fill:none; stroke:var(--accent); stroke-width:2; stroke-dasharray:6 7; opacity:.6; }
+.rbtn .glass{ fill:none; stroke:var(--accent-ink); stroke-width:4; }
+/* S doesn't know yet: its lamps take turns */
+[data-state~="s"] .rbtn .lamp.g{ animation:lamp-g 1.6s ease-in-out infinite; }
+[data-state~="s"] .rbtn .lamp.r{ animation:lamp-r 1.6s ease-in-out infinite; }
+@keyframes lamp-g{ 0%, 100%{ fill:rgba(57,255,158,.08); } 25%{ fill:var(--green); } 50%{ fill:rgba(57,255,158,.08); } }
+@keyframes lamp-r{ 0%, 50%, 100%{ fill:rgba(255,61,110,.08); } 75%{ fill:var(--red); } }
+
+.dslide .stack p{ font-size:29px; }
+.dslide .stack{ gap:20px; }
+.dslide .viz.side{ width:700px; height:600px; }
+.dgm .dbody, .dgm .redbtn{ opacity:0; transition:opacity .6s ease; }
+[data-state~="d"] .dgm .dbody, [data-state~="d"] .dgm .redbtn{ opacity:1; }
+.dgm .dbox{ fill:rgba(255,61,242,.05); stroke:var(--magenta); stroke-width:3; }
+.dgm .dname{ fill:var(--magenta-ink); font:800 42px var(--display); }
+.dgm .arg{ fill:var(--ink); font:600 24px var(--ui); }
+.dgm .wl{ fill:var(--muted); font:400 20px var(--ui); }
+.dgm .ld, .dgm .lx{ transition:opacity .4s ease; }
+.dgm .ld{ opacity:0; }
+[data-state~="self"] .dgm .ld{ opacity:1; transition-delay:.9s; }
+[data-state~="self"] .dgm .lx{ opacity:0; transition-delay:.9s; }
+.dgm .paper{ transform:translate(22px, 440px); transition:transform 1s ease, opacity .5s ease; opacity:0; }
+.dgm .paper path{ fill:rgba(255,61,242,.12); stroke:var(--magenta); stroke-width:2.5; stroke-linejoin:round; }
+.dgm .paper text{ fill:var(--magenta-ink); font:italic 700 30px var(--ui); }
+.dgm .plbl{ fill:var(--magenta-ink); font:400 22px var(--ui); text-anchor:start; opacity:0; transition:opacity .5s ease; }
+[data-state~="d"] .dgm .paper, [data-state~="d"] .dgm .plbl{ opacity:1; }
+[data-state~="self"] .dgm .paper{ transform:translate(6px, 150px) scale(.8); }
+[data-state~="self"] .dgm .plbl{ opacity:0; }
+/* case 1: S says safe, so D presses */
+[data-state~="c1"] .dgm .lamp.g{ fill:var(--green); filter:drop-shadow(0 0 8px rgba(57,255,158,.9)); }
+[data-state~="c1"] .dgm .press{ stroke:var(--green); stroke-dasharray:10 8; animation:wire-run .6s linear infinite; opacity:1; }
+@keyframes wire-run{ to{ stroke-dashoffset:-18; } }
+.dgm .redbtn .cap{ transform-box:fill-box; transform-origin:center; }
+[data-state~="c1"] .dgm .redbtn .cap{ transform:scale(.86) translateY(6px); filter:drop-shadow(0 0 26px rgba(255,61,110,1)); transition-delay:.8s; }
+.dgm .pressed{ fill:var(--red); font:800 19px var(--display); letter-spacing:.06em; opacity:0; transition:opacity .3s ease; }
+[data-state~="c1"] .dgm .pressed{ opacity:1; transition-delay:1s; }
+/* case 2: S says unsafe, so D does nothing */
+[data-state~="c2"] .dgm .lamp.r{ fill:var(--red); filter:drop-shadow(0 0 8px rgba(255,61,110,.9)); }
+[data-state~="c2"] .dgm .idle{ stroke:var(--red); opacity:1; }
+[data-state~="c2"] .dgm .redbtn .cap{ fill:#5a1a2c; filter:none; }
+.dgm .stamp{ opacity:0; }
+.dgm .stamp rect{ fill:rgba(255,61,110,.1); stroke:var(--red); stroke-width:4; }
+.dgm .stamp text{ fill:var(--red); font:800 34px var(--display); letter-spacing:.1em; }
+[data-state~="c1"] .dgm .stamp, [data-state~="c2"] .dgm .stamp{ animation:stamp .4s ease 1.4s forwards; }
+@keyframes stamp{ from{ opacity:0; transform:translate(300px, 480px) rotate(-8deg) scale(1.6); } to{ opacity:1; transform:translate(300px, 480px) rotate(-8deg) scale(1); } }
+.dgm .stamp{ transform-box:view-box; }
+/* no S after all */
+[data-state~="none"] .dgm .box.s{ stroke:var(--muted); stroke-dasharray:8 8; fill:none; }
+[data-state~="none"] .dgm .sname, [data-state~="none"] .dgm .arg{ fill:var(--muted); }
+[data-state~="none"] .dgm .stamp{ animation:none; opacity:1; transform:translate(300px, 480px) rotate(-8deg); }
+
+
 /* a slide that is one big photo with a caption */
 .photo-slide{ padding:78px 60px 40px; gap:0; }
 .photo-slide figure{ margin:0; flex:1; min-height:0; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:10px; }
 .photo-slide img{ max-width:100%; min-height:0; flex:0 1 auto; object-fit:contain; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
 .photo-slide figcaption{ font-size:30px; text-align:center; line-height:1.25; }
 .photo-slide figcaption small{ display:block; font-size:24px; color:var(--muted); margin-top:1px; }
-
-/* Mitä ajattelu on: a line (logic) against a loop (enactivism) */
-.mind .card{ display:flex; flex-direction:column; gap:10px; }
-.mind .card p{ font-size:26px; }
-.mind .mag-card{ border-color:rgba(255,61,242,.5); }
-.mind .mag-card b{ color:var(--magenta-ink); }
-.mindpic{ width:100%; height:300px; }
-.mindpic .lines{ filter:var(--glow-cyan); }
-.mindpic text{ fill:var(--ink); font:600 22px var(--ui); text-anchor:middle; }
-.mindpic text.fm{ fill:var(--accent-ink); font:400 24px var(--ui); }
-.mindpic text.lbl{ fill:var(--muted); font-weight:400; }
-.mindpic .box, .mindpic .head, .mindpic .body, .mindpic .world{ fill:rgba(0,229,255,.06); stroke:var(--accent); stroke-width:2.5; }
-.mindpic .rule{ stroke:var(--accent); stroke-width:2; }
-.mindpic .arr, .mindpic .loop{ fill:none; stroke:var(--accent); stroke-width:3; }
-.mag-card .mindpic .lines{ filter:var(--glow-magenta); }
-.mag-card .mindpic .body, .mag-card .mindpic .world{ fill:rgba(255,61,242,.07); stroke:var(--magenta); }
-.mag-card .mindpic .loop{ stroke:var(--magenta); }
-.mindpic .pulse{ fill:var(--gold); filter:drop-shadow(0 0 6px rgba(255,225,77,.9)); }
 
 /* Kahden maailman välissä: a Venn diagram */
 .venn text{ text-anchor:middle; }
@@ -302,6 +433,8 @@ s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; he
 .maze .trail, .morph .trail{ fill:none; stroke:var(--gold); stroke-width:4; stroke-linejoin:round; stroke-linecap:round; opacity:.75; }
 .maze .door{ fill:none; stroke:var(--green); stroke-width:4; stroke-linecap:round; stroke-linejoin:round; filter:drop-shadow(0 0 5px rgba(57,255,158,.7)); }
 .maze .robot, .morph .robot{ fill:var(--gold); filter:drop-shadow(0 0 6px rgba(255,225,77,.9)); }
+.maze .trail.b{ stroke:var(--orange); }
+.maze .robot.b{ fill:var(--orange); filter:drop-shadow(0 0 6px rgba(255,154,61,.9)); }
 .maze .out{ fill:var(--gold); font:800 30px var(--display); letter-spacing:.08em; opacity:0; transition:opacity .4s ease; }
 .maze .out.on{ opacity:1; }
 .maze .forever{ fill:var(--magenta-ink); font:600 26px var(--ui); opacity:0; transition:opacity .4s ease; }
@@ -318,7 +451,7 @@ s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; he
 .morph-txt{ gap:70px; }
 
 /* Topology and AI */
-.book-cols{ grid-template-columns:auto 1fr; gap:50px; }
+.book-cols{ grid-template-columns:auto 1fr auto; gap:50px; }
 .bookcover{ height:600px; display:block; border-radius:var(--radius); box-shadow:0 0 26px rgba(0,229,255,.3); }
 .paper{ width:100%; max-width:620px; display:block; background:#fff; border-radius:var(--radius); padding:6px; }
 
@@ -352,6 +485,72 @@ s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; he
 .title-slide .who{ font-size:28px; color:var(--muted); margin-top:30px; }
 
 /* cards */
+/* TikTok video: a 9:16 player beside the text */
+.tt{ width:400px; height:711px; border-radius:var(--radius); overflow:hidden; border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); background:#000; }
+.tt iframe{ width:100%; height:100%; border:0; display:block; }
+.tiktok .cols{ grid-template-columns:1fr auto; }
+/* matikkapelit.fi: five games in a row */
+.games-row{ display:grid; grid-template-columns:repeat(5,1fr); gap:24px; }
+.games-row figure{ margin:0; }
+.games-row a{ display:block; color:inherit; text-decoration:none; }
+.games-row figure.f:not(.shown){ pointer-events:none; }
+.games-row a img{ transition:box-shadow .2s ease, transform .2s ease; }
+.games-row a:hover img{ box-shadow:0 0 30px rgba(0,229,255,.6); transform:translateY(-4px); }
+.games-row img{ width:100%; aspect-ratio:1; object-fit:cover; display:block; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
+.games-row figcaption{ margin-top:12px; font-size:26px; font-weight:600; color:var(--accent-ink); line-height:1.2; }
+.games-row figcaption small{ display:block; font-size:20px; font-weight:400; color:var(--muted); margin-top:3px; }
+/* Kysymyksiä: the question as a smaller title, and three photos */
+.slide h2.q{ font-size:40px; line-height:1.25; }
+.q-cols{ font-size:28px; gap:50px; }
+.q-cols .stack{ gap:14px; }
+.q-pics{ display:flex; gap:40px; justify-content:center; }
+.q-pics img{ height:420px; width:315px; object-fit:cover; display:block; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
+/* Liukuluvut: the formula, a binary number whose point can be dragged, the 0,1 + 0,2 sum */
+.fp-formula{ display:flex; gap:26px; align-items:flex-end; justify-content:center; }
+.fp-formula > div{ display:flex; flex-direction:column; align-items:center; gap:4px; }
+.fp-formula .sym{ font:600 96px var(--ui); line-height:1; }
+.fp-formula sup{ font-size:.55em; }
+.fp-formula small{ font-size:22px; color:var(--muted); }
+.fp-play{ display:flex; flex-direction:column; align-items:center; gap:22px; margin-top:10px; }
+.fp-line{ display:flex; align-items:center; gap:30px; }
+.fp-row{ display:flex; align-items:baseline; font:600 64px var(--ui); cursor:ew-resize; user-select:none; touch-action:none; padding:6px 18px; border:1px solid var(--line); border-radius:var(--radius); min-width:560px; justify-content:center; }
+.fp-row .d{ width:46px; text-align:center; }
+.fp-row .d.pad{ color:var(--muted); opacity:.55; }
+.fp-row .pt{ color:var(--accent-ink); text-shadow:var(--glow-text); width:22px; text-align:center; }
+.fp-btn{ font:600 40px var(--ui); width:64px; height:64px; border-radius:50%; border:1px solid rgba(0,229,255,.55); background:rgba(0,229,255,.06); color:var(--accent-ink); cursor:pointer; }
+.fp-btn:hover{ background:rgba(0,229,255,.16); }
+.fp-eq{ font-size:38px; }
+.fp-eq sup{ font-size:.6em; }
+.board-slide canvas{ position:absolute; left:50px; top:90px; width:1500px; height:750px; border:1px dashed var(--line); border-radius:var(--radius); background:rgba(255,255,255,.02); cursor:crosshair; touch-action:none; }
+.board-hint{ position:absolute; right:60px; bottom:22px; font-size:18px; color:var(--muted); opacity:.6; }
+.fp2{ gap:20px; }
+.fp2-cols{ display:grid; grid-template-columns:auto 1fr; gap:40px; align-items:start; }
+.fp2 .stack{ gap:14px; }
+.bits{ display:grid; grid-template-columns:150px 34px 12px 720px 90px; row-gap:2px; font:500 20px ui-monospace, "DejaVu Sans Mono", Consolas, monospace; align-items:baseline; }
+.bits .lab{ font:400 22px var(--ui); color:var(--muted); text-align:right; padding-right:12px; }
+.bits .ip{ text-align:right; }
+.bits .ex{ font-family:var(--ui); font-size:22px; padding-left:10px; }
+.bits sup{ font-size:.65em; }
+.bits .sum{ border-top:2px solid var(--muted); padding-top:2px; }
+.bits .drop{ font-style:normal; color:var(--muted); text-decoration:line-through; }
+.bits .mag{ font-weight:700; }
+.term{ border:1px solid rgba(0,229,255,.45); border-radius:var(--radius); background:#05050a; box-shadow:0 0 18px rgba(0,229,255,.18); overflow:hidden; }
+.term .tbar{ display:flex; gap:7px; align-items:center; padding:8px 12px; background:rgba(255,255,255,.06); font-size:17px; color:var(--muted); }
+.term .tbar i{ width:11px; height:11px; border-radius:50%; background:var(--line); }
+.term .tbar span{ margin-left:8px; }
+.term pre{ margin:0; padding:14px 18px; font:500 22px/1.5 ui-monospace, "DejaVu Sans Mono", Consolas, monospace; color:var(--ink); }
+.term .pr{ color:var(--muted); }
+.term .out{ color:var(--gold); }
+/* Robottihiiri: the toy on a white card */
+.mouse-pic{ margin:0; align-self:center; background:#fff; border-radius:var(--radius); padding:20px 40px; box-shadow:0 0 22px rgba(0,229,255,.25); }
+.mouse-pic img{ display:block; height:480px; }
+/* Konsertti-paralleeli: two photos side by side */
+.pair-pics{ gap:40px; align-items:start; }
+.pair-pics figure{ margin:0; display:flex; flex-direction:column; gap:12px; }
+.pair-pics img{ width:100%; height:440px; object-fit:cover; display:block; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
+.pair-pics figcaption{ font-size:30px; line-height:1.3; }
+.pair-pics figcaption b{ display:block; color:var(--accent-ink); font-weight:600; }
+.pair-pics figcaption small{ display:block; font-size:22px; color:var(--muted); }
 .cards{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }
 .cards.three{ grid-template-columns:repeat(3,1fr); }
 .cards.two{ grid-template-columns:repeat(2,1fr); }
@@ -487,197 +686,11 @@ body.idle{ cursor:none; }
     <li>MSc 2016 (WY) kognitiotieteestä: enaktivismi, mielen filosofia, </li>
     <li>Tutkimusta & luennointia Wienin, Helsingin ja Aalto-yliopistoissa 2012-2019</li>
     <li>Matemaattista robotiikkaa Oulun yliopistossa 2020-2026</li>
-    <li>Yritystoimintaa, konsultointia: nettikasinoiden matematiikkaa sekä matematiikan opettaminen <b>tekoälylle</b>, lukiolaisille ja muille. Manifold Solutions Oy, <span class="cyan">matikkapelit.fi</span>, TikTok <span class="cyan">@matikkapelit</span></li>
+    <li>Yritystoimintaa, konsultointia: nettikasinoiden matematiikkaa sekä matematiikan opettaminen <b>tekoälylle</b>, lukiolaisille ja muille. Manifold Solutions Oy, <span class="cyan">matikkapelit.fi</span>, TikTok <span class="cyan">@matikkapelit</span></li>, materiaalin kehittämistä asiakkaalle <span class="cyan">lääkisvalmennus.fi</span></li> <span class="muted">(lääkisvalmennuksen perustaja Sampo Tiensuu on myös Ressu)</span>
   </ul>
   <aside class="notes"><ul>
     <li>30 sekuntia. Tarkemmin osassa 9.</li>
   </ul></aside>
-</section>
-
-<section class="slide" data-part="1">
-  <h2>perusteiden perässä</h2>
-  <div class="cols tower-cols">
-    <!-- one picture per floor, cross-fading as the dot goes down (this column
-         is a .viz box too, so it gets the same state as the tower) -->
-    <div class="stack viz tower-pics" data-state="">
-      <figure class="book p0">
-        <div class="pics"><img class="cover" src="img/tiede-2000-1999-1.jpg" alt=""></div>
-        <figcaption><i>Tiede 2000</i> -lehti<small>Yläasteen kirjastosta löytyi...</small></figcaption>
-      </figure>
-      <figure class="book p1">
-        <div class="pics"><img class="cover" src="img/evolution-of-physics.jpg" alt=""><img class="photo bw" src="img/einstein-infeld.jpg" alt=""></div>
-        <figcaption>A. Einstein ja L. Infeld: <i>The Evolution of Physics (1938)</i><span class="suom">suom. <i>Fysiikan kehitys Newtonista kvanttiteoriaan</i>, 1962</span><small>Yleistajuinen kirja fysiikan läpimurroista 1900-luvun alussa</small></figcaption>
-      </figure>
-      <figure class="book p2">
-        <div class="pics"><img class="cover" src="img/knot-book.jpg" alt=""><img class="photo wide" src="img/kauffman.jpg" alt=""></div>
-        <figcaption>Suuri kiinnostuksenkohteeni: solmuteoria. Kuvassa Colin Adamsin kirja ja Luis Kauffman.</figcaption>
-      </figure>
-      <figure class="book p3">
-        <div class="pics"><img class="cover" src="img/dependence-logic.jpg" alt=""><img class="photo" src="img/vaananen.jpg" alt=""></div>
-        <figcaption>Jouko Väänänen
-          <ul class="facts">
-            <li>Helsingin logiikan ryhmän johtava hahmo viimeiset 30 vuotta</li>
-            <li>Riippuvuuslogiikan kehittäjä</li>
-            <li>Matematiikan perusteiden ja joukko-opin edelläkävijä Suomessa</li>
-            <li>Julkaisi yleistajuisen kirjan v. 2026 <i>Matematiikka – epätäydellisyyden valtakunta</i></li>
-          </ul></figcaption>
-      </figure>
-      <figure class="book p3b">
-        <div class="pics"><img class="cover" src="img/vaananen-kirja.jpg" alt=""><img class="photo" src="img/vaananen-julkistus.jpg" alt=""></div>
-        <figcaption><i>Matematiikka – epätäydellisyyden valtakunta</i><small>Suomen Tiedeseura 2026 · julkistamistilaisuus<br>Mats Gyllenberg (oik.)</small></figcaption>
-      </figure>
-      <figure class="book p4">
-        <div class="pics"><img class="photo tall" src="img/vadim-hutto.jpg" alt=""><img class="photo tall" src="img/vadim-noe.jpg" alt=""></div>
-        <figcaption>Daniel Hutto ja Alva Noë<small>Mielenfilosofian konferenssi Granadassa 2024</small></figcaption>
-      </figure>
-    </div>
-    <div class="steps">
-      <i class="f step" data-viz="f1 at1"></i>
-      <i class="f step" data-viz="f1 f2 at2"></i>
-      <i class="f step" data-viz="f1 f2 f3 at3"></i>
-      <i class="f step" data-viz="f1 f2 f3 at3 j2"></i>
-      <i class="f step" data-viz="f1 f2 f3 cold at3 j2"></i>
-      <i class="f step" data-viz="f1 f2 f3 cold at4"></i>
-    </div>
-    <!-- An upside-down pyramid: each floor is what the one above stands on.
-         The magenta dot (me) goes down a floor at a time, then out sideways. -->
-    <div class="viz tower-viz" data-state="">
-      <svg class="pane tower" viewBox="0 20 860 580" preserveAspectRatio="xMidYMid meet">
-        <g class="trail">
-          <line class="t1" pathLength="1" x1="685" y1="85" x2="625" y2="215"/>
-          <line class="t2" pathLength="1" x1="625" y1="215" x2="565" y2="345"/>
-          <line class="t3" pathLength="1" x1="565" y1="345" x2="505" y2="475"/>
-          <line class="t4" pathLength="1" x1="505" y1="475" x2="600" y2="475"/>
-        </g>
-        <g class="fl fl0">
-          <polygon points="0,30 680,30 630,140 50,140"/>
-          <text class="t" x="340" y="80">Maailmankaikkeus, tähtitiede</text><text class="s" x="340" y="116">Miten maailma toimii?</text>
-        </g>
-        <g class="fl fl1">
-          <polygon points="60,160 620,160 570,270 110,270"/>
-          <text class="t" x="340" y="210">Fysiikka</text><text class="s" x="340" y="246">Einstein &amp; Infeld</text>
-        </g>
-        <g class="fl fl2">
-          <polygon points="120,290 560,290 510,400 170,400"/>
-          <text class="t" x="340" y="340">Matematiikka</text><text class="s" x="340" y="376">fysiikan kieli</text>
-        </g>
-        <g class="fl fl3">
-          <polygon points="180,420 500,420 450,530 230,530"/>
-          <text class="t" x="340" y="470">Logiikka</text><text class="s" x="340" y="506">joukko-oppi · malliteoria</text>
-        </g>
-        <text class="abstract" x="340" y="580">Norsunluutorni</text>
-        <g class="cog">
-          <rect x="590" y="425" width="270" height="100" rx="6"/>
-          <text class="t" x="725" y="468">Kognitiotiede</text><text class="s" x="725" y="502">keho ja toiminta</text>
-        </g>
-        <circle class="me" r="14"/>
-      </svg>
-    </div>
-  </div>
-  <aside class="notes"><ul>
-    <li>16-vuotiaana Einstein &amp; Infeld: halusin ymmärtää, miten maailma toimii.</li>
-    <li>Fysiikan ymmärtämiseen tarvitaan matematiikkaa, matematiikan ymmärtämiseen logiikkaa: väitöskirja joukko-opista ja malliteoriasta.</li>
-    <li>Pohjalla tuntui liian abstraktilta. Sivuttain: kognitiotieteen maisteri.</li>
-    <li>Kuvat kerros kerrallaan: Tiede 2000 1/1999; Einstein ja Infeld (Lotte Jacobi, Princeton 1938, kirjaa kirjoitettaessa); Adams: The Knot Book ja Louis Kauffman; Väänänen: Dependence Logic, sitten hänen uusi kirjansa ja sen julkistus (2026); Alva Noë ja Daniel Hutto, Granada 2024.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="1">
-  <h2>Kognitivismi ja enaktivismi</h2>
-  <div class="cols even mind">
-    <div class="card f">
-      <b>Kognitivismi (kognitio on loogista)</b>
-      <p>Ajattelu on säännönmukaista symbolista loogista päättelyä, joka pohjautuu pään "sisällä" olevaan todellisuuden malliin.</p>
-      <!-- a straight line: sense → reason → act, a pulse runs along it -->
-      <svg class="mindpic" viewBox="0 0 560 300">
-        <g class="lines">
-          <rect class="box" x="10" y="115" width="120" height="70" rx="6"/>
-          <text x="70" y="157">havainto</text>
-          <rect class="head" x="175" y="40" width="210" height="220" rx="16"/>
-          <text class="fm" x="280" y="95">∀x (P(x) → Q(x))</text>
-          <text class="fm" x="280" y="135">P(a)</text>
-          <line class="rule" x1="225" y1="152" x2="335" y2="152"/>
-          <text class="fm" x="280" y="182">Q(a)</text>
-          <text class="lbl" x="280" y="236">päättely</text>
-          <rect class="box" x="430" y="115" width="120" height="70" rx="6"/>
-          <text x="490" y="157">toiminta</text>
-          <path class="arr" d="M130 150 H175 M385 150 H430"/>
-        </g>
-        <path id="mind-line" d="M70 150 H490" fill="none"/>
-        <circle class="pulse" r="8"><animateMotion dur="3s" repeatCount="indefinite"><mpath href="#mind-line"/></animateMotion></circle>
-      </svg>
-    </div>
-    <div class="card f mag-card">
-      <b>Enaktivismi (kognitio on dynaamista)</b>
-      <p>Ajattelua, havaitsemista ja toimintaa ei pysty erottamaan toisistaan. Keho, liike ja ympäristö muodostavat dynaamisen systeemin.</p>
-      <!-- a loop: the agent acts on the world, the world answers -->
-      <svg class="mindpic" viewBox="0 0 560 300">
-        <g class="lines">
-          <circle class="body" cx="120" cy="150" r="54"/>
-          <text x="120" y="157">keho</text>
-          <path class="world" d="M380 70 Q440 40 500 80 Q545 120 510 175 Q490 230 430 235 Q370 240 375 180 Q330 130 380 70 Z"/>
-          <text x="445" y="157">ympäristö</text>
-          <path class="loop" d="M160 112 Q280 20 385 92"/>
-          <path class="loop" d="M392 220 Q280 290 158 190"/>
-          <text class="lbl" x="275" y="52">liike</text>
-          <text class="lbl" x="275" y="282">aistimus</text>
-        </g>
-        <path id="mind-loop" d="M160 112 Q280 20 385 92 L392 220 Q280 290 158 190 Z" fill="none"/>
-        <circle class="pulse" r="8"><animateMotion dur="4s" repeatCount="indefinite"><mpath href="#mind-loop"/></animateMotion></circle>
-        <circle class="pulse" r="8"><animateMotion dur="4s" begin="-2s" repeatCount="indefinite"><mpath href="#mind-loop"/></animateMotion></circle>
-      </svg>
-    </div>
-  </div>
-  <aside class="notes"><ul>
-    <li>Klassinen kognitiotiede: mieli on tietokone, joka päättelee symboleilla. Logiikka on sen luonteva kieli.</li>
-    <li>Enaktivismi (Varela, Thompson, Rosch: <i>The Embodied Mind</i>, 1991): mieli syntyy kehon ja ympäristön vuorovaikutuksesta.</li>
-    <li>O'Regan &amp; Noë: näkeminen on sensorimotoristen kontingenssien hallintaa.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="1">
-  <h2>Robotiikka</h2>
-  <div class="viz venn-viz" data-state="">
-    <svg class="pane venn" viewBox="0 -30 1380 620" preserveAspectRatio="xMidYMid meet">
-      <defs><clipPath id="venn-l"><circle cx="560" cy="280" r="300"/></clipPath></defs>
-      <g class="vc vl"><circle cx="560" cy="280" r="300"/>
-        <text class="t" x="390" y="270">Matematiikka</text><text class="s" x="390" y="310">logiikka · joukko-oppi</text><text class="s" x="390" y="342">malliteoria</text></g>
-      <g class="vc vr"><circle cx="820" cy="280" r="300"/>
-        <text class="t" x="985" y="235">Enaktivistinen</text><text class="t" x="985" y="275">(kehollinen)</text><text class="t" x="985" y="315">kognitiotiede</text>
-        <text class="s" x="985" y="357">keho · liike · aistimus</text></g>
-      <g class="vx"><circle clip-path="url(#venn-l)" cx="820" cy="280" r="300"/>
-        <text class="t" x="690" y="270">Robotiikka</text><text class="s" x="690" y="310">Oulun yliopisto</text><text class="s" x="690" y="342">Steven LaVallen ryhmä</text></g>
-      <circle class="me" cx="690" cy="200" r="13"/>
-    </svg>
-  </div>
-  <i class="f step" data-viz="r"></i>
-  <p class="f small" data-viz="r x">Robotiikan inspiroimia matemaattisia malleja ja teorioita.</p>
-  <aside class="notes"><ul>
-    <li>Oulun yliopisto, Steven LaVallen ryhmä: robotin aistimukset ja liikkeet matemaattisena teoriana.</li>
-  </ul></aside>
-</section>
-
-<section class="slide photo-slide" data-part="1">
-  <figure>
-    <img src="img/pamosa-2026.jpg" alt="PaMoSA-konferenssin paneeli Oulussa 2026">
-    <figcaption>PaMoSA Oulu 2026<small>Philosophy and Mathematics of Situated Agency</small><small>Järjestäjät: Kalle Timperi, Vadim Weinstein ja Adrian Wieczorek</small><small>Kutsutut puhujat: D. Hutto, K. O'Regan, T. Froese, D. Kirsh, E. Del Dottore, S. M. LaValle</small></figcaption>
-  </figure>
-  <aside class="notes"><ul>
-    <li>Philosophy and Mathematics of Situated Agency, Oulu 22.–24.6.2026.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="1">
-  <h2>Tänä päivänä</h2>
-  <ul class="pts">
-    <li>Tekoälymallien kouluttaminen paremmiksi matematiikassa (konsulttina)</li>
-    <li>Matematiikan opetusta ja oppimateriaalin kehittämistä eri tasoilla (oma yritys & konsultointi)</li>
-    <li>Oma sivu: <span class="cyan">matikkapelit.fi</span></li>
-    <li>TikTok: <span class="cyan">@matikkapelit</span></li>
-    <li>Asiakas: <span class="cyan">lääkisvalmennus.fi</span> <span class="muted">(perustaja Sampo Tiensuu myös Ressu)</span></li>
-    <li>Edelleen aktiivinen tutkimuksessa, mutta lähinnä harrastuksena</li>
-    <li>Harkitsen robotiikkayrityksen perustamista</li>
-  </ul>
 </section>
 
 <!-- ════════════════════════ 2 · KÖNIGSBERG ════════════════════════ -->
@@ -689,15 +702,31 @@ body.idle{ cursor:none; }
 
 <section class="slide" data-part="2">
   <h2>Königsbergin sillat</h2>
-  <p>Voiko kaupungin läpi kävellä niin, että ylittää jokaisen sillan <span class="gold">tasan kerran</span>?</p>
-  <div class="demo">
-    <div class="tag">▶ DEMO</div>
-    <div class="what">Königsbergin kartta, seitsemän siltaa ja QR-koodi</div>
-    <div class="how">Oppilaat avaavat tehtävän omilla puhelimillaan ja yrittävät piirtää reitin sormella.</div>
+  <p>Löytyykö kaupungista kävelyreitti, joka ylittää jokaisen sillan <span class="gold">tasan kerran</span> ja palaa lähtöpaikkaansa?</p>
+  <!-- the next slide's first picture (the map, bridges in gold), with the river in cyan -->
+  <div class="viz kb-still">
+    <svg class="pane kb" viewBox="0 0 628 437" preserveAspectRatio="xMidYMid meet">
+      <defs><clipPath id="kb-still-clip"><rect width="628" height="437"/></clipPath></defs>
+      <image class="map" href="img/koenigsberg-merian.jpg" x="0" y="0" width="628" height="437"/>
+      <g class="river" clip-path="url(#kb-still-clip)">
+        <path d="M0 264 L178 268 L408 268"/>
+        <path d="M178 268 L214 189 L408 189 L408 268"/>
+        <path d="M408 189 Q470 200 628 190"/>
+        <path d="M408 268 C400 300 372 318 392 338 S470 356 628 336"/>
+      </g>
+      <g class="hl">
+        <ellipse cx="243.5" cy="188.7" rx="20" ry="7.5" transform="rotate(114 243.5 188.7)"/>
+        <ellipse cx="319.1" cy="189.2" rx="20" ry="8" transform="rotate(124 319.1 189.2)"/>
+        <ellipse cx="199.5" cy="269.3" rx="22" ry="8" transform="rotate(114 199.5 269.3)"/>
+        <ellipse cx="261.8" cy="268.9" rx="23" ry="8.5" transform="rotate(115 261.8 268.9)"/>
+        <ellipse cx="406.9" cy="236.5" rx="25" ry="9" transform="rotate(11 406.9 236.5)"/>
+        <ellipse cx="422.0" cy="194.5" rx="21" ry="8" transform="rotate(80 422 194.5)"/>
+        <ellipse cx="428.4" cy="351.0" rx="28" ry="10" transform="rotate(123 428.4 351)"/>
+      </g>
+    </svg>
   </div>
   <aside class="notes"><ul>
-    <li>Älä kerro mitään taustaa. Anna yrittää pari minuuttia.</li>
-    <li>Kierrä salissa: "Kuka on löytänyt? Mistä aloitit?"</li>
+    <li>Älä kerro mitään taustaa. Anna miettiä hetki: "Kuka uskoo, että onnistuu? Mistä aloittaisit?"</li>
   </ul></aside>
 </section>
 
@@ -788,7 +817,7 @@ body.idle{ cursor:none; }
   <aside class="notes"><ul>
     <li>Kartta: Merian-Erben 1652. Sillat korostettuina, sitten pelkkä joki ja sillat, sitten verkko: maa-alueet ovat solmuja, sillat särmiä.</li>
     <li>Saari: viisi siltaa. Kaksi paria (sisään–ulos), yksi jää yli.</li>
-    <li>Paikallinen tieto (yhden solmun aste) ratkaisee globaalin kysymyksen (koko kierros). Tähän palataan osassa 7.</li>
+    <li>Paikallinen tieto (yhden solmun aste) ratkaisee globaalin kysymyksen (koko kierros). Tähän palataan osassa 9.</li>
     <li>Verkkoteorian syntymä.</li>
   </ul></aside>
 </section>
@@ -822,7 +851,8 @@ body.idle{ cursor:none; }
       <ul class="pts">
         <li class="f" data-viz="trail1">"Talon" voi piirtää yhdellä vedolla: <span class="gold">Eulerin polku</span>.</li>
         <li class="f" data-viz="trail1 deg1">Parittomia solmuja on tasan kaksi. Polku alkaa toisesta ja päättyy toiseen.</li>
-        <li class="f" data-viz="cut deg3">Nyt verkossa on neljä paritonta solmua ⇒ <span class="mag">mahdotonta</span>.</li>
+        <li class="f" data-viz="cut deg3">Neljä paritonta solmua ⇒ <span class="mag">mahdotonta</span>.</li>
+        <li class="f" data-viz="cut deg3">Esimerkki matemaattisesta mahdottomuustodistuksesta.</li>
       </ul>
     </div>
     <!-- K4 + a roof. BL (60,320) BR (240,320) TL (60,140) TR (240,140), roof A (150,50) -->
@@ -857,13 +887,94 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
+<section class="slide dna" data-part="2">
+  <h2>DNA:n sekvensointi</h2>
+  <div class="cols">
+    <div class="stack">
+      <p>Sekvensointilaite ei lue genomia alusta loppuun, vaan <span class="gold">lyhyinä pätkinä</span>. Pätkät pitää koota oikeaan järjestykseen.</p>
+      <p class="f" data-viz="graph">Jokainen pätkä on särmä ensimmäisestä viimeiseen kirjaimeen (nukleotidiin): <span class="gold">ATG</span> on särmä AT → TG.</p>
+      <p class="f" data-viz="graph path">Genomi on <span class="gold">Eulerin polku</span>: jokainen pätkä käytetään tasan kerran.</p>
+      <p class="f" data-viz="graph path">Huom: tässä verkko on <span class="cyan">suunnattu</span>!</p>
+    </div>
+    <!-- the reads of TATGCATGA and their de Bruijn graph, built by the script (dnaSlide) -->
+    <div class="viz side"><svg class="pane dnag" viewBox="0 30 720 550" preserveAspectRatio="xMidYMid meet"></svg></div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Oikeat pätkät ovat 100–300 kirjainta pitkiä, ja niitä on miljoonia. Tässä 3 kirjainta.</li>
+    <li>Solmut ovat kahden kirjaimen jonoja. Pätkä ATG esiintyy kahdesti: toistot tekevät kokoamisesta vaikeaa, mutta Eulerin polku ratkaisee järjestyksen.</li>
+    <li>De Bruijnin verkko: Pevzner, Tang ja Waterman 2001. Nykyiset genomin kokoajat perustuvat tähän.</li>
+    <li>Aiemmin pätkät olivat solmuja, ja piti etsiä polku, joka käy jokaisessa solmussa kerran. Se on paljon vaikeampaa: seuraava dia.</li>
+  </ul></aside>
+</section>
+
+<section class="slide dodeca" data-part="2">
+  <div class="cols">
+    <div class="stack">
+      <h2>Hamiltonin polku</h2>
+      <p>Polku, joka käy jokaisessa <span class="gold">solmussa</span> tasan kerran. Jos se lopuksi palaa alkuun, se on <span class="gold">Hamiltonin kierros</span>.</p>
+      <p class="muted">Eulerin polussa jokainen särmä kuljetaan kerran, Hamiltonin polussa jokaisessa solmussa käydään kerran.</p>
+      <p class="f" data-viz="cyc">William Rowan Hamilton 1857: <span class="cyan">Icosian-peli</span>. Kierrä dodekaedrin kaikki 20 kärkeä.</p>
+    </div>
+    <!-- the dodecahedron flattened: outer pentagon, a ring of ten, inner pentagon (dodecaSlide) -->
+    <div class="viz side"><svg class="pane dodg" viewBox="-250 -250 500 500" preserveAspectRatio="xMidYMid meet"></svg></div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Icosian-pelin lauta on dodekaedri litistettynä tasoon: 20 kärkeä, 30 särmää, jokaisen kärjen aste 3. Hamilton myi pelin lelukauppiaalle 25 punnalla.</li>
+    <li>Dodekaedrissa kierros löytyy helposti kokeilemalla, mutta yleisessä verkossa kokeiltavia järjestyksiä on valtavasti: seuraava dia.</li>
+  </ul></aside>
+</section>
+
+<section class="slide ham" data-part="2">
+  <h2>Pölynimurirobotti</h2>
+  <div class="cols">
+    <div class="stack">
+      <p>Pölynimuri haluaa käydä jokaisessa huoneessa kerran.</p>
+      <p class="f" data-viz="graph">Huoneet ovat solmuja, ovet särmiä: etsitään <span class="gold">Hamiltonin polku</span>.</p>
+      <p class="f" data-viz="graph try">Keittiön kautta eteiseen: <span class="mag">jumissa</span>.</p>
+      <p class="f" data-viz="graph ham">Toinen järjestys onnistuu.</p>
+    </div>
+    <!-- a flat of seven rooms, built by the script (hamSlide) -->
+    <div class="viz side"><svg class="pane hamg" viewBox="-14 -14 668 488" preserveAspectRatio="xMidYMid meet"></svg></div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Latauspisteet (oranssit) ovat työhuoneessa ja vaatehuoneessa: imuri lähtee toisesta ja päättyy toiseen.</li>
+    <li>Työhuoneessa ja vaatehuoneessa on vain yksi ovi, joten polun on pakko alkaa toisesta ja päättyä toiseen. Tällaiset vihjeet auttavat, mutta yleistä nopeaa sääntöä ei tunneta.</li>
+  </ul></aside>
+</section>
+
+<section class="slide hamq" data-part="2">
+  <h2>Onko olemassa Hamiltonin polkua?</h2>
+  <div class="viz hq-viz" data-state="">
+  <div class="hq-pair">
+    <!-- Herschel's graph, 11 nodes: a Hamiltonian path exists (no cycle) -->
+    <svg class="hq" viewBox="-200 -200 400 400"><g class="lines"><line x1="127.3" y1="-127.3" x2="-127.3" y2="-127.3"/><line x1="127.3" y1="-127.3" x2="127.3" y2="127.3"/><line x1="127.3" y1="-127.3" x2="72.5" y2="-72.5"/><line x1="-127.3" y1="-127.3" x2="-127.3" y2="127.3"/><line x1="-127.3" y1="-127.3" x2="-30.6" y2="-93.3"/><line x1="-127.3" y1="-127.3" x2="-93.3" y2="-30.6"/><line x1="-127.3" y1="127.3" x2="127.3" y2="127.3"/><line x1="-127.3" y1="127.3" x2="-72.5" y2="72.5"/><line x1="127.3" y1="127.3" x2="30.6" y2="93.3"/><line x1="127.3" y1="127.3" x2="93.3" y2="30.6"/><line x1="72.5" y1="-72.5" x2="-30.6" y2="-93.3"/><line x1="72.5" y1="-72.5" x2="93.3" y2="30.6"/><line x1="-30.6" y1="-93.3" x2="0.0" y2="0.0"/><line x1="-93.3" y1="-30.6" x2="-72.5" y2="72.5"/><line x1="-93.3" y1="-30.6" x2="0.0" y2="0.0"/><line x1="-72.5" y1="72.5" x2="30.6" y2="93.3"/><line x1="30.6" y1="93.3" x2="0.0" y2="0.0"/><line x1="93.3" y1="30.6" x2="0.0" y2="0.0"/><circle cx="127.3" cy="-127.3" r="11"/><circle cx="-127.3" cy="-127.3" r="11"/><circle cx="-127.3" cy="127.3" r="11"/><circle cx="127.3" cy="127.3" r="11"/><circle cx="72.5" cy="-72.5" r="11"/><circle cx="-30.6" cy="-93.3" r="11"/><circle cx="-93.3" cy="-30.6" r="11"/><circle cx="-72.5" cy="72.5" r="11"/><circle cx="30.6" cy="93.3" r="11"/><circle cx="93.3" cy="30.6" r="11"/><circle cx="0.0" cy="0.0" r="11"/></g></svg>
+    <!-- the rhombic dodecahedron, 14 nodes: no Hamiltonian path -->
+    <svg class="hq" viewBox="-200 -200 400 400"><g class="lines"><line x1="39.8" y1="93.3" x2="127.3" y2="127.3"/><line x1="39.8" y1="93.3" x2="21.3" y2="26.7"/><line x1="39.8" y1="93.3" x2="-87.7" y2="93.1"/><line x1="-55.5" y1="49.6" x2="-21.2" y2="-26.7"/><line x1="-55.5" y1="49.6" x2="21.3" y2="26.7"/><line x1="-55.5" y1="49.6" x2="-87.7" y2="93.1"/><line x1="-127.3" y1="127.3" x2="127.3" y2="127.3"/><line x1="-127.3" y1="127.3" x2="-127.3" y2="-127.3"/><line x1="-127.3" y1="127.3" x2="-87.7" y2="93.1"/><line x1="-93.3" y1="-39.6" x2="-21.2" y2="-26.7"/><line x1="-93.3" y1="-39.6" x2="-127.3" y2="-127.3"/><line x1="-93.3" y1="-39.6" x2="-87.7" y2="93.1"/><line x1="93.3" y1="39.6" x2="127.3" y2="127.3"/><line x1="93.3" y1="39.6" x2="21.3" y2="26.7"/><line x1="93.3" y1="39.6" x2="87.7" y2="-93.2"/><line x1="55.5" y1="-49.8" x2="-21.2" y2="-26.7"/><line x1="55.5" y1="-49.8" x2="21.3" y2="26.7"/><line x1="55.5" y1="-49.8" x2="87.7" y2="-93.2"/><line x1="127.3" y1="-127.3" x2="127.3" y2="127.3"/><line x1="127.3" y1="-127.3" x2="-127.3" y2="-127.3"/><line x1="127.3" y1="-127.3" x2="87.7" y2="-93.2"/><line x1="-39.8" y1="-93.3" x2="-21.2" y2="-26.7"/><line x1="-39.8" y1="-93.3" x2="-127.3" y2="-127.3"/><line x1="-39.8" y1="-93.3" x2="87.7" y2="-93.2"/><circle cx="39.8" cy="93.3" r="11"/><circle cx="-55.5" cy="49.6" r="11"/><circle cx="-127.3" cy="127.3" r="11"/><circle cx="-93.3" cy="-39.6" r="11"/><circle cx="93.3" cy="39.6" r="11"/><circle cx="55.5" cy="-49.8" r="11"/><circle cx="127.3" cy="-127.3" r="11"/><circle cx="-39.8" cy="-93.3" r="11"/><circle cx="-21.2" cy="-26.7" r="11"/><circle cx="127.3" cy="127.3" r="11"/><circle cx="-127.3" cy="-127.3" r="11"/><circle cx="21.3" cy="26.7" r="11"/><circle cx="87.7" cy="-93.2" r="11"/><circle cx="-87.7" cy="93.1" r="11"/></g></svg>
+  </div>
+  </div>
+  <i class="f step" data-viz="go"></i>
+  <div class="f" data-viz="go">
+    <p>Eulerin polulle on helppo testi: laske asteet. Hamiltonin polulle <span class="mag">ei tunneta nopeaa menetelmää</span>.</p>
+    <p>Valmiin reitin <span class="gold">tarkistaminen</span> on helppoa. Onko sen <span class="gold">löytäminen</span> aina yhtä helppoa? Tämä on <span class="cyan">P = NP -ongelma</span>, avoin vuodesta 1971.</p>
+  </div>
+  <aside class="notes"><ul>
+    <li>Painalluksella vasemmalla piirtyy Hamiltonin polku. Oikealla yritetään yhä uudestaan eri solmuista: parhaimmillaan päästään 13 solmuun, ja yksi jää aina yli (magenta).</li>
+    <li>Vasen, Herschelin verkko, 11 solmua: polku on olemassa, kierrosta ei.</li>
+    <li>Oikea, rombidodekaedri, 14 solmua: polkua ei ole. Miksi? Väritä solmut kahdella värillä niin, että jokainen särmä yhdistää eri värit: 8 ja 6. Polku vuorottelee värejä, joten värien määrät voivat erota korkeintaan yhdellä.</li>
+    <li>Tässä löytyi oikotie, väritys. Yleisesti oikotietä ei tunneta.</li>
+    <li>P = NP: Cook 1971, Levin. Hamiltonin polku on NP-täydellinen, Karp 1972: jos sille löytyy nopea menetelmä, niin P = NP.</li>
+    <li>Yksi Clay-instituutin Millennium-ongelmista vuodelta 2000: miljoonan dollarin palkinto.</li>
+  </ul></aside>
+</section>
+
 <section class="slide metro" data-part="2">
   <h2>Verkkoteoria ja topologia</h2>
   <div class="metro-top">
-    <figure><img src="img/metro-kartta.jpg" alt="Helsingin metro kartalla"><figcaption>Kartta: etäisyydet ja muodot</figcaption></figure>
+    <figure><img src="img/metro-kartta.jpg" alt="Helsingin metro kartalla"><figcaption>Geometrinen</figcaption></figure>
     <p>Eulerin havainto synnytti <span class="cyan">verkkoteorian</span> ja loi myös perustan <span class="gold">topologialle</span>.</p>
   </div>
-  <figure class="f"><img src="img/metro-linjakartta.jpg" alt="Helsingin metron linjakartta"><figcaption>Linjakartta: vain se, mikä on yhteydessä mihinkin</figcaption></figure>
+  <figure class="f"><img src="img/metro-linjakartta.jpg" alt="Helsingin metron linjakartta"><figcaption>Topologinen</figcaption></figure>
+  <p>Esimerkki pyrähdyksestä matematiikassa.</p>
   <aside class="notes"><ul>
     <li>Sama metro kahdesti. Kartalla etäisyydet ja mutkat ovat oikein. Linjakartta heittää ne pois ja säilyttää vain järjestyksen ja haarautumisen Itäkeskuksessa: se on verkko.</li>
     <li>Matkustajalle linjakartta riittää: missä vaihdetaan, monesko asema.</li>
@@ -878,32 +989,43 @@ body.idle{ cursor:none; }
 
 <section class="slide" data-part="3">
   <h2>Robotti labyrintissa</h2>
-  <p>Sääntö: pidä <span class="gold">oikea käsi seinässä</span>.</p>
+  <p>Sääntö: seuraa seinää niin, että seinä pysyy aina oikealla puolellasi.</p>
   <!-- two copies of one maze (built by the script, mazeSlide); the second has
        one wall less, which leaves an island of walls in the middle -->
   <div class="viz maze-viz" data-state=""><svg class="pane maze" viewBox="0 0 1240 470" preserveAspectRatio="xMidYMid meet"></svg></div>
   <i class="f step" data-viz="run1"></i>
-  <i class="f step" data-viz="run1 run2"></i>
-  <p class="f" data-viz="run1 run2 isl">Oikealla seinät eivät ole yhtä kappaletta: keskellä on <span class="mag">saareke</span>, jota robotti kiertää ikuisesti.</p>
+  <i class="f step" data-viz="run1 run1b"></i>
+  <i class="f step" data-viz="run1 run1b run2"></i>
   <aside class="notes"><ul>
+    <li>Vasemmalla kaksi robottia: toinen (oranssi) lähtee eri kohdasta, ja sen reitti päätyy samalle tielle ulos.</li>
     <li>Sama labyrintti, sama lähtöpaikka, sama sääntö. Oikealta on poistettu yksi seinä (katkoviiva).</li>
     <li>Vasemmalla robotti pääsee aina ulos, lähti se mistä tahansa. Miksi?</li>
+    <li>Oikealla seinät eivät ole yhtä kappaletta: keskellä on saareke, jota robotti kiertää ikuisesti.</li>
   </ul></aside>
 </section>
 
 <section class="slide" data-part="3">
-  <h2>Topologia: matematiikkaa jatkuvaa muunnosta vaille</h2>
+  <h2>Topologisesti kiekko ja annulus</h2>
   <!-- the free space of both mazes, flowed smoothly into a disc and a ring (mazeMorph) -->
   <div class="viz morph-viz" data-state=""><svg class="pane morph" viewBox="0 0 1240 470" preserveAspectRatio="xMidYMid meet"></svg></div>
   <i class="f step" data-viz="morph"></i>
   <div class="cols even morph-txt">
     <p class="f small" data-viz="morph run">Kiekko, jonka reunassa on <span class="green">aukko</span>: reunaa kiertämällä tulee aina aukolle.</p>
-    <p class="f small" data-viz="morph run">Rengas: saarekkeen reuna on oma ympyränsä. Sitä kiertävä robotti ei koskaan pääse ulkoreunalle.</p>
+    <p class="f small" data-viz="morph run">Annulus: saarekkeen reuna on oma ympyränsä. Sitä kiertävä robotti ei koskaan pääse ulkoreunalle.</p>
   </div>
   <aside class="notes"><ul>
     <li>Labyrintin käytävät venytetään sileästi ympyräksi. Seinää seuraava robotti kulkee reunaa pitkin: reuna on yksi ympyrä, ja aukko on sillä.</li>
     <li>Oikeanpuoleinen on rengas: kaksi reunaympyrää. Topologia erottaa ne: kiekossa jokaisen silmukan voi kutistaa pisteeksi, renkaassa ei.</li>
     <li>Animaatio: reunakäyrän Fourier-kertoimia vaimennetaan (lämpöyhtälö), lopuksi ympyräksi.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="3">
+  <h2>Robottihiiri</h2>
+  <figure class="mouse-pic"><img src="img/robottihiiri.jpg" alt="Lelurobotti, läpinäkyvä hiiri, jolla on metallilankainen viiksi"></figure>
+  <p class="f">Viiksi tuntee seinän ja ohjaa hiirtä: <span class="gold">seinän seuraaminen</span> mekaanisesti.</p>
+  <aside class="notes"><ul>
+    <li>Sama sääntö kuin labyrintin robotilla, toteutettuna viiksellä ja moottorilla.</li>
   </ul></aside>
 </section>
 
@@ -916,6 +1038,7 @@ body.idle{ cursor:none; }
       <p class="f">Kysymys: milloin robotti <span class="gold">ei voi erottaa</span> kahta ympäristöä toisistaan?</p>
       <p class="f">Topologinen analyysi.</p>
     </div>
+    <figure class="face"><img src="img/lavalle.jpg" alt=""><figcaption>Steven M. LaValle<small>Oulun yliopisto</small></figcaption></figure>
   </div>
   <aside class="notes"><ul>
     <li>Kirjan toinen artikkeli on Stevenin ja minun.</li>
@@ -930,7 +1053,7 @@ body.idle{ cursor:none; }
        list of the covering spaces of S¹ ∨ S¹ -->
   <div class="viz cover-viz" data-state=""><svg class="pane cover" viewBox="0 0 1380 430" preserveAspectRatio="xMidYMid meet"></svg></div>
   <p class="f" data-viz="walk">Robotti tekee saman liikesarjan kaikissa neljässä.</p>
-  <p class="f" data-viz="walk">Se ei voi tietää, missä niistä se on. <span class="muted">Topologinen teoria tämän takana on ns. <span>peiteavaruuksien</span> teoria.</span></p>
+  <p class="f" data-viz="walk">Liikeradastaan robotti ei voi päätellä, missä näistä ympäristöistä se on. <span class="muted">Tämä on ns. peitekuvausteorian sovellus </span></p>
   <aside class="notes"><ul>
     <li>Robotti aistii vain risteykset (montako haaraa, mikä väri), ei pituuksia eikä voi jättää merkkejä.</li>
     <li>Puu on kahdeksikon universaali peite: siinä ei ole yhtään silmukkaa.</li>
@@ -938,158 +1061,146 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 4 · TULOS VAI KOKEMUS ════════════════════════ -->
+<!-- ════════════════════════ 4 · TEKOÄLYMALLIEN UNIVERSAALISUUS ════════════════════════ -->
 <section class="slide divider" data-part="4">
   <div class="num">04</div>
-  <h2>Tulos vai kokemus</h2>
-  <aside class="notes"><ul><li>5 min.</li></ul></aside>
+  <h2>Tekoälymallien universaalisuus</h2>
+  <aside class="notes"><ul><li>8 min.</li></ul></aside>
 </section>
 
 <section class="slide" data-part="4">
-  <h2>Matematiikka työkaluna</h2>
-  <div class="cards">
-    <div class="card f"><b>Lentokone</b>Aerodynamiikka: miten ilma virtaa siiven ympäri</div>
-    <div class="card f"><b>Epidemiat</b>Miten tauti leviää, ja mitä rajoitukset tekevät</div>
-    <div class="card f"><b>Pörssi</b>Kurssien ja riskien ennakointi</div>
-    <div class="card f"><b>Tomografia</b>Kuva kehon sisältä mittauksista. Helsinki on inversio-ongelmien huippua.</div>
+  <div class="cols">
+    <div class="stack">
+      <h2>Tekoälymallit ovat universaaleja</h2>
+      <p>Kielimalli, jolla on <span class="cyan">muisti</span> ja joka saa toistaa askeliaan, voi suorittaa <span class="gold">minkä tahansa tietokoneohjelman</span>.</p>
+      <p class="f">Se on siis yhtä vahva kuin Turingin kone. Siksi myös Turingin koneen rajoitukset koskevat myös kielimallia.</p>
+    </div>
+    <!-- a Turing machine counting in binary: the head reads, writes and moves (tapeSlide) -->
+    <div class="stack tape-col">
+      <div class="viz side tape-viz"><svg class="pane tape" viewBox="40 80 540 270" preserveAspectRatio="xMidYMid meet"></svg></div>
+      <figure class="face turing"><img src="img/turing.jpg" alt=""><figcaption>Alan Turing<small>On Computable Numbers, with an Application to the Entscheidungsproblem (1936) </small></figcaption></figure>
+    </div>
   </div>
-  <p class="f">Näissä kukaan ei tarvitse nautintoa tai uteliaisuutta. <span class="gold">Tarvitaan vastaus.</span></p>
   <aside class="notes"><ul>
-    <li>Soveltava matematiikka on tarkoitettu työkaluksi, ei esteettiseksi nautinnoksi.</li>
-    <li>Tomografia: Helsingin yliopiston inversio-ongelmien ryhmä (esim. Siltanen, Lassas).</li>
+    <li>Turing: "On Computable Numbers, with an Application to the Entscheidungsproblem", Proceedings of the London Mathematical Society, ilmestyi marras–joulukuussa 1936 (vuosikerta 1936–37). Kuva Princetonista samalta vuodelta.</li>
+    <li>Kuvassa Turingin kone laskee binäärilukuja: pää lukee merkin, kirjoittaa uuden ja siirtyy. Ei muuta.</li>
+    <li>Malli, jolla on muistilehtiö (esim. ulkoinen muisti tai pitkä ajatusketju), voi simuloida tällaisen koneen askel askeleelta: se on universaali (Turing-täydellinen).</li>
   </ul></aside>
 </section>
 
 <section class="slide" data-part="4">
   <div class="cols">
     <div class="stack">
-      <h2>Volterran kalat</h2>
-      <p>Adrianmeri, ensimmäinen maailmansota: kalastus väheni, ja saaliissa oli yhtäkkiä <span class="mag">enemmän petokaloja</span>. Miksi?</p>
+      <h2>Punainen nappi</h2>
+      <p class="small muted">Turingin pysähtymisongelma-argumentti (1937) adaptoituna tekoälymalleille</p>
+      <p>Agentti <b class="cyan">A</b> saa syötteen <b>x</b>. Pari (A, x) on <span class="green">turvallinen</span>, jos A ei koskaan paina punaista nappia syötteellä x.</p>
+      <p class="f" data-viz="s">Onko mahdollista suunnitella <span class="cyan">tarkastaja-agentti T</span>, joka kertoo aina oikein, onko (A, x) turvallinen yhdistelmä?</p>
+      <p class="f" data-viz="s">Tarkastaja-agentille syötetään pari (a, x), jossa a on agentin A koodi, ja T vastaa "turvallinen" tai "vaarallinen".</p>
     </div>
-    <figure class="face"><img src="img/volterra.jpg" alt=""><figcaption>Vito Volterra<small>1860–1940 · selitys 1926</small></figcaption></figure>
-  </div>
-  <div class="demo">
-    <div class="tag">▶ DEMO</div>
-    <div class="what">Saalis- ja petokalat heilahtelevat. Liukusäädin: kalastus.</div>
-    <div class="how">Kun kalastusta vähennetään, petokalojen osuus kasvaa.</div>
+    <div class="viz side rbtn-viz">
+      <svg class="pane rbtn" viewBox="0 0 640 520" preserveAspectRatio="xMidYMid meet">
+        <defs><marker id="ar-c" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+        <g class="mach">
+          <line class="wire" x1="20" y1="150" x2="120" y2="150" marker-end="url(#ar-c)"/>
+          <text class="io" x="60" y="132">x</text>
+          <rect class="box" x="125" y="95" width="190" height="110" rx="12"/>
+          <text class="big" x="220" y="160">agentti A</text>
+          <path class="wire" d="M315 150 H452"/>
+        </g>
+        <g class="redbtn" transform="translate(510 150)">
+          <rect class="base" x="-62" y="22" width="124" height="34" rx="8"/>
+          <circle class="cap" r="52"/>
+          <text class="lbl" y="92">punainen nappi</text>
+        </g>
+        <g class="checker">
+          <path class="sight" d="M165 340 L60 158 M220 330 L220 210"/>
+          <rect class="box s" x="120" y="330" width="200" height="120" rx="12"/>
+          <text class="big" x="186" y="400">T</text>
+          <g transform="translate(250 385)"><circle class="glass" r="20"/><line class="glass" x1="14" y1="14" x2="30" y2="30"/></g>
+          <circle class="lamp g" cx="370" cy="360" r="15"/><text class="lt" x="396" y="367">turvallinen</text>
+          <circle class="lamp r" cx="370" cy="420" r="15"/><text class="lt" x="396" y="427">vaarallinen</text>
+          <path class="wire" d="M320 360 H353 M320 420 H353"/>
+        </g>
+      </svg>
+    </div>
   </div>
   <aside class="notes"><ul>
-    <li>Biologi Umberto D'Ancona huomasi kalatorien tilastoista petokalojen osuuden kasvun ja kysyi appiukoltaan Volterralta. (D'Anconalle ei löytynyt vapaata kuvaa, siksi vain muistiinpanoissa.)</li>
-    <li>Lotkan–Volterran malli (Lotka keksi saman yhtälön itsenäisesti; ei myöskään vapaata kuvaa).</li>
-    <li>Tämä on hyötymatematiikkaa: kalastuksen säätely.</li>
+    <li>Agentti = ohjelma tai tekoälymalli. Punainen nappi = mikä tahansa teko, jota emme halua (vahinko, tietovuoto, …).</li>
+    <li>T katsoo agentin koodin ja syötteen ja vastaa aina: turvallinen tai vaarallinen. Kysymys: voiko sellainen T olla olemassa?</li>
   </ul></aside>
 </section>
 
-<section class="slide center" data-part="4">
-  <p class="big">Ennen tulokseen ei päässyt ymmärtämättä.</p>
-  <div class="pair"><div class="chip res">TULOS</div><div class="link"></div><div class="chip exp">KOKEMUS</div></div>
-  <p class="big f" data-slide-class="split">Tekoäly erottaa ne <span class="mag">ensimmäistä kertaa</span>.</p>
-  <p class="f muted">Nyt näkyy, teenkö jotain kokemuksen vai tuloksen takia.</p>
+<section class="slide dslide" data-part="4">
+  <div class="cols">
+    <div class="stack">
+      <h2>Häirikkö H</h2>
+      <p class="f" data-viz="d">Rakennetaan agentti <b class="mag">H</b>, joka kysyy T:ltä: jos T sanoo <span class="green">turvallinen</span>, H painaa nappia. Muuten H ei paina.</p>
+      <p class="f" data-viz="d self">H saa syötteeksi <span class="mag">oman koodinsa h</span>. Mitä T sanoo parista (h, h)?</p>
+      <p class="f" data-viz="d self c1">"Turvallinen" ⇒ H painaa ⇒ <span class="red">T oli väärässä</span>.</p>
+      <p class="f" data-viz="d self c2">"Vaarallinen" ⇒ H ei paina ⇒ <span class="red">T oli väärässä</span>.</p>
+      <p class="f" data-viz="d self c2 none">Täydellistä tarkastaja-agenttia T <span class="mag">ei ole</span>.</p>
+      <p class="f" data-viz="d self c2 none">⇒ Mikään tarkastaja-agentti ei voi taata <span class="gold">kaikkien</span> agenttien turvallisuutta.</p>
+      <p class="f" data-viz="d self c2 none">Tämä on <span class="cyan">teoreettinen</span> tulos. Käytännössä turvatarkastukset voivat toimia <span class="green">todella hyvin</span>.</p>
+    </div>
+    <div class="viz side d-viz">
+      <svg class="pane dgm" viewBox="0 0 700 560" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <marker id="ar-d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="4" markerHeight="4" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker>
+        </defs>
+        <g class="dbody">
+          <rect class="dbox" x="90" y="60" width="440" height="340" rx="16"/>
+          <text class="dname" x="118" y="108">H</text>
+          <path class="wire" d="M20 235 H110 M110 235 L150 205 M110 235 L150 265" />
+          <path class="wire" d="M150 205 H168 M150 265 H168" marker-end="url(#ar-d)"/>
+          <text class="io lx" x="74" y="222">x</text><text class="io ld" x="74" y="222">h</text>
+          <rect class="box s" x="172" y="160" width="170" height="150" rx="10"/>
+          <text class="big sname" x="257" y="218">T</text>
+          <text class="arg lx" x="257" y="270">T(x, x)</text><text class="arg ld" x="257" y="270">T(h, h)</text>
+          <path class="wire" d="M342 200 H363 M342 275 H363"/>
+          <circle class="lamp g" cx="380" cy="200" r="15"/><text class="lt" x="402" y="207">turvallinen</text>
+          <circle class="lamp r" cx="380" cy="275" r="15"/><text class="lt" x="402" y="282">vaarallinen</text>
+          <path class="wire press" d="M380 185 V112 H600 V184"/>
+          <text class="wl" x="500" y="100">paina</text>
+          <path class="wire idle" d="M380 290 V352 H418 M418 340 V364"/>
+          <text class="wl" x="428" y="358" style="text-anchor:start">ei mitään</text>
+        </g>
+        <g class="redbtn" transform="translate(600 235)">
+          <rect class="base" x="-52" y="18" width="104" height="30" rx="8"/>
+          <circle class="cap" r="44"/>
+          <text class="pressed" y="84">PAINETTU!</text>
+        </g>
+        <g class="paper">
+          <path d="M0 0 H38 L54 16 V70 H0 Z M38 0 V16 H54"/>
+          <text x="27" y="48">h</text>
+        </g>
+        <text class="plbl" x="88" y="486">H:n oma koodi</text>
+        <g class="stamp" transform="translate(300 480) rotate(-8)">
+          <rect x="-130" y="-30" width="260" height="60" rx="8"/>
+          <text y="12">RISTIRIITA</text>
+        </g>
+      </svg>
+    </div>
+  </div>
   <aside class="notes"><ul>
-    <li>Puhtaan ja soveltavan matematiikan ero on vanha, mutta nyt jako on selkeämpi ja dramaattisempi.</li>
-    <li>Ennen tulos ja kokemus olivat melko erottamattomia.</li>
+    <li>H on rakennettavissa vain, jos T on ohjelma: H kutsuu sitä kuin aliohjelmaa. Tämä on todistuksen ainoa oletus.</li>
+    <li>H ei viittaa itseensä: se vain saa syötteeksi oman koodinsa, ja T:ltä kysytään parista (h, h). (Suora itseviittaus vaatisi Kleenen rekursiolauseen; sitä ei tarvita.)</li>
+    <li>Turingin alkuperäisessä: jos pysähtymistarkastaja sanoo "pysähtyy", häirikkö jää ikuiseen silmukkaan, muuten se pysähtyy.</li>
+    <li>Tämä ei tarkoita, ettei mitään voisi tarkastaa: yksittäisiä agentteja voi todistaa turvallisiksi, ja tarkastaja-agentti saa vastata "en tiedä". Mahdotonta on tarkastaja-agentti, joka vastaa aina ja on aina oikeassa.</li>
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 5 · HISTORIA ════════════════════════ -->
+<!-- ════════════════════════ 5 · INHIMILLISYYS ════════════════════════ -->
 <section class="slide divider" data-part="5">
   <div class="num">05</div>
-  <h2>5000 vuotta ulkoistamista</h2>
-  <aside class="notes"><ul><li>5 min.</li></ul></aside>
-</section>
-
-<section class="slide" data-part="5">
-  <h2>Tieto lähtee päästä</h2>
-  <div class="timeline">
-    <div class="ev f"><b>n. 3000 eaa.</b>Maanviljely: jokainen saa erikoistua</div>
-    <div class="ev f"><b>suullinen</b>Perinne opetellaan ulkoa</div>
-    <div class="ev f"><b>kirjoitus</b>Ensin vähän tekstiä, sen rinnalla suullinen perinne</div>
-    <div class="ev f"><b>n. 1450</b>Kirjapaino</div>
-    <div class="ev f"><b>1990–</b>Internet, some, digimedia</div>
-    <div class="ev new f"><b>2020-luku</b>Tekoäly</div>
-  </div>
-  <p class="f">Yhä vähemmän ulkoa, yhä helpommin saatavilla.</p>
-  <aside class="notes"><ul>
-    <li>Kenenkään ei tarvinnut enää selviytyä yksin aavikolla.</li>
-    <li>Mitä enemmän kirjoitettiin ja opittiin lukemaan, sitä vähemmän muistettiin ulkoa, mutta sitä paremmin tieto oli saatavilla.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="5">
-  <h2>Suullinen perinne</h2>
-  <div class="cols">
-    <div class="cards two" style="align-self:center">
-      <div class="card f"><b>Kalevala</b>Runonlaulajat muistivat tuhansia säkeitä. Lönnrot kirjoitti ne muistiin: Kalevala 1835.</div>
-      <div class="card f"><b>Toora</b>Kirjoitetun Tooran rinnalla kulki suullinen perinne. Se kirjoitettiin muistiin vasta noin 200 jaa. (Mišna).</div>
-    </div>
-    <figure class="face"><img src="img/lonnrot.jpg" alt=""><figcaption>Elias Lönnrot<small>1802–1884</small></figcaption></figure>
-  </div>
-  <aside class="notes"><ul>
-    <li>Varalla: Vedat (lausuttiin ulkoa tuhansia vuosia), Homeros, Paalikaanon, druidit (Caesarin mukaan eivät kirjoittaneet oppejaan).</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="5">
-  <div class="cols">
-    <div class="stack">
-      <p class="muted small">Sokrates kertoo tarinan, jossa kuningas Thamus sanoo kirjoituksen keksijälle:</p>
-      <blockquote>Tämä keksintö tuottaa unohdusta oppijoiden sieluihin, koska he lakkaavat käyttämästä muistiaan. He luottavat ulkoisiin merkkeihin eivätkä muista itse.</blockquote>
-      <p class="cite">Platon, Faidros 275a, n. 370 eaa. (vapaa käännös)</p>
-      <p class="f mag">Sama huoli kuin nyt tekoälystä, 2400 vuotta sitten.</p>
-    </div>
-    <div class="faces sm">
-      <figure class="face"><img src="img/sokrates.jpg" alt=""><figcaption>Sokrates<small>n. 470–399 eaa.</small></figcaption></figure>
-      <figure class="face"><img src="img/platon.jpg" alt=""><figcaption>Platon<small>n. 428–348 eaa.</small></figcaption></figure>
-    </div>
-  </div>
-  <aside class="notes"><ul>
-    <li>Ironia: tiedämme tämän vain siksi, että Platon kirjoitti sen muistiin.</li>
-  </ul></aside>
-</section>
-
-<section class="slide center" data-part="5">
-  <p class="big">Isoäitini opetteli koulussa runoja ulkoa, monella kielellä.</p>
-  <p class="big cyan f">Montako puhelinnumeroa te osaatte ulkoa?</p>
-  <aside class="notes"><ul>
-    <li>Kädennosto: yksi, kaksi, enemmän?</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="5">
-  <h2>Kuinka paljon tietoa on päiden ulkopuolella?</h2>
-  <div class="demo">
-    <div class="tag">▶ DEMO</div>
-    <div class="what">Eksponenttikäyrä, joka zoomaa ulos</div>
-    <div class="how">3000 eaa.–1800 → –1900 → –2000 → –2026. Joka kerta käyrä näyttää samalta: "polvi" on aina nyt.</div>
-  </div>
-  <p class="f">Eksponenttifunktio näyttää samalta kaikilla zoomauksilla: e<sup>t+c</sup> = e<sup>c</sup>·e<sup>t</sup>. <span class="muted">Jokainen sukupolvi luulee elävänsä polvessa.</span></p>
-  <aside class="notes"><ul>
-    <li>Siksi väite ei voi nojata käyrän muotoon. Raja on laadullinen: seuraava dia.</li>
-  </ul></aside>
-</section>
-
-<section class="slide center" data-part="5">
-  <p class="big">Tähän asti kaikki saatavilla oleva tieto oli <span class="gold">jonkun ihmisen kirjoittamaa</span>.</p>
-  <p class="big mag f">Nyt ei enää.</p>
-  <p class="f muted small">Konekin on tuottanut matematiikkaa ennenkin, esim. neliväriteoreema 1976. Uutta on, että nyt kone tuottaa ideoita ja kieltä massoittain.</p>
-  <aside class="notes"><ul>
-    <li>Saatavilla voi olla täysin uutta informaatiota, jota kukaan ihminen ei ole ajatellut.</li>
-  </ul></aside>
-</section>
-
-<!-- ════════════════════════ 6 · INHIMILLISTÄ ════════════════════════ -->
-<section class="slide divider" data-part="6">
-  <div class="num">06</div>
-  <h2>Mikä matematiikassa on inhimillistä</h2>
+  <h2>Inhimillisyys matematiikassa</h2>
   <aside class="notes"><ul><li>7 min.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="6">
+<section class="slide" data-part="5">
   <div class="cols">
     <div class="stack">
-      <p class="big left">"Haluan ymmärtää tämän."</p>
-      <p class="f">Kukaan ei voi ymmärtää puolestani niin, että saisin samat kiksit.</p>
-      <p class="f muted">Kukaan ei voi katsoa auringonlaskua puolestani. Kukaan ei voi meditoida puolestani.</p>
+      <p class="big left">Ymmärryksen kokemus ja viehätys</p>
+      <p class="f">Kukaan ei voi saada ahaa-elämystä puolestani..</p>
     </div>
     <svg class="sun" viewBox="0 0 400 260" aria-hidden="true">
       <defs>
@@ -1120,52 +1231,422 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="6">
-  <h2>Konsertti ja konferenssi</h2>
-  <div class="cols even">
-    <div class="card"><b>Musiikki</b>Äänitteitä on voinut kuunnella kotona halvalla vuosikymmeniä. Livestriimissä kuva ja ääni ovat usein parempia.<br><br><span class="gold">Silti konsertit myydään loppuun.</span> Klassinen, pop, rock.</div>
-    <div class="card f"><b>Matematiikka</b>Paperit ja videot ovat kaikkien saatavilla.<br><br><span class="gold">Silti konferenssit ja seminaarit täyttyvät.</span> Koronan jälkeen kasvokkain tapaaminen oli erityisen haluttua.</div>
+<section class="slide" data-part="5">
+  <h2>Konsertti-paralleeli</h2>
+  <div class="cols even pair-pics">
+    <figure><img src="img/rso-musiikkitalo.jpg" alt="Radion sinfoniaorkesteri Musiikkitalossa"><figcaption><small>Radion sinfoniaorkesteri, Musiikkitalo 2023</small></figcaption></figure>
+    <figure><img src="img/pamosa-2026.jpg" alt="PaMoSA-konferenssin paneelikeskustelu"><figcaption><small>Paneelikeskustelu, PaMoSA Oulu 2026</small></figcaption></figure>
   </div>
   <p class="f">Asian ydin välittyy livenä paremmin. <span class="muted">Matematiikasta voi puhua samalla aallonpituudella kenen kanssa tahansa, mistä kulttuurista tahansa.</span></p>
   <aside class="notes"><ul>
+    <li>Musiikki: äänitteitä on voinut kuunnella kotona halvalla vuosikymmeniä, ja livestriimissä kuva ja ääni ovat usein parempia. Silti konsertit myydään loppuun: klassinen, pop, rock.</li>
+    <li>Matematiikka: paperit ja videot ovat kaikkien saatavilla. Silti konferenssit ja seminaarit täyttyvät. Koronan jälkeen kasvokkain tapaaminen oli erityisen haluttua.</li>
     <li>Ihmiset nauttivat sosiaalisesta vuorovaikutuksesta. Jostain syystä ytimen kommunikointi onnistuu livenä aina paremmin.</li>
     <li>Tähän palataan aivan lopussa.</li>
   </ul></aside>
 </section>
 
-<section class="slide" data-part="6">
+<section class="slide tiktok" data-part="5">
   <div class="cols">
     <div class="stack">
       <h2>Shakki</h2>
-      <p>1997 Deep Blue voitti Kasparovin. Nyt kone voittaa jokaisen ihmisen, ja sitä kutsutaan "moottoriksi". <span class="gold">Shakkia pelataan enemmän kuin koskaan.</span></p>
-      <ul class="pts tight small">
-        <li class="f">Ihminen pelaa ihmistä vastaan, yleisön edessä.</li>
-        <li class="f">Kukaan ei tarvitse parasta siirtoa. Arvo on pelaamisessa.</li>
-        <li class="f">Koneen pelit ovat usein tylsiä ja epäintuitiivisia.</li>
-      </ul>
-      <p class="f mag">Onko matematiikassa samoja piirteitä?</p>
+      <p>Tietokone on ollut ihmistä parempi shakissa jo melkein 30 vuoden ajan. Siitä huolimatta shakin suosio on kasvanut ihmisten keskuudessa. <br>
+	<span class="muted">FIDE-reitattuja pelaajia 323 k (2018) → 502 k (2025))</span></p>
+      <p class="small muted">TikTok @chess_esportswc</p>
     </div>
-    <figure class="face"><img src="img/kasparov.jpg" alt=""><figcaption>Garri Kasparov<small>s. 1963</small></figcaption></figure>
+    <!-- loaded when the slide opens, emptied when it closes (syncEmbeds) -->
+    <div class="tt"><iframe data-src="https://www.tiktok.com/player/v1/7580863604891716886?autoplay=0&amp;music_info=0&amp;description=0&amp;rel=0" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen title="TikTok-video"></iframe></div>
   </div>
   <aside class="notes"><ul>
-    <li>Luvut: FIDE-reitattuja pelaajia noin 323 000 (2018) → noin 502 000 (2025). Vanhempia lukuja ei voi verrata, koska reittauksen alaraja on muuttunut.</li>
-    <li>Chess.com noin 8,7 miljoonaa päivittäistä käyttäjää loppuvuonna 2025. Osin internetin, koronan ja Queen's Gambitin ansiota, mutta kukaan ei pelaa siksi, että ihminen olisi koneen veroinen.</li>
+    <li>Video 40 s: <a href="https://www.tiktok.com/@chess_esportswc/video/7580863604891716886">tiktok.com/@chess_esportswc</a>. Tarvitsee verkkoyhteyden.</li>
+    <li>Video on pysäytettynä, kunnes sitä klikkaa. Nuolinäppäimet palaavat esitykselle klikkauksen jälkeen.</li>
   </ul></aside>
 </section>
 
-<section class="slide" data-part="6">
+<section class="slide" data-part="5">
+  <div class="cols">
+    <div class="stack">
+      <blockquote>Usko tai älä, me nautitaan matematiikan tekemisestä.</blockquote>
+      <p class="cite">Jouko Väänänen</p>
+    </div>
+    <figure class="face"><img src="img/vaananen.jpg" alt=""></figure>
+  </div>
+</section>
+
+<section class="slide" data-part="5">
+  <div class="stack">
+    <blockquote>It would take away the fun of it.</blockquote>
+    <p class="cite">Miguel Moreno</p>
+  </div>
+  <aside class="notes"><ul>
+    <li>(Konteksti: mihin kysymykseen tämä oli vastaus?)</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="5">
   <h2>Ego ja kilpailu</h2>
   <ul class="pts">
-    <li>Päteminen, ego ja kilpailu ovat aina olleet iso osa matemaatikon motivaatiota.</li>
-    <li class="f">Ne eivät katoa. Ne muuttavat muotoaan.</li>
-    <li class="f">Tekoäly saavutti 2025 kultamitalin tason matematiikan olympialaisissa. Olympialaiset tarvitsevat huijauksenestoa, kuten shakkiturnaukset.</li>
+    <li>Kilpailu, ensimmäisenä oleminen ja henkilökohtainen lähestymistapa ovat perinteisesti olleet iso osa matemaatikon motivaatiota.</li>
+    <li class="f">Minkä muodon nämä saavat tulevaisuudessa?</li>
+    <li class="f">Tekoäly saavutti 2025 kultamitalin tason matematiikan olympialaisissa.</li>
   </ul>
   <aside class="notes"><ul>
-    <li>Ihmiset haluavat kuitenkin kilpailla ja pönkittää egoa.</li>
+    <li>.</li>
+  </ul></aside>
+</section>
+
+<!-- ════════════════════════ 6 · TULOS VAI KOKEMUS ════════════════════════ -->
+<section class="slide divider" data-part="6">
+  <div class="num">06</div>
+  <h2>Tulos vai kokemus</h2>
+  <aside class="notes"><ul><li>5 min.</li></ul></aside>
+</section>
+
+<section class="slide" data-part="6">
+  <h2>Matematiikka työkaluna</h2>
+  <div class="cards">
+    <div class="card f"><b>DNA-sekvensointi</b>Genomin rekonstruktion DNA-pätkistä</div>
+    <div class="card f"><b>Pölynimurirobotti</b>Tehtävänä kattaa kokonainen alue</div>
+    <div class="card f"><b>Sammutusdrooni</b>Robotti löytää tiensä ulos palavasta rakennuksessa, vaikka savu peittää näkyvyyden</div>
+    <div class="card f"><b>Lentokone</b>Aerodynamiikka: miten ilma virtaa siiven ympäri</div>
+    <div class="card f"><b>Epidemiat</b>Tautien leviäminen, rokotusten vaikutus</div>
+    <div class="card f"><b>Pörssi</b>Kurssien ja riskien ennakointi</div>
+    <div class="card f"><b>Tomografia</b>Kuvien ottaminen kehon sisältä.</div>
+  </div>
+  <p class="f"><span class="gold">Tarvitaan vastaus.</span></p>
+  <aside class="notes"><ul>
+    <li>Soveltava matematiikka on tarkoitettu työkaluksi, ei esteetiikaksi.</li>
+    <li>Tomografia: Helsingin yliopiston inversio-ongelmien ryhmä (esim. Siltanen, Lassas).</li>
+  </ul></aside>
+</section>
+
+
+<section class="slide center" data-part="6">
+  <p class="big">Perinteisesti nämä ovat olleet erottamattomia.</p>
+  <div class="pair"><div class="chip res">TULOS</div><div class="link"></div><div class="chip exp">KOKEMUS</div></div>
+  <p class="big f" data-slide-class="split">AI:n myötä joudutaan miettimään uudella tavalla, missä tämä raja menee.</p>
+  <aside class="notes"><ul>
+    <li>Puhtaan ja soveltavan matematiikan ero on vanha, mutta nyt jako on selkeämpi ja dramaattisempi.</li>
+    <li>Ennen tulos ja kokemus olivat melko erottamattomia.</li>
   </ul></aside>
 </section>
 
 <section class="slide" data-part="6">
+  <h2>matikkapelit.fi</h2>
+  <p>Itse olen innostunut matematiikan pedagogiikasta, johon tekoäly on antanut uudet mahdollisuudet:</p>
+  <div class="games-row">
+    <figure class="f"><a href="../../../../games/lukio/maa1-2/yhtalovaaka/" target="_blank" rel="noopener"><img src="img/peli-vaaka.jpg" alt=""><figcaption>Yhtälövaaka<small>yhtälö vaakana</small></figcaption></a></figure>
+    <figure class="f"><a href="../../../../games/lukio/maa1-2/yhtalosade/" target="_blank" rel="noopener"><img src="img/peli-hyokkays.jpg" alt=""><figcaption>Yhtälöhyökkäys<small>putoavat yhtälöt</small></figcaption></a></figure>
+    <figure class="f"><a href="../../../../games/lukio/maa5/yksikkoympyra/" target="_blank" rel="noopener"><img src="img/peli-ympyra.jpg" alt=""><figcaption>Yksikköympyrä<small>trigonometria</small></figcaption></a></figure>
+    <figure class="f"><a href="../../../../games/artsy_math/fractals/ifs_explorer/" target="_blank" rel="noopener"><img src="img/peli-ifs.jpg" alt=""><figcaption>IFS-fraktaalit<small>Matikkataiteilua</small></figcaption></a></figure>
+    <figure class="f"><a href="../../../../games/artsy_math/fourier/fourier_curve/" target="_blank" rel="noopener"><img src="img/peli-fourier.jpg" alt=""><figcaption>Fourier-käyrä<small>Matikkataiteilua</small></figcaption></a></figure>
+  </div>
+  <aside class="notes"><ul>
+    <li>Kaikki ilmaisia ja selaimessa, puhelin ensin. Demo tarvittaessa: matikkapelit.fi.</li>
+  </ul></aside>
+</section>
+
+<!-- ════════════════════════ 7 · MATH 2.0 ════════════════════════ -->
+<section class="slide divider" data-part="7">
+  <div class="num">07</div>
+  <h2>Maths 2.0</h2>
+  <aside class="notes"><ul><li>10 min: käytäntö 2, Tao 8.</li></ul></aside>
+</section>
+
+
+<section class="slide" data-part="7">
+  <div class="cols">
+    <div class="stack">
+      <h2>Terence Tao</h2>
+      <p>UCLA, Fieldsin mitali 2006. </p>
+      <p class="card" style="font-size:28px"><span class="cyan">"Why maths has a future even in the era of AI"</span><br><span class="muted">Nature, 29.10.2026</span></p>
+    </div>
+    <figure class="face"><img src="img/tao.jpg" alt=""><figcaption>Terence Tao<small>s. 1975</small></figcaption></figure>
+  </div>
+</section>
+
+<section class="slide" data-part="7">
+  <h2>Maths 2.0 Käytännössä</h2>
+  <div class="flow">
+    <div class="box f"><b>MALLI</b>ehdottaa todistusta</div>
+    <div class="arr f">→</div>
+    <div class="box f"><b>LEAN</b>tarkistaa sen askel askeleelta: ei aukkoja</div>
+    <div class="arr f">→</div>
+    <div class="box human f"><b>IHMINEN</b>yrittää ymmärtää</div>
+  </div>
+  <p class="f muted small">Tarkistimessakin voi olla virheitä (Lean on epätäydellinen, virheitä löytynyt 2026), ja tarkistetuksi voi päätyä hiukan eri lause kuin luultiin.</p>
+  <p class="f">Lean kertoo, että todistus on oikein, <span class="mag">mutta ei miksi.</span></p>
+  <aside class="notes"><ul>
+    <li>Lean on formaali todistustarkistin: todistus kirjoitetaan ohjelmointikielellä, ja kone tarkistaa jokaisen askeleen.</li>
+    <li>Yksikin virhe ytimessä riittää: ristiriidasta seuraa mitä tahansa.</li>
+  </ul></aside>
+</section>
+
+<section class="slide center" data-part="7">
+  <p class="big">"Todistusten niukkuus" on loppunut.</p>
+  <p class="f">Tekoälyn avulla on julkaistu todistuksia <span class="gold">satoihin</span> vanhoihin ongelmiin.</p>
+  <p class="f">6.10.2026 OpenAI julkaisi kerralla satoja ratkaisuja. <span class="mag">Sekotti pakkaa monissa tutkimusohjelmissa.</span></p>
+  <aside class="notes"><ul>
+    <li>Matemaatikoilta voi kulua kuukausia ymmärtää yksi tällainen todistus.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="7">
+  <h2>Ongelmat Taon mukaan</h2>
+  <ul class="pts">
+    <li class="f"><span class="gold">Todistusähky</span> (proof indigestion): tuloksia tulee nopeammin kuin ihmiset ehtivät sulattaa niitä. Ihmisten ymmärrys jää jälkeen.</li>
+    <li class="f">Epäselvästi kirjoitettuja todistuksia. Seuraavaan ongelmaan heti, kun todistus on juuri ja juuri esitettävissä.</li>
+    <li class="f">Ongelmien avoin jakaminen on uhattuna: pelätään, että kilpailija ehtii ensin tekoälyn kanssa. Nuoret tutkijat ovat oppineet juuri näitä ongelmia ratkomalla.</li>
+    <li class="f">Onko rikkailla yrityksillä nyt etulyöntiasema matematiikassa?</li>
+    <li class="f">Epäselvää, kuinka paljon mallit käyttävät aiempaa työtä ilman viittausta.</li>
+    <li class="f">Riski ulottuu matematiikan ulkopuolelle: tekoälyn malleja käytetään jo lainapäätöksissä ja rahoitusriskin mittaamisessa.</li>
+  </ul>
+  <aside class="notes"><ul>
+    <li>Tao ei sano, että matematiikan taso olisi laskenut. Hän sanoo, että ymmärrys jää jälkeen ja laatu kärsii.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="7">
+  <h2>Taon Maths 2.0</h2>
+  <div class="cards two">
+    <div class="card f"><b>Kannustimet uusiksi</b>Palkitaan prosessia ja oivalluksia, ei vain sitä, joka ratkaisee ensimmäisenä. Suuria kansainvälisiä yhteistöitä.</div>
+    <div class="card f"><b>Uusia tapoja, ei vain nopeampia</b>Miljoonien tehtävien aineistoja. Kymmeniä todistuksia samalle lauseelle: mitkä ideat ovat olennaisia?</div>
+    <div class="card f"><b>Avoimet mallit</b>Ala ei voi nojata yhtiöihin, joilla on kiire louhia ratkaisuja uusien mallien esittelyyn.</div>
+    <div class="card f"><b>Ihminen valvoo</b>Käyttöönotto ei saa ohittaa ihmisten kykyä ymmärtää ja valvoa. Ihmisen pitää aina voida ohittaa malli.</div>
+  </div>
+</section>
+
+<section class="slide" data-part="7">
+  <h2>Mihin tämä vie?</h2>
+  <div class="cols even">
+    <div class="card"><b>Tuloksen saaminen</b><span class="gold">Räjähtää</span>: nopeaa ja halpaa.</div>
+    <div class="card"><b>Sulattaminen ja ymmärtäminen</b><span class="mag">Yhä hidasta.</span></div>
+  </div>
+  <p class="f">Insentiivi ei ole enää "saada tulos", vaan ymmärtämisen ilo, yhteisö ja se, että haluamme olla <span class="cyan">kuljettajan paikalla</span>.</p>
+  <p class="f muted">Onko paine kuitenkin sitä kohti, että tekoäly pääsee ohjaajan paikalle?</p>
+</section>
+
+<section class="slide center" data-part="7">
+  <p class="big">Valvominen vaatii ymmärrystä.</p>
+  <p class="f" style="font-size:40px">Ymmärrys oli ennen keino saada tulos.</p>
+  <p class="f cyan" style="font-size:40px">Nyt se on keino johonkin muuhun -- hallita järjetselmää?</p>
+  <aside class="notes"><ul>
+    <li>Tässä inhimillinen arvo muuttuu taas hyödylliseksi, mutta eri syystä kuin ennen.</li>
+  </ul></aside>
+</section>
+
+<!-- ════════════════════════ 8 · KYSYMYKSIÄ ════════════════════════ -->
+<section class="slide divider" data-part="8">
+  <div class="num">08</div>
+  <h2>Kysymyksiä</h2>
+</section>
+
+<section class="slide" data-part="8">
+  <h2 class="q">Miten matemaattinen ongelma voidaan todistaa sellaiseksi, ettei sillä ole ratkaisua?</h2>
+  <ul class="pts">
+    <li class="f"><span class="gold">Eulerin kierros:</span> invariantti. Parittomat asteet tekevät kierroksesta mahdottoman.</li>
+    <li class="f"><span class="gold">Ratkeavuus Turingin koneella, siis tekoälyllä:</span> diagonaaliargumentti.</li>
+    <li class="f"><span class="gold">Logiikassa:</span> löydä kaksi mallia, joista toisessa väite on tosi ja toisessa epätosi.</li>
+    <li class="f"><span class="gold">Joukko-opissa:</span> pakotus ja sisäiset mallit.</li>
+  </ul>
+  <aside class="notes"><ul>
+    <li>Logiikan esimerkki: paralleeliaksiooma. Euklidinen ja hyperbolinen taso ovat kaksi mallia muille aksioomille, toisessa se on tosi ja toisessa epätosi. Siksi sitä ei voi todistaa muista.</li>
+    <li>Joukko-oppi: kontinuumihypoteesi. Gödel 1938: sisäinen malli L, jossa se on tosi. Cohen 1963: pakotus, malli jossa se on epätosi. Siis ZFC ei ratkaise sitä.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="8">
+  <h2 class="q">Eteneekö matematiikan tutkimus tasaisesti vai sykäyksittäin? Elämmekö nyt buumia vai suvantovaihetta?</h2>
+  <p class="f gold">Ehdottomasti molempia.</p>
+  <div class="cols even f q-cols">
+    <div class="stack">
+      <p><span class="cyan">Sykäyksiä:</span> kokonaan uusia aloja</p>
+      <ul class="pts tight">
+        <li>Verkkoteorian ja topologian synty, Euler 1736</li>
+        <li>Differentiaaligeometrian synty, Gauss 1827 ja Riemann 1854</li>
+        <li>Matemaattisen logiikan synty, Boole 1847 ja Frege 1879</li>
+        <li>Lebesguen integraali, 1902</li>
+        <li>jne.</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <p><span class="cyan">Tasaista:</span> alojen sisällä</p>
+      <p>Matematiikan aloja on AMS:n luokituksessa yli 60, ja jokaisella on oma kehityslinjansa.</p>
+    </div>
+  </div>
+  <p class="f">Tekoäly on toistaiseksi tuottanut, tietääkseni, vain <span class="gold">tasaista</span> kehitystä, ei <span class="mag">sykäyksiä</span>.</p>
+  <aside class="notes"><ul>
+    <li>AMS:n Mathematics Subject Classification 2020: 63 pääluokkaa.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="8">
+  <h2 class="q">Voiko kuka vain oppia millaista matematiikkaa tahansa, kunhan jaksaa nähdä vaivaa sen eteen?</h2>
+  <div class="q-pics">
+    <img src="img/q-pavlova.jpg" alt="Anna Pavlova">
+    <img src="img/q-carlsen.jpg" alt="Magnus Carlsen">
+    <img src="img/q-ali.jpg" alt="Muhammad Ali">
+    <img src="img/q-tao.jpg" alt="Terence Tao">
+  </div>
+  <aside class="notes"><ul>
+    <li>Kuvissa Anna Pavlova, Magnus Carlsen, Muhammad Ali ja Terence Tao.</li>
+  </ul></aside>
+</section>
+
+<section class="slide fp" data-part="8">
+  <h2 class="q">Osaatko selittää, miten liukulukulaskennan tarkkuusformaatit toimivat?</h2>
+  <div class="fp-formula">
+    <div><span class="sym mag">±</span><small>etumerkki</small></div>
+    <div><span class="sym gold">b</span><small>mantissa</small></div>
+    <div><span class="sym">·</span><small>&nbsp;</small></div>
+    <div><span class="sym">2<sup class="cyan">n</sup></span><small>eksponentti n</small></div>
+  </div>
+  <!-- the same digits, the point dragged to and fro: only n changes (fpSlide) -->
+  <div class="fp-play f">
+    <div class="fp-line">
+      <button class="fp-btn" data-d="-1" title="Pilkku vasemmalle">‹</button>
+      <div class="fp-row" title="Vedä pilkkua"></div>
+      <button class="fp-btn" data-d="1" title="Pilkku oikealle">›</button>
+    </div>
+    <div class="fp-eq"></div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Pilkkua voi vetää hiirellä tai siirtää nuolinapeilla ‹ ›. Numerot pysyvät samoina, vain eksponentti n muuttuu: siksi "liukuva" pilkku.</li>
+    <li>Tietokone tallentaa vain etumerkin, mantissan bitit ja eksponentin. float64: 1 + 52 + 11 bittiä, float32: 1 + 23 + 8, float16: 1 + 10 + 5. Tekoälymalleissa käytetään yhä lyhyempiä: bfloat16, fp8, jopa 4 bittiä.</li>
+  </ul></aside>
+</section>
+
+<section class="slide board-slide" data-part="8">
+  <!-- a chalkboard: draw with the mouse or a pen tablet, Ctrl+Z takes the last line away (boardSlide) -->
+  <canvas class="board" width="3000" height="1500"></canvas>
+  <p class="board-hint">Ctrl+Z peruuttaa</p>
+  <aside class="notes"><ul><li>Liitutaulu: piirrä hiirellä tai piirtopöydällä. Ctrl+Z poistaa viimeisen viivan. Viivat säilyvät, vaikka dialta lähtee välillä pois.</li></ul></aside>
+</section>
+
+<section class="slide fp2" data-part="8">
+  <h2 class="q">0,1 + 0,2 = ?</h2>
+  <p class="small">Binäärinä 0,1 = 0,000110011001100…₂: jakso 0011 toistuu loputtomiin. float64 pyöristää mantissan <span class="gold">52 bittiin</span>.</p>
+  <div class="fp2-cols">
+    <div class="stack">
+    <div class="bits">
+      <span class="lab">0,1 ≈</span><span class="ip">1</span><span class="cm">,</span><span class="fr">1001100110011001100110011001100110011001100110011010</span><span class="ex">· 2<sup>−4</sup></span>
+      <span class="lab">0,2 ≈</span><span class="ip">1</span><span class="cm">,</span><span class="fr">1001100110011001100110011001100110011001100110011010</span><span class="ex">· 2<sup>−3</sup></span>
+      <span class="lab">0,3 ≈</span><span class="ip">1</span><span class="cm">,</span><span class="fr">0011001100110011001100110011001100110011001100110011</span><span class="ex">· 2<sup>−2</sup></span>
+    </div>
+    <div class="bits f">
+      <span class="lab">0,1 =</span><span class="ip">0</span><span class="cm">,</span><span class="fr">11001100110011001100110011001100110011001100110011010</span><span class="ex">· 2<sup>−3</sup></span>
+      <span class="lab">+ 0,2 =</span><span class="ip">1</span><span class="cm">,</span><span class="fr">10011001100110011001100110011001100110011001100110100</span><span class="ex">· 2<sup>−3</sup></span>
+      <span class="lab sum">=</span><span class="ip sum">10</span><span class="cm sum">,</span><span class="fr sum">01100110011001100110011001100110011001100110011001110</span><span class="ex sum">· 2<sup>−3</sup></span>
+      <span class="lab">=</span><span class="ip">1</span><span class="cm">,</span><span class="fr">0011001100110011001100110011001100110011001100110011<i class="drop">10</i></span><span class="ex">· 2<sup>−2</sup></span>
+    </div>
+    <div class="bits f">
+      <span class="lab">pyöristys ≈</span><span class="ip">1</span><span class="cm">,</span><span class="fr">0011001100110011001100110011001100110011001100110<b class="mag">100</b></span><span class="ex">· 2<sup>−2</sup></span>
+      <span class="lab">0,3 ≈</span><span class="ip">1</span><span class="cm">,</span><span class="fr">0011001100110011001100110011001100110011001100110<b class="mag">011</b></span><span class="ex">· 2<sup>−2</sup></span>
+    </div>
+    </div>
+    <div class="term f">
+      <div class="tbar"><i></i><i></i><i></i><span>python3</span></div>
+<pre><span class="pr">&gt;&gt;&gt;</span> 0.1 + 0.2
+<span class="out">0.30000000000000004</span>
+<span class="pr">&gt;&gt;&gt;</span> 0.1 + 0.2 == 0.3
+<span class="out">False</span>
+<span class="pr">&gt;&gt;&gt;</span> 10**17*(0.1+0.2-0.3)
+<span class="out">5.551115123125783</span></pre>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Ensin luvut samaan eksponenttiin: 0,1 siirtyy yhden askeleen, 2⁻⁴ → 2⁻³. Summa normalisoidaan muotoon 1,… · 2⁻², ja kaksi viimeistä bittiä 10 eivät mahdu: tasan puolivälissä pyöristetään parilliseen, eli ylöspäin.</li>
+    <li>Tulos eroaa 0,3:n lähimmästä liukuluvusta viimeisissä biteissä: 0.30000000000000004 ≠ 0.3.</li>
+    <li>Python 3.14 -tulkin todellinen tuloste.</li>
+  </ul></aside>
+</section>
+
+<!-- ════════════════════════ 9 · MUUTA (siistitään myöhemmin) ════════════════════════ -->
+<section class="slide divider" data-part="9">
+  <h2>5000 vuotta ulkoistamista</h2>
+  <aside class="notes"><ul><li>5 min.</li></ul></aside>
+</section>
+
+<section class="slide" data-part="9">
+  <h2>Tieto lähtee päästä</h2>
+  <div class="timeline">
+    <div class="ev f"><b>n. 3000 eaa.</b>Maanviljely: jokainen saa erikoistua</div>
+    <div class="ev f"><b>suullinen</b>Perinne opetellaan ulkoa</div>
+    <div class="ev f"><b>kirjoitus</b>Ensin vähän tekstiä, sen rinnalla suullinen perinne</div>
+    <div class="ev f"><b>n. 1450</b>Kirjapaino</div>
+    <div class="ev f"><b>1990–</b>Internet, some, digimedia</div>
+    <div class="ev new f"><b>2020-luku</b>Tekoäly</div>
+  </div>
+  <p class="f">Yhä vähemmän ulkoa, yhä helpommin saatavilla.</p>
+  <aside class="notes"><ul>
+    <li>Kenenkään ei tarvinnut enää selviytyä yksin aavikolla.</li>
+    <li>Mitä enemmän kirjoitettiin ja opittiin lukemaan, sitä vähemmän muistettiin ulkoa, mutta sitä paremmin tieto oli saatavilla.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="9">
+  <h2>Suullinen perinne</h2>
+  <div class="cols">
+    <div class="cards two" style="align-self:center">
+      <div class="card f"><b>Kalevala</b>Runonlaulajat muistivat tuhansia säkeitä. Lönnrot kirjoitti ne muistiin: Kalevala 1835.</div>
+      <div class="card f"><b>Toora</b>Kirjoitetun Tooran rinnalla kulki suullinen perinne. Se kirjoitettiin muistiin vasta noin 200 jaa. (Mišna).</div>
+    </div>
+    <figure class="face"><img src="img/lonnrot.jpg" alt=""><figcaption>Elias Lönnrot<small>1802–1884</small></figcaption></figure>
+  </div>
+  <aside class="notes"><ul>
+    <li>Varalla: Vedat (lausuttiin ulkoa tuhansia vuosia), Homeros, Paalikaanon, druidit (Caesarin mukaan eivät kirjoittaneet oppejaan).</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="9">
+  <div class="cols">
+    <div class="stack">
+      <p class="muted small">Sokrates kertoo tarinan, jossa kuningas Thamus sanoo kirjoituksen keksijälle:</p>
+      <blockquote>Tämä keksintö tuottaa unohdusta oppijoiden sieluihin, koska he lakkaavat käyttämästä muistiaan. He luottavat ulkoisiin merkkeihin eivätkä muista itse.</blockquote>
+      <p class="cite">Platon, Faidros 275a, n. 370 eaa. (vapaa käännös)</p>
+      <p class="f mag">Sama huoli kuin nyt tekoälystä, 2400 vuotta sitten.</p>
+    </div>
+    <div class="faces sm">
+      <figure class="face"><img src="img/sokrates.jpg" alt=""><figcaption>Sokrates<small>n. 470–399 eaa.</small></figcaption></figure>
+      <figure class="face"><img src="img/platon.jpg" alt=""><figcaption>Platon<small>n. 428–348 eaa.</small></figcaption></figure>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Ironia: tiedämme tämän vain siksi, että Platon kirjoitti sen muistiin.</li>
+  </ul></aside>
+</section>
+
+<section class="slide center" data-part="9">
+  <p class="big">Isoäitini opetteli koulussa runoja ulkoa, monella kielellä.</p>
+  <p class="big cyan f">Montako puhelinnumeroa te osaatte ulkoa?</p>
+  <aside class="notes"><ul>
+    <li>Kädennosto: yksi, kaksi, enemmän?</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="9">
+  <h2>Kuinka paljon tietoa on päiden ulkopuolella?</h2>
+  <div class="demo">
+    <div class="tag">▶ DEMO</div>
+    <div class="what">Eksponenttikäyrä, joka zoomaa ulos</div>
+    <div class="how">3000 eaa.–1800 → –1900 → –2000 → –2026. Joka kerta käyrä näyttää samalta: "polvi" on aina nyt.</div>
+  </div>
+  <p class="f">Eksponenttifunktio näyttää samalta kaikilla zoomauksilla: e<sup>t+c</sup> = e<sup>c</sup>·e<sup>t</sup>. <span class="muted">Jokainen sukupolvi luulee elävänsä polvessa.</span></p>
+  <aside class="notes"><ul>
+    <li>Siksi väite ei voi nojata käyrän muotoon. Raja on laadullinen: seuraava dia.</li>
+  </ul></aside>
+</section>
+
+<section class="slide center" data-part="9">
+  <p class="big">Tähän asti kaikki saatavilla oleva tieto oli <span class="gold">jonkun ihmisen kirjoittamaa</span>.</p>
+  <p class="big mag f">Nyt ei enää.</p>
+  <p class="f muted small">Konekin on tuottanut matematiikkaa ennenkin, esim. neliväriteoreema 1976. Uutta on, että nyt kone tuottaa ideoita ja kieltä massoittain.</p>
+  <aside class="notes"><ul>
+    <li>Saatavilla voi olla täysin uutta informaatiota, jota kukaan ihminen ei ole ajatellut.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="9">
   <h2>Kuka maksaa matemaatikolle?</h2>
   <p>Shakista ei ole koskaan maksettu siksi, että se olisi hyödyllistä. Ammattilaisille maksavat <span class="gold">katsojat</span>.</p>
   <p class="f">Kiinnostaako valtioita ja yrityksiä enää maksaa matemaatikoille? Millä insentiivillä?</p>
@@ -1180,15 +1661,13 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<!-- ════════════════════════ 7 · PAIKALLINEN → GLOBAALI ════════════════════════ -->
-<section class="slide divider" data-part="7">
-  <div class="num">07</div>
+<section class="slide divider" data-part="9">
   <h2>Paikallinen sääntö, globaali rakenne</h2>
   <p class="sub">Kokeillaan, miltä matematiikka tuntuu.</p>
   <aside class="notes"><ul><li>13 min: elämäpeli 3, Hopfield 6, grid cellit ja kenno 4.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <div class="cols">
     <div class="stack">
       <h2>Elämäpeli</h2>
@@ -1211,7 +1690,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <div class="demo">
     <div class="tag">▶ DEMO</div>
     <div class="what">Elämäpeli: vilkkuja, liitäjä, liitäjätykki</div>
@@ -1226,7 +1705,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <div class="cols">
     <div class="stack">
       <h2>Hopfieldin verkko</h2>
@@ -1248,7 +1727,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <div class="demo">
     <div class="tag">▶ DEMO</div>
     <div class="what">Hopfieldin verkko: piirrä, tallenna, sotke, muista</div>
@@ -1260,7 +1739,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <div class="cols">
     <div class="stack">
       <h2>Kuusikulmiot aivoissa</h2>
@@ -1280,7 +1759,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <div class="demo">
     <div class="tag">▶ DEMO</div>
     <div class="what">Kuusikulmiohila syntyy silmien edessä</div>
@@ -1295,7 +1774,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="7">
+<section class="slide" data-part="9">
   <div class="cols">
     <div class="stack">
       <h2>Mehiläiskenno</h2>
@@ -1311,101 +1790,12 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide center" data-part="7">
+<section class="slide center" data-part="9">
   <p class="big">Nykyiset kielimallit ovat Hopfieldin verkkojen kaukaisia jälkeläisiä.</p>
   <p class="big cyan f">Mitä ne tekevät nyt matematiikalle?</p>
 </section>
 
-<!-- ════════════════════════ 8 · MATH 2.0 ════════════════════════ -->
-<section class="slide divider" data-part="8">
-  <div class="num">08</div>
-  <h2>Math 2.0</h2>
-  <aside class="notes"><ul><li>10 min: käytäntö 2, Tao 8.</li></ul></aside>
-</section>
-
-<section class="slide" data-part="8">
-  <h2>Miten se toimii käytännössä</h2>
-  <div class="flow">
-    <div class="box f"><b>MALLI</b>ehdottaa todistusta</div>
-    <div class="arr f">→</div>
-    <div class="box f"><b>LEAN</b>tarkistaa sen askel askeleelta: ei aukkoja</div>
-    <div class="arr f">→</div>
-    <div class="box human f"><b>IHMINEN</b>yrittää ymmärtää</div>
-  </div>
-  <p class="f muted small">Tarkistimessakin voi olla virheitä (Leanin ytimestä löytyi niitä 2026), ja tarkistetuksi voi päätyä hiukan eri lause kuin luultiin.</p>
-  <p class="f">Lean kertoo, että todistus on oikein. <span class="mag">Se ei kerro, miksi.</span></p>
-  <aside class="notes"><ul>
-    <li>Lean on formaali todistustarkistin: todistus kirjoitetaan ohjelmointikielellä, ja kone tarkistaa jokaisen askeleen.</li>
-    <li>Yksikin virhe ytimessä riittää: ristiriidasta seuraa mitä tahansa.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="8">
-  <div class="cols">
-    <div class="stack">
-      <h2>Terence Tao</h2>
-      <p>UCLA, Fieldsin mitali 2006. Yksi aikamme tunnetuimmista matemaatikoista, ja käyttää itse tekoälyä tutkimuksessaan.</p>
-      <p class="card" style="font-size:28px"><span class="cyan">"Why maths has a future even in the era of AI"</span><br><span class="muted">Nature, 29.10.2026</span></p>
-    </div>
-    <figure class="face"><img src="img/tao.jpg" alt=""><figcaption>Terence Tao<small>s. 1975</small></figcaption></figure>
-  </div>
-</section>
-
-<section class="slide center" data-part="8">
-  <p class="big">"Todistusten niukkuus" on loppunut.</p>
-  <p class="f">Tekoälyn avulla on julkaistu todistuksia <span class="gold">satoihin</span> vanhoihin ongelmiin.</p>
-  <p class="f">6.10.2026 OpenAI julkaisi kerralla satoja ratkaisuja. <span class="mag">Lukemattomat tutkimusohjelmat sekosivat yhdessä yössä.</span></p>
-  <aside class="notes"><ul>
-    <li>Matemaatikoilta voi kulua kuukausia ymmärtää yksi tällainen todistus.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="8">
-  <h2>Ongelmat Taon mukaan</h2>
-  <ul class="pts">
-    <li class="f"><span class="gold">Todistusähky</span> (proof indigestion): tuloksia tulee nopeammin kuin ihmiset ehtivät sulattaa niitä. Ihmisten ymmärrys jää jälkeen.</li>
-    <li class="f">Epäselvästi kirjoitettuja todistuksia. Seuraavaan ongelmaan heti, kun todistus on juuri ja juuri esitettävissä.</li>
-    <li class="f">Ongelmien avoin jakaminen on uhattuna: pelätään, että kilpailija ehtii ensin tekoälyn kanssa. Nuoret tutkijat ovat oppineet juuri näitä ongelmia ratkomalla.</li>
-    <li class="f">Epäselvää, kuinka paljon mallit käyttävät aiempaa työtä ilman viittausta.</li>
-    <li class="f">Riski ulottuu matematiikan ulkopuolelle: tekoälyn malleja käytetään jo lainapäätöksissä ja rahoitusriskin mittaamisessa.</li>
-  </ul>
-  <aside class="notes"><ul>
-    <li>Tao ei sano, että matematiikan taso olisi laskenut. Hän sanoo, että ymmärrys jää jälkeen ja laatu kärsii.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="8">
-  <h2>Taon Maths 2.0</h2>
-  <div class="cards two">
-    <div class="card f"><b>Kannustimet uusiksi</b>Palkitaan prosessia ja oivalluksia, ei vain sitä, joka ratkaisee ensimmäisenä. Suuria kansainvälisiä yhteistöitä.</div>
-    <div class="card f"><b>Uusia tapoja, ei vain nopeampia</b>Miljoonien tehtävien aineistoja. Kymmeniä todistuksia samalle lauseelle: mitkä ideat ovat olennaisia?</div>
-    <div class="card f"><b>Avoimet mallit</b>Ala ei voi nojata yhtiöihin, joilla on kiire louhia ratkaisuja uusien mallien esittelyyn.</div>
-    <div class="card f"><b>Ihminen valvoo</b>Käyttöönotto ei saa ohittaa ihmisten kykyä ymmärtää ja valvoa. Ihmisen pitää aina voida ohittaa malli.</div>
-  </div>
-</section>
-
-<section class="slide" data-part="8">
-  <h2>Mihin tämä vie</h2>
-  <div class="cols even">
-    <div class="card"><b>Tuloksen saaminen</b><span class="gold">Räjähtää</span>: nopeaa ja halpaa.</div>
-    <div class="card"><b>Sulattaminen ja ymmärtäminen</b><span class="mag">Yhä hidasta.</span></div>
-  </div>
-  <p class="f">Insentiivi ei ole enää "saada tulos", vaan ymmärtämisen ilo, yhteisö, ego ja se, että haluamme olla <span class="cyan">kuljettajan paikalla</span>.</p>
-  <p class="f muted">Paine vie silti kohti sitä, että ohjat ovat tekoälyllä.</p>
-</section>
-
-<section class="slide center" data-part="8">
-  <p class="big">Valvominen vaatii ymmärrystä.</p>
-  <p class="f" style="font-size:40px">Ymmärrys oli ennen keino saada tulos.</p>
-  <p class="f cyan" style="font-size:40px">Nyt se on keino pitää ohjat.</p>
-  <aside class="notes"><ul>
-    <li>Tässä inhimillinen arvo muuttuu taas hyödylliseksi, mutta eri syystä kuin ennen.</li>
-  </ul></aside>
-</section>
-
-<!-- ════════════════════════ 9 · OMA TARINA ════════════════════════ -->
 <section class="slide divider" data-part="9">
-  <div class="num">09</div>
   <h2>Oma tarina</h2>
   <aside class="notes"><ul><li>4 min.</li></ul></aside>
 </section>
@@ -1442,18 +1832,150 @@ body.idle{ cursor:none; }
   <p class="f muted">Tekoäly teki työkalun. Ymmärryksen haluan jakaa itse.</p>
 </section>
 
-<!-- ════════════════════════ 10 · LOPETUS ════════════════════════ -->
-<section class="slide center" data-part="10">
+<section class="slide center" data-part="9">
   <p class="big">Siksi olen täällä enkä lähettänyt videota.</p>
   <p class="f" style="font-size:40px">Ensimmäisessä tehtävässä kukaan ei tarvinnut vastausta, <span class="gold">mutta jokainen halusi sen itse</span>.</p>
   <p class="f big cyan">Keskustellaan.</p>
   <aside class="notes"><ul>
-    <li>Paluu konserttiin (osa 6) ja Königsbergiin (osa 2).</li>
+    <li>Paluu konserttiin (osa 5) ja Königsbergiin (osa 2).</li>
     <li>Keskustelukysymyksiä varalle: kuka maksaa matemaatikolle? Mikä teille on matematiikassa tulosta, mikä kokemusta?</li>
   </ul></aside>
 </section>
 
-<section class="slide" data-part="10">
+<section class="slide" data-part="9">
+  <h2>perusteiden perässä</h2>
+  <div class="cols tower-cols">
+    <!-- one picture per floor, cross-fading as the dot goes down (this column
+         is a .viz box too, so it gets the same state as the tower) -->
+    <div class="stack viz tower-pics" data-state="">
+      <figure class="book p0">
+        <div class="pics"><img class="cover" src="img/tiede-2000-1999-1.jpg" alt=""></div>
+        <figcaption><i>Tiede 2000</i> -lehti<small>Yläasteen kirjastosta löytyi...</small></figcaption>
+      </figure>
+      <figure class="book p1">
+        <div class="pics"><img class="cover" src="img/evolution-of-physics.jpg" alt=""><img class="photo bw" src="img/einstein-infeld.jpg" alt=""></div>
+        <figcaption>A. Einstein ja L. Infeld: <i>The Evolution of Physics (1938)</i><span class="suom">suom. <i>Fysiikan kehitys Newtonista kvanttiteoriaan</i>, 1962</span><small>Yleistajuinen kirja fysiikan läpimurroista 1900-luvun alussa</small></figcaption>
+      </figure>
+      <figure class="book p2">
+        <div class="pics"><img class="cover" src="img/knot-book.jpg" alt=""><img class="photo wide" src="img/kauffman.jpg" alt=""></div>
+        <figcaption>Suuri kiinnostuksenkohteeni: solmuteoria. Kuvassa Colin Adamsin kirja ja Luis Kauffman.</figcaption>
+      </figure>
+      <figure class="book p3">
+        <div class="pics"><img class="cover" src="img/dependence-logic.jpg" alt=""><img class="photo" src="img/vaananen.jpg" alt=""></div>
+        <figcaption>Jouko Väänänen
+          <ul class="facts">
+            <li>Helsingin logiikan ryhmän johtava hahmo viimeiset 30 vuotta</li>
+            <li>Riippuvuuslogiikan kehittäjä</li>
+            <li>Matematiikan perusteiden ja joukko-opin edelläkävijä Suomessa</li>
+            <li>Julkaisi yleistajuisen kirjan v. 2026 <i>Matematiikka – epätäydellisyyden valtakunta</i></li>
+          </ul></figcaption>
+      </figure>
+      <figure class="book p3b">
+        <div class="pics"><img class="cover" src="img/vaananen-kirja.jpg" alt=""><img class="photo" src="img/vaananen-julkistus.jpg" alt=""></div>
+        <figcaption><i>Matematiikka – epätäydellisyyden valtakunta</i><small>Suomen Tiedeseura 2026 · julkistamistilaisuus<br>Mats Gyllenberg (oik.)</small></figcaption>
+      </figure>
+      <figure class="book p4">
+        <div class="pics"><img class="photo tall" src="img/vadim-hutto.jpg" alt=""><img class="photo tall" src="img/vadim-noe.jpg" alt=""></div>
+        <figcaption>Daniel Hutto ja Alva Noë<small>Mielenfilosofian konferenssi Granadassa 2024</small></figcaption>
+      </figure>
+    </div>
+    <div class="steps">
+      <i class="f step" data-viz="f1 at1"></i>
+      <i class="f step" data-viz="f1 f2 at2"></i>
+      <i class="f step" data-viz="f1 f2 f3 at3"></i>
+      <i class="f step" data-viz="f1 f2 f3 at3 j2"></i>
+      <i class="f step" data-viz="f1 f2 f3 cold at3 j2"></i>
+      <i class="f step" data-viz="f1 f2 f3 cold at4"></i>
+    </div>
+    <!-- An upside-down pyramid: each floor is what the one above stands on.
+         The magenta dot (me) goes down a floor at a time, then out sideways. -->
+    <div class="viz tower-viz" data-state="">
+      <svg class="pane tower" viewBox="0 20 860 580" preserveAspectRatio="xMidYMid meet">
+        <g class="trail">
+          <line class="t1" pathLength="1" x1="685" y1="85" x2="625" y2="215"/>
+          <line class="t2" pathLength="1" x1="625" y1="215" x2="565" y2="345"/>
+          <line class="t3" pathLength="1" x1="565" y1="345" x2="505" y2="475"/>
+          <line class="t4" pathLength="1" x1="505" y1="475" x2="600" y2="475"/>
+        </g>
+        <g class="fl fl0">
+          <polygon points="0,30 680,30 630,140 50,140"/>
+          <text class="t" x="340" y="80">Maailmankaikkeus, tähtitiede</text><text class="s" x="340" y="116">Miten maailma toimii?</text>
+        </g>
+        <g class="fl fl1">
+          <polygon points="60,160 620,160 570,270 110,270"/>
+          <text class="t" x="340" y="210">Fysiikka</text><text class="s" x="340" y="246">Einstein &amp; Infeld</text>
+        </g>
+        <g class="fl fl2">
+          <polygon points="120,290 560,290 510,400 170,400"/>
+          <text class="t" x="340" y="340">Matematiikka</text><text class="s" x="340" y="376">fysiikan kieli</text>
+        </g>
+        <g class="fl fl3">
+          <polygon points="180,420 500,420 450,530 230,530"/>
+          <text class="t" x="340" y="470">Logiikka</text><text class="s" x="340" y="506">joukko-oppi · malliteoria</text>
+        </g>
+        <text class="abstract" x="340" y="580">Norsunluutorni</text>
+        <g class="cog">
+          <rect x="590" y="425" width="270" height="100" rx="6"/>
+          <text class="t" x="725" y="468">Kognitiotiede</text><text class="s" x="725" y="502">keho ja toiminta</text>
+        </g>
+        <circle class="me" r="14"/>
+      </svg>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>16-vuotiaana Einstein &amp; Infeld: halusin ymmärtää, miten maailma toimii.</li>
+    <li>Fysiikan ymmärtämiseen tarvitaan matematiikkaa, matematiikan ymmärtämiseen logiikkaa: väitöskirja joukko-opista ja malliteoriasta.</li>
+    <li>Pohjalla tuntui liian abstraktilta. Sivuttain: kognitiotieteen maisteri.</li>
+    <li>Kuvat kerros kerrallaan: Tiede 2000 1/1999; Einstein ja Infeld (Lotte Jacobi, Princeton 1938, kirjaa kirjoitettaessa); Adams: The Knot Book ja Louis Kauffman; Väänänen: Dependence Logic, sitten hänen uusi kirjansa ja sen julkistus (2026); Alva Noë ja Daniel Hutto, Granada 2024.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="9">
+  <h2>Robotiikka</h2>
+  <div class="viz venn-viz" data-state="">
+    <svg class="pane venn" viewBox="0 -30 1380 620" preserveAspectRatio="xMidYMid meet">
+      <defs><clipPath id="venn-l"><circle cx="560" cy="280" r="300"/></clipPath></defs>
+      <g class="vc vl"><circle cx="560" cy="280" r="300"/>
+        <text class="t" x="390" y="270">Matematiikka</text><text class="s" x="390" y="310">logiikka · joukko-oppi</text><text class="s" x="390" y="342">malliteoria</text></g>
+      <g class="vc vr"><circle cx="820" cy="280" r="300"/>
+        <text class="t" x="985" y="235">Enaktivistinen</text><text class="t" x="985" y="275">(kehollinen)</text><text class="t" x="985" y="315">kognitiotiede</text>
+        <text class="s" x="985" y="357">keho · liike · aistimus</text></g>
+      <g class="vx"><circle clip-path="url(#venn-l)" cx="820" cy="280" r="300"/>
+        <text class="t" x="690" y="270">Robotiikka</text><text class="s" x="690" y="310">Oulun yliopisto</text><text class="s" x="690" y="342">Steven LaVallen ryhmä</text></g>
+      <circle class="me" cx="690" cy="200" r="13"/>
+    </svg>
+  </div>
+  <i class="f step" data-viz="r"></i>
+  <p class="f small" data-viz="r x">Robotiikan inspiroimia matemaattisia malleja ja teorioita.</p>
+  <aside class="notes"><ul>
+    <li>Oulun yliopisto, Steven LaVallen ryhmä: robotin aistimukset ja liikkeet matemaattisena teoriana.</li>
+  </ul></aside>
+</section>
+
+<section class="slide photo-slide" data-part="9">
+  <figure>
+    <img src="img/pamosa-2026.jpg" alt="PaMoSA-konferenssin paneeli Oulussa 2026">
+    <figcaption>PaMoSA Oulu 2026<small>Philosophy and Mathematics of Situated Agency</small><small>Järjestäjät: Kalle Timperi, Vadim Weinstein ja Adrian Wieczorek</small><small>Kutsutut puhujat: D. Hutto, K. O'Regan, T. Froese, D. Kirsh, E. Del Dottore, S. M. LaValle</small></figcaption>
+  </figure>
+  <aside class="notes"><ul>
+    <li>Philosophy and Mathematics of Situated Agency, Oulu 22.–24.6.2026.</li>
+  </ul></aside>
+</section>
+
+<section class="slide" data-part="9">
+  <h2>Tänä päivänä</h2>
+  <ul class="pts">
+    <li>Tekoälymallien kouluttaminen paremmiksi matematiikassa (konsulttina)</li>
+    <li>Matematiikan opetusta ja oppimateriaalin kehittämistä eri tasoilla (oma yritys & konsultointi)</li>
+    <li>Oma sivu: <span class="cyan">matikkapelit.fi</span></li>
+    <li>TikTok: <span class="cyan">@matikkapelit</span></li>
+    <li>Asiakas: <span class="cyan">lääkisvalmennus.fi</span> <span class="muted">(perustaja Sampo Tiensuu myös Ressu)</span></li>
+    <li>Edelleen aktiivinen tutkimuksessa, mutta lähinnä harrastuksena</li>
+    <li>Harkitsen robotiikkayrityksen perustamista</li>
+  </ul>
+</section>
+
+<section class="slide" data-part="9">
   <h2 style="font-size:36px">Kuvat</h2>
   <ul class="credits">
     <li>Leonhard Euler: Jakob Emanuel Handmann, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Leonhard_Euler_-_Jakob_Emanuel_Handmann_(Kunstmuseum_Basel).jpg">Wikimedia Commons</a></li>
@@ -1475,6 +1997,13 @@ body.idle{ cursor:none; }
     <li>Königsbergin kartta: Merian-Erben 1652, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Image-Koenigsberg,_Map_by_Merian-Erben_1652.jpg">Wikimedia Commons</a></li>
     <li>Albert Einstein ja Leopold Infeld: Lotte Jacobi, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Alberteinsteinbi0000cath_0058.jpg">Wikimedia Commons</a></li>
     <li>Louis H. Kauffman: Gallusgallus, CC BY-SA 3.0, <a href="https://commons.wikimedia.org/wiki/File:Louis_H._Kauffman,_Oct_2014.jpg">Wikimedia Commons</a></li>
+    <li>Steven M. LaValle: NPTEL HRD, CC BY 3.0, <a href="https://commons.wikimedia.org/wiki/File:Steven_M._LaValle.png">Wikimedia Commons</a></li>
+    <li>Radion sinfoniaorkesteri Musiikkitalossa 2023: Marty B, CC BY-SA 2.0, <a href="https://commons.wikimedia.org/wiki/File:Finnish_Radio_Symphony_Orchestra_-_Bruckner%27s_8th_-_Musiikkitalo_(52890135082).jpg">Wikimedia Commons</a></li>
+    <li>Anna Pavlova kuolevana joutsenena 1908: tuntematon kuvaaja, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Anna_Pavlova_as_the_Dying_Swan.jpg">Wikimedia Commons</a></li>
+    <li>Magnus Carlsen 2012: Autopilot, CC BY-SA 3.0, <a href="https://commons.wikimedia.org/wiki/File:Magnus_Carlsen_(2012).jpg">Wikimedia Commons</a></li>
+    <li>Muhammad Ali 1967: Ira Rosenberg, World Journal Tribune, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Muhammad_Ali_NYWTS.jpg">Wikimedia Commons</a></li>
+    <li>Terence Tao, kysymysdia: Penny Jennings / UCLA, kuva Taon artikkelista "Why maths has a future even in the era of AI", Nature 2026</li>
+    <li>Alan Turing Princetonissa 1936: tuntematon kuvaaja, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Alan_Turing_(1912-1954)_in_1936_at_Princeton_University.jpg">Wikimedia Commons</a></li>
     <li>Jouko Väänänen: Mirnadza, CC0, <a href="https://commons.wikimedia.org/wiki/File:Jouko_Vaananen2014.jpg">Wikimedia Commons</a></li>
     <li>Kirjojen kannet: <i>The Evolution of Physics</i> (Simon &amp; Schuster 1938), <i>The Knot Book</i> (AMS 2004), <i>Dependence Logic</i> (Cambridge University Press 2007), <i>Topology and AI</i> (EMS Press)</li>
     <li>Metro kartalla: Google Maps -kuvakaappauksista yhdistetty ja muokattu, karttatiedot © Google</li>
@@ -1507,9 +2036,8 @@ body.idle{ cursor:none; }
 // Keys: → ↓ PageDown space Enter = next, ← ↑ PageUp = back, Home/End,
 // F full screen, N speaker notes, B or . black screen (presentation clickers).
 // The slide number is kept in the URL (#12), so a reload stays put.
-const PARTS = ["", "Minun matkani", "Königsberg", "Robotit ja topologia", "Tulos vai kokemus", "5000 vuotta ulkoistamista",
-  "Mikä matematiikassa on inhimillistä", "Paikallinen sääntö, globaali rakenne",
-  "Math 2.0", "Oma tarina", "Lopetus"];
+const PARTS = ["", "Minun matkani", "Königsberg", "Robotit ja topologia", "Tekoälymallien universaalisuus",
+  "Inhimillisyys", "Tulos vai kokemus", "Math 2.0", "Kysymyksiä", "Muuta"];
 
 const stage = document.getElementById("stage");
 const slides = [...document.querySelectorAll(".slide")];
@@ -1709,12 +2237,322 @@ function svgEl(tag, attrs, parent) {
 const ptsAttr = p => p.map(([x, y]) => x.toFixed(1) + "," + y.toFixed(1)).join(" ");
 const ease = t => t < .5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
 
+// ── DNA:n sekvensointi ──
+// The reads of TATGCATGA (3 letters each) lie shuffled at the top; on "graph"
+// each flies onto its edge from its first two letters to its last two, and
+// on "path" the Euler path runs and spells the genome below.
+function dnaSlide(svg) {
+  const N = { TA: [80, 390], AT: [250, 390], TG: [470, 390], GA: [640, 390], CA: [250, 190], GC: [470, 190] };
+  const R = 30, FLY = 1.0, SPEED = 320;                       // s, px a second
+  const E = [["TAT", 0], ["ATG", -70], ["TGC", 0], ["GCA", 0], ["CAT", 0], ["ATG", 70], ["TGA", 0]];   // the genome's order
+  const SHUF = [4, 1, 6, 3, 0, 5, 2];                          // where each read lies at first
+  const defs = svgEl("defs", {}, svg);
+  const mk = svgEl("marker", { id: "dna-arr", viewBox: "0 0 10 10", refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto" }, defs);
+  svgEl("path", { d: "M0 0L10 5L0 10z", fill: "var(--accent)" }, mk);
+  const trailG = svgEl("g", {}, svg), net = svgEl("g", { class: "net" }, svg), cardG = svgEl("g", {}, svg), nodeG = svgEl("g", { class: "net" }, svg);
+  const quad = (p, c, q, t) => [(1 - t) * (1 - t) * p[0] + 2 * t * (1 - t) * c[0] + t * t * q[0], (1 - t) * (1 - t) * p[1] + 2 * t * (1 - t) * c[1] + t * t * q[1]];
+  const edges = E.map(([r, bend], i) => {
+    const p = N[r.slice(0, 2)], q = N[r.slice(1)], L = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    const c = [(p[0] + q[0]) / 2 - bend * (q[1] - p[1]) / L, (p[1] + q[1]) / 2 + bend * (q[0] - p[0]) / L];
+    // the drawn edge stops at the node circles
+    const t0 = R / L * 1.05, t1 = 1 - (R + 4) / L * 1.05, a = quad(p, c, q, t0), b = quad(p, c, q, t1), m = quad(p, c, q, .5);
+    const cm = [2 * m[0] - (a[0] + b[0]) / 2, 2 * m[1] - (a[1] + b[1]) / 2];
+    svgEl("path", { class: "edge", d: `M${a[0]} ${a[1]}Q${cm[0]} ${cm[1]} ${b[0]} ${b[1]}`, "marker-end": "url(#dna-arr)" }, net);
+    const card = svgEl("g", { class: "card" }, cardG);
+    svgEl("rect", { x: -42, y: -20, width: 84, height: 40, rx: 6 }, card);
+    svgEl("text", {}, card).textContent = r;
+    const pts = []; for (let k = 0; k <= 24; k++) pts.push(quad(p, c, q, k / 24));
+    return { card, from: [70 + SHUF[i] * 97, 75], to: m, pts };
+  });
+  for (const k in N) {
+    const g = svgEl("g", { class: "node" }, nodeG);
+    svgEl("circle", { cx: N[k][0], cy: N[k][1], r: R }, g);
+    svgEl("text", { x: N[k][0], y: N[k][1] }, g).textContent = k;
+  }
+  const all = [], ends = [];                                    // the whole path, and where each edge ends on it
+  let len = 0;
+  for (const e of edges) {
+    for (const q of e.pts.slice(all.length ? 1 : 0)) {
+      if (all.length) len += Math.hypot(q[0] - all[all.length - 1][0], q[1] - all[all.length - 1][1]);
+      all.push(q);
+    }
+    ends.push(len);
+  }
+  const walker = polyWalker(all), trail = svgEl("polyline", { class: "trail", points: "" }, trailG);
+  const genome = "TATGCATGA", gen = svgEl("g", { class: "gen" }, svg), letters = [];
+  svgEl("text", { class: "lab", x: 160, y: 530 }, gen).textContent = "Genomi:";
+  for (let i = 0; i < genome.length; i++) {
+    const t = svgEl("text", { x: 200 + i * 44, y: 530 }, gen);
+    t.textContent = genome[i]; letters.push(t);
+  }
+  mover(svg.closest(".viz"), (now, since) => {
+    const tg = "graph" in since ? (now - since.graph) / 1000 : -1;
+    const d = "path" in since ? (now - since.path) / 1000 * SPEED : -1;
+    edges.forEach((e, i) => {
+      const u = tg < 0 ? 0 : ease(Math.min(1, Math.max(0, (tg - .08 * i) / FLY)));
+      const x = e.from[0] + u * (e.to[0] - e.from[0]), y = e.from[1] + u * (e.to[1] - e.from[1]);
+      e.card.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+      e.card.classList.toggle("used", d >= (i ? ends[i - 1] : 0) + (ends[i] - (i ? ends[i - 1] : 0)) / 2);
+    });
+    const op = tg < 0 ? 0 : Math.min(1, Math.max(0, (tg - .6) / .5));
+    svg.querySelectorAll(".net").forEach(g => g.style.opacity = op);
+    trail.setAttribute("points", d > 0 ? ptsAttr(walker.upTo(d)) : "");
+    const shown = d < 0 ? 0 : 2 + ends.filter(L => d >= L - R).length;
+    letters.forEach((t, i) => t.style.opacity = i < shown ? 1 : 0);
+  });
+}
+document.querySelectorAll(".viz .dnag").forEach(dnaSlide);
+
+// ── Hamiltonin polku: Hamilton's cycle through the 20 corners of the dodecahedron ──
+// nodes: outer pentagon 0–4, ring of ten 5–14 (a_i = 5+i under o_i, b_i = 10+i between), inner pentagon 15–19
+function dodecaSlide(svg) {
+  const P = [], R = [220, 150, 150, 70], SPEED = 330;
+  for (let i = 0; i < 5; i++) {
+    const t = (-90 + 72 * i) * Math.PI / 180, u = t + Math.PI / 5;
+    P[i] = [R[0] * Math.cos(t), R[0] * Math.sin(t)]; P[5 + i] = [R[1] * Math.cos(t), R[1] * Math.sin(t)];
+    P[10 + i] = [R[2] * Math.cos(u), R[2] * Math.sin(u)]; P[15 + i] = [R[3] * Math.cos(u), R[3] * Math.sin(u)];
+  }
+  const E = [];
+  for (let i = 0; i < 5; i++) {
+    const j = (i + 1) % 5;
+    E.push([i, j], [i, 5 + i], [5 + i, 10 + i], [10 + i, 5 + j], [10 + i, 15 + i], [15 + i, 15 + j]);
+  }
+  const CYC = [0, 1, 2, 3, 4, 9, 13, 8, 12, 7, 11, 6, 10, 15, 16, 17, 18, 19, 14, 5, 0];   // found offline
+  const lines = svgEl("g", { class: "lines" }, svg);
+  for (const [a, b] of E) svgEl("line", { x1: P[a][0], y1: P[a][1], x2: P[b][0], y2: P[b][1] }, lines);
+  const trail = svgEl("polyline", { class: "trail", points: "" }, svg);
+  const dots = P.map(([x, y]) => svgEl("circle", { cx: x, cy: y, r: 11 }, lines));
+  const pts = CYC.map(k => P[k]), walker = polyWalker(pts), at = [0];
+  for (let i = 1; i < pts.length; i++) at.push(at[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  mover(svg.closest(".viz"), (now, since) => {
+    const d = "cyc" in since ? (now - since.cyc) / 1000 * SPEED : -1;
+    trail.setAttribute("points", d > 0 ? ptsAttr(walker.upTo(d)) : "");
+    dots.forEach((c, k) => c.classList.toggle("seen", d >= 0 && CYC.some((v, i) => v === k && d >= at[i])));
+  });
+}
+document.querySelectorAll(".viz .dodg").forEach(dodecaSlide);
+
+// ── Onko olemassa Hamiltonin polkua: a path found on the left, attempts that get stuck on the right ──
+function hamqSlide(box) {
+  const SPEED = 260, HOLD = 1.4;                                   // units a second, s at the end of an attempt
+  const graphs = [...box.querySelectorAll("svg.hq")].map(svg => {
+    const dots = [...svg.querySelectorAll("circle")], P = dots.map(c => [+c.getAttribute("cx"), +c.getAttribute("cy")]);
+    const near = (x, y) => P.findIndex(([a, b]) => Math.abs(a - x) < .5 && Math.abs(b - y) < .5);
+    const adj = P.map(() => []);
+    svg.querySelectorAll("line").forEach(l => {
+      const u = near(+l.getAttribute("x1"), +l.getAttribute("y1")), v = near(+l.getAttribute("x2"), +l.getAttribute("y2"));
+      adj[u].push(v); adj[v].push(u);
+    });
+    const trail = svgEl("polyline", { class: "trail", points: "" });
+    svg.querySelector(".lines").insertBefore(trail, svg.querySelector(".lines circle"));
+    return { svg, dots, P, adj, trail };
+  });
+  // the longest simple paths, from each start node: the first one found of the greatest length
+  const longest = g => {
+    const n = g.P.length, out = [];
+    for (let s = 0; s < n; s++) {
+      let best = [];
+      const dfs = (p, seen) => {
+        if (p.length > best.length) best = p.slice();
+        if (best.length === n) return;
+        for (const w of g.adj[p[p.length - 1]]) if (!seen.has(w)) { seen.add(w); p.push(w); dfs(p, seen); p.pop(); seen.delete(w); if (best.length === n) return; }
+      };
+      dfs([s], new Set([s]));
+      out.push(best);
+    }
+    return out;
+  };
+  const route = (g, path) => {
+    const pts = path.map(k => g.P[k]), at = [0];
+    for (let i = 1; i < pts.length; i++) at.push(at[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+    return { path, w: polyWalker(pts), at, len: at[at.length - 1] };
+  };
+  const [L, R] = graphs;
+  const win = route(L, longest(L).find(p => p.length === L.P.length));
+  const tries = longest(R).filter((p, i, all) => i % 5 === 1).slice(0, 3).map(p => route(R, p));   // three different starts
+  const paint = (g, r, d, over) => {
+    g.trail.setAttribute("points", r && d > 0 ? ptsAttr(r.w.upTo(d)) : "");
+    g.dots.forEach((c, k) => {
+      const i = r ? r.path.indexOf(k) : -1;
+      c.classList.toggle("seen", i >= 0 && d >= r.at[i]);
+      c.classList.toggle("miss", !!over && i < 0);
+    });
+  };
+  mover(box, (now, since) => {
+    if (!("go" in since)) { paint(L, null, 0); paint(R, null, 0); return; }
+    const t = (now - since.go) / 1000;
+    paint(L, win, t * SPEED, false);
+    const cyc = tries.map(r => r.len / SPEED + HOLD), total = cyc.reduce((a, b) => a + b, 0);
+    let u = t % total, k = 0;
+    while (u > cyc[k]) { u -= cyc[k]; k++; }
+    const r = tries[k];
+    paint(R, r, u * SPEED, u * SPEED > r.len);
+  });
+}
+document.querySelectorAll(".hq-viz").forEach(hamqSlide);
+
+// ── Pölynimurirobotti ──
+// Seven rooms (x0 y0 x1 y1), the doors between them, and a robot vacuum that
+// starts in the study: on "try" it goes kitchen, hall, closet and is stuck;
+// on "ham" it takes every room once.
+function hamSlide(svg) {
+  const ROOMS = {
+    mh: { r: [0, 0, 220, 190], c: [110, 95], name: "Makuuhuone", at: [12, 28] },
+    kh: { r: [220, 0, 380, 190], c: [300, 95], name: "Kylpyhuone", at: [232, 28] },
+    th: { r: [380, 0, 640, 190], c: [510, 95], name: "Työhuone", at: [392, 28] },
+    oh: { r: [0, 190, 300, 460], c: [150, 325], name: "Olohuone", at: [12, 448] },
+    ke: { r: [300, 190, 640, 330], c: [470, 260], name: "Keittiö", at: [556, 318] },
+    et: { r: [300, 330, 500, 460], c: [400, 395], name: "Eteinen", at: [312, 448] },
+    vh: { r: [500, 330, 640, 460], c: [570, 395], name: "Vaatehuone", at: [512, 448] },
+  };
+  const DOORS = { "mh kh": [220, 95], "mh oh": [110, 190], "kh ke": [340, 190], "th ke": [510, 190],
+                  "oh ke": [300, 260], "oh et": [300, 395], "ke et": [400, 330], "et vh": [500, 395] };
+  const GAP = 26, SPEED = 260;
+  const roomEl = {};
+  for (const k in ROOMS) {
+    const [x0, y0, x1, y1] = ROOMS[k].r;
+    roomEl[k] = svgEl("rect", { class: "room", x: x0, y: y0, width: x1 - x0, height: y1 - y0 }, svg);
+  }
+  // walls: the outline and the inner walls, with a gap at every door
+  const doorPts = Object.values(DOORS);
+  const wall = (x0, y0, x1, y1) => {
+    const hor = y0 === y1, cuts = doorPts.filter(([x, y]) => hor ? y === y0 && x > x0 && x < x1 : x === x0 && y > y0 && y < y1)
+      .map(([x, y]) => hor ? x : y).sort((a, b) => a - b);
+    let d = "", from = hor ? x0 : y0;
+    for (const c of [...cuts, null]) {
+      const to = c === null ? (hor ? x1 : y1) : c - GAP;
+      d += hor ? `M${from} ${y0}H${to}` : `M${x0} ${from}V${to}`;
+      if (c !== null) from = c + GAP;
+    }
+    return d;
+  };
+  const W = [[0, 0, 640, 0], [0, 460, 640, 460], [0, 0, 0, 460], [640, 0, 640, 460],
+             [220, 0, 220, 190], [380, 0, 380, 190], [0, 190, 640, 190], [300, 190, 300, 460], [300, 330, 640, 330], [500, 330, 500, 460]];
+  svgEl("path", { d: W.map(w => wall(...w)).join("") }, svgEl("g", { class: "walls" }, svg));
+  for (const k in ROOMS) svgEl("text", { class: "rname", x: ROOMS[k].at[0], y: ROOMS[k].at[1] }, svg).textContent = ROOMS[k].name;
+  // charging docks against the right wall of the study and the closet, where the path starts and ends
+  for (const [x, y] of [[618, 95], [618, 405]]) {
+    const g = svgEl("g", { class: "dock", transform: `translate(${x} ${y})` }, svg);
+    svgEl("rect", { x: -13, y: -24, width: 26, height: 48, rx: 6 }, g);
+    svgEl("path", { d: "M3 -15 L-6 2 H1 L-3 15 L7 -3 H0 Z" }, g);
+  }
+  const net = svgEl("g", { class: "net" }, svg);
+  for (const key in DOORS) {
+    const [a, b] = key.split(" ");
+    svgEl("polyline", { points: ptsAttr([ROOMS[a].c, DOORS[key], ROOMS[b].c]) }, net);
+  }
+  const trailG = svgEl("g", {}, svg);
+  for (const k in ROOMS) svgEl("circle", { cx: ROOMS[k].c[0], cy: ROOMS[k].c[1], r: 11 }, net);
+  const stuck = svgEl("text", { class: "stuck", x: 570, y: 360 }, svg);
+  stuck.textContent = "jumissa!";
+  const vac = svgEl("g", { class: "vac" }, svg);
+  svgEl("circle", { r: 17 }, vac); svgEl("circle", { class: "eye", r: 5, cy: -8 }, vac);
+  const walk = rooms => {                                       // through the doors, and where each room is reached
+    const pts = [ROOMS[rooms[0]].c], at = [0];
+    let len = 0;
+    for (let i = 1; i < rooms.length; i++) {
+      const door = DOORS[rooms[i - 1] + " " + rooms[i]] || DOORS[rooms[i] + " " + rooms[i - 1]];
+      for (const q of [door, ROOMS[rooms[i]].c]) { len += Math.hypot(q[0] - pts[pts.length - 1][0], q[1] - pts[pts.length - 1][1]); pts.push(q); }
+      at.push(len);
+    }
+    return { rooms, at, w: polyWalker(pts), trail: svgEl("polyline", { class: "trail", points: "" }, trailG) };
+  };
+  const runs = { try: walk(["th", "ke", "et", "vh"]), ham: walk(["th", "ke", "kh", "mh", "oh", "et", "vh"]) };
+  mover(svg.closest(".viz"), (now, since) => {
+    const word = "ham" in since ? "ham" : "try" in since ? "try" : null;
+    const d = word ? (now - since[word]) / 1000 * SPEED : 0;
+    for (const k in runs) runs[k].trail.setAttribute("points", k === word && d > 0 ? ptsAttr(runs[k].w.upTo(d)) : "");
+    const run = runs[word || "ham"], [x, y] = run.w.at(d);
+    vac.setAttribute("transform", `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+    const seen = new Set(word ? run.rooms.filter((r, i) => d >= run.at[i]) : []), over = word === "try" && d >= run.w.total + 300;
+    for (const k in ROOMS) {
+      roomEl[k].classList.toggle("seen", seen.has(k));
+      roomEl[k].classList.toggle("miss", over && !seen.has(k));
+    }
+    stuck.classList.toggle("on", over);
+  });
+}
+document.querySelectorAll(".viz .hamg").forEach(hamSlide);
+
+// ── Liukuluvut: drag the point of 1,01101₂ to and fro; only the exponent n changes ──
+function fpSlide(box) {
+  const D = "101101", MIN = -4, MAX = 9, row = box.querySelector(".fp-row"), eq = box.querySelector(".fp-eq");
+  let n = 0;
+  const render = () => {
+    let ip, fr, padInt = 0, padFr = 0;
+    if (n >= 0) {
+      const k = n + 1;
+      if (k <= D.length) { ip = D.slice(0, k); fr = D.slice(k); }
+      else { ip = D + "0".repeat(k - D.length); padInt = k - D.length; fr = ""; }
+    } else { ip = "0"; fr = "0".repeat(-n - 1) + D; padFr = -n - 1; }
+    const cells = [];
+    [...ip].forEach((c, i) => cells.push(`<span class="d${(n < 0 || i >= ip.length - padInt) ? " pad" : ""}">${c}</span>`));
+    cells.push('<span class="pt">,</span>');
+    if (!fr) cells.push('<span class="d pad">0</span>');
+    [...fr].forEach((c, i) => cells.push(`<span class="d${i < padFr ? " pad" : ""}">${c}</span>`));
+    row.innerHTML = cells.join("");
+    const v = parseInt(D, 2) * Math.pow(2, n - (D.length - 1));
+    eq.innerHTML = `= <span class="gold">1,01101₂</span> · 2<sup class="cyan">${n < 0 ? "−" + (-n) : n}</sup> = ${String(v).replace(".", ",")}`;
+  };
+  const set = m => { n = Math.max(MIN, Math.min(MAX, m)); render(); };
+  box.querySelectorAll(".fp-btn").forEach(b => b.addEventListener("click", e => { set(n + +b.dataset.d); b.blur(); }));
+  let drag = null;
+  row.addEventListener("pointerdown", e => {
+    const cell = row.querySelector(".d"), w = cell ? cell.getBoundingClientRect().width : 40;
+    drag = { x: e.clientX, n, w }; try { row.setPointerCapture(e.pointerId); } catch {}
+  });
+  row.addEventListener("pointermove", e => { if (drag) set(drag.n + Math.round((e.clientX - drag.x) / drag.w)); });
+  const end = () => drag = null;
+  row.addEventListener("pointerup", end); row.addEventListener("pointercancel", end);
+  row.addEventListener("wheel", e => { e.preventDefault(); set(n + (e.deltaY < 0 ? 1 : -1)); }, { passive: false });
+  render();
+}
+document.querySelectorAll(".fp-play").forEach(fpSlide);
+
+// ── Liitutaulu: lines drawn with the mouse or a pen; Ctrl+Z takes the last one away ──
+function boardSlide(c) {
+  const ctx = c.getContext("2d"), K = c.width / 1500, strokes = [];
+  let cur = null;
+  const style = () => { ctx.lineWidth = 4 * K; ctx.lineCap = ctx.lineJoin = "round"; ctx.strokeStyle = "#e8f7ff"; };
+  const at = e => { const r = c.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * c.width, (e.clientY - r.top) / r.height * c.height]; };
+  const draw = s => {
+    style(); ctx.beginPath(); ctx.moveTo(...s[0]);
+    if (s.length === 1) ctx.lineTo(s[0][0] + .1, s[0][1]);
+    for (const p of s.slice(1)) ctx.lineTo(...p);
+    ctx.stroke();
+  };
+  const redraw = () => { ctx.clearRect(0, 0, c.width, c.height); strokes.forEach(draw); };
+  c.addEventListener("pointerdown", e => {
+    if (e.button !== 0) return;
+    cur = [at(e)]; strokes.push(cur); try { c.setPointerCapture(e.pointerId); } catch {}
+    draw(cur); e.preventDefault();
+  });
+  c.addEventListener("pointermove", e => {
+    if (!cur) return;
+    const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+    for (const ev of evs.length ? evs : [e]) {
+      const p = at(ev), q = cur[cur.length - 1];
+      cur.push(p); style(); ctx.beginPath(); ctx.moveTo(...q); ctx.lineTo(...p); ctx.stroke();
+    }
+  });
+  const end = () => cur = null;
+  c.addEventListener("pointerup", end); c.addEventListener("pointercancel", end);
+  c.undo = () => { strokes.pop(); redraw(); };
+}
+document.querySelectorAll("canvas.board").forEach(boardSlide);
+addEventListener("keydown", e => {
+  if (!(e.ctrlKey || e.metaKey) || e.shiftKey || (e.key !== "z" && e.key !== "Z")) return;
+  const b = document.querySelector(".slide.on canvas.board");
+  if (b) { b.undo(); e.preventDefault(); }
+});
+
 // ── The maze ──
 // A perfect maze (seeded depth-first search): every cell reachable in exactly
 // one way, so all walls hang together with the outer wall. MAZE.cut is the wall
 // whose removal leaves an island of walls in the middle; both robots start on
 // the island's wall (MAZE.start: lattice point and direction).
-const MAZE = { W: 10, H: 7, seed: 4, exit: 3, cut: [5, 4], start: [6, 4, 2], cs: 46, off: .3 };
+const MAZE = { W: 10, H: 7, seed: 4, exit: 3, cut: [5, 4], start: [6, 4, 2], cs: 46, off: .3,
+  start2: [2, 5, 0], off2: .3 };   // a second robot in the left maze, from earlier on the same way out
 function makeMaze(W, H, seed, exitRow) {
   let s = seed;
   const rnd = () => { s = (s * 1103515245 + 12345) % 2147483648; return s / 2147483648; };
@@ -1842,9 +2680,10 @@ function polyWalker(pts, loopFrom = -1) {
   return { at, upTo, total };
 }
 
-// "Robotti labyrintissa": the maze twice, the second with one wall less
+// "Robotti labyrintissa": the maze twice, the second with one wall less.
+// The left one gets two robots: the second starts earlier on the same way out.
 function mazeSlide(svg) {
-  const { cs, off } = MAZE, [m1, m2] = mazePair(), SPEED = 3.5;   // cells a second
+  const { cs, off } = MAZE, [m1, m2] = mazePair(), SPEED = { run1: 3.5, run1b: 5, run2: 3.5 };   // cells a second
   const OX = [40, 700], OY = 40;
   const runs = [];
   [m1, m2].forEach((m, k) => {
@@ -1854,25 +2693,34 @@ function mazeSlide(svg) {
     const ey = (m.exitRow + .5) * cs;
     svgEl("path", { class: "door", d: `M${m.W * cs + 14} ${ey}h40m-12 -10l12 10l-12 10` }, g);   // the way out
     svgEl("text", { class: "cap", x: m.W * cs / 2, y: m.H * cs + 44 }, g).textContent =
-      k ? "Yksi seinä vähemmän" : "Kaikki seinät kiinni ulkoseinässä";
-    const w = wallWalk(m, ...MAZE.start, off);
-    if (w.end === "out") w.pts.push([m.W - .1, m.exitRow + .5], [m.W + 1.4, m.exitRow + .5]);
-    const walker = polyWalker(w.pts.map(([x, y]) => [x * cs, y * cs]), w.end === "loop" ? w.loopFrom : -1);
-    const trail = svgEl("polyline", { class: "trail", points: "" }, g);
-    const robot = svgEl("circle", { class: "robot", r: 10 }, g);
+      k ? "Ei-yhdesti yhtenäinen" : "Yhdesti yhtenäinen";
     const note = k ? svgEl("text", { class: "forever", x: m.W * cs / 2, y: m.H * cs + 82, "text-anchor": "middle" }, g)
                    : svgEl("text", { class: "out", x: m.W * cs + 16, y: ey - 26 }, g);
-    note.textContent = k ? "Ympäri, ympäri, ikuisesti…" : "ULOS!";
-    runs.push({ walker, trail, robot, note, word: "run" + (k + 1), loop: w.end === "loop" });
+    note.textContent = k ? "Jää jumiin..." : "ULOS!";
+    const robots = k ? [[MAZE.start, off, "run2", ""]]
+                     : [[MAZE.start, off, "run1", ""], [MAZE.start2, MAZE.off2, "run1b", "b"]];
+    const trails = svgEl("g", {}, g), bots = svgEl("g", {}, g);
+    for (const [start, o, word, cls] of robots) {
+      const w = wallWalk(m, ...start, o);
+      // out through the door; the second robot stops a little before the first, so both show
+      if (w.end === "out") w.pts.push([m.W - .1, m.exitRow + .5], [m.W + (cls ? .85 : 1.4), m.exitRow + .5]);
+      const walker = polyWalker(w.pts.map(([x, y]) => [x * cs, y * cs]), w.end === "loop" ? w.loopFrom : -1);
+      const trail = svgEl("polyline", { class: "trail " + cls, points: "" }, trails);
+      const robot = svgEl("circle", { class: "robot " + cls, r: 10 }, bots);
+      runs.push({ walker, trail, robot, note, word, loop: w.end === "loop", hide: !!cls });
+    }
   });
   mover(svg.closest(".viz"), (now, since) => {
+    const done = new Map();
     for (const r of runs) {
-      const d = r.word in since ? (now - since[r.word]) / 1000 * SPEED * cs : 0;
+      const d = r.word in since ? (now - since[r.word]) / 1000 * SPEED[r.word] * cs : 0;
       const [x, y] = r.walker.at(d);
       r.robot.setAttribute("cx", x); r.robot.setAttribute("cy", y);
+      r.robot.style.display = r.hide && !(r.word in since) ? "none" : "";
       r.trail.setAttribute("points", d ? ptsAttr(r.walker.upTo(d)) : "");
-      r.note.classList.toggle("on", r.loop ? d > r.walker.total : d >= r.walker.total);
+      done.set(r.note, done.get(r.note) || (r.loop ? d > r.walker.total : d >= r.walker.total));
     }
+    done.forEach((on, note) => note.classList.toggle("on", on));
   });
 }
 document.querySelectorAll(".viz .maze").forEach(mazeSlide);
@@ -2034,6 +2882,54 @@ function mazeMorph(svg) {
 }
 document.querySelectorAll(".viz .morph").forEach(mazeMorph);
 
+// ── Tekoälymallit ovat universaaleja: a Turing machine adding 1 to a binary
+// number again and again. The head reads a cell, writes, moves: carry left
+// over the 1s, write a 1, walk back to the right end.
+function tapeSlide(svg) {
+  const N = 8, CW = 64, X0 = (620 - N * CW) / 2, Y = 200, STEP = 420;
+  const bits = [0, 0, 0, 0, 1, 0, 1, 1];
+  const cellsG = svgEl("g", { class: "cells" }, svg), cells = [];
+  for (let i = 0; i < N; i++) {
+    const g = svgEl("g", { class: "cell" }, cellsG);
+    svgEl("rect", { x: X0 + i * CW + 3, y: Y, width: CW - 6, height: CW - 6, rx: 6 }, g);
+    const t = svgEl("text", { x: X0 + i * CW + CW / 2, y: Y + (CW - 6) / 2 }, g);
+    cells.push({ g, t });
+  }
+  svgEl("text", { class: "lbl", x: 310, y: Y + CW + 36 }, svg).textContent = "nauha = muisti";
+  const num = svgEl("text", { class: "num", x: 310, y: Y + CW + 110 }, svg);
+  const head = svgEl("g", { class: "head" }, svg);
+  svgEl("path", { d: "M-44 -96 H44 V-40 H12 L0 -14 L-12 -40 H-44 Z" }, head);
+  svgEl("text", { y: -60 }, head).textContent = "malli";
+  let pos = N - 1, mode = "carry", step = 0, t0 = null, from = pos, wrote = -1;
+  const show = () => {
+    cells.forEach((c, i) => { c.t.textContent = bits[i]; c.g.classList.toggle("w", i === wrote); });
+    num.textContent = "= " + parseInt(bits.join(""), 2);
+  };
+  function advance() {                             // one move of the machine
+    from = pos; wrote = -1;
+    if (mode === "carry") {                        // 1 → 0 and left, until a 0 takes the 1
+      wrote = pos;
+      if (bits[pos] === 1 && pos > 0) { bits[pos] = 0; pos--; }
+      else { bits[pos] = 1; mode = "back"; }
+    } else if (pos < N - 1) pos++;                 // back to the right end
+    else {
+      mode = "carry";
+      if (parseInt(bits.join(""), 2) >= 40) bits.splice(0, N, 0, 0, 0, 0, 1, 0, 1, 1);
+    }
+  }
+  show();
+  mover(svg.closest(".viz"), now => {
+    if (t0 === null) t0 = now;
+    const k = Math.floor((now - t0) / STEP);
+    while (step < k) { advance(); step++; show(); }
+    const f = Math.min(1, ((now - t0) % STEP) / (STEP * .5));
+    const x = X0 + (from + (pos - from) * ease(f)) * CW + CW / 2;
+    head.setAttribute("transform", `translate(${x.toFixed(1)} ${Y - 4})`);
+  });
+}
+document.querySelectorAll(".viz .tape").forEach(tapeSlide);
+
+
 // ── Neljä maailmaa: four covering spaces of the figure eight ──
 // Letters 0 = a, 1 = a⁻¹ (cyan), 2 = b, 3 = b⁻¹ (magenta). A place in the tree
 // is a reduced word; the other three are what the tree folds into: (b) folds
@@ -2145,6 +3041,18 @@ function graphSlide(svg) {
 }
 document.querySelectorAll(".viz .cover").forEach(graphSlide);
 
+// embedded videos play only on their own slide: loaded when it opens, emptied when it closes
+function syncEmbeds() {
+  document.querySelectorAll("iframe[data-src]").forEach(f => {
+    const want = f.closest(".slide") === slides[cur] ? f.dataset.src : "";
+    if ((f.getAttribute("src") || "") !== want) { if (want) f.src = want; else f.removeAttribute("src"); }
+  });
+}
+// a click into a video takes the keyboard away from the deck: give it back
+addEventListener("blur", () => setTimeout(() => {
+  if (document.activeElement && document.activeElement.tagName === "IFRAME") { document.activeElement.blur(); focus(); }
+}, 300));
+
 function show(i, revealAll = false) {
   i = Math.max(0, Math.min(slides.length - 1, i));
   slides[cur].classList.remove("on");
@@ -2153,6 +3061,7 @@ function show(i, revealAll = false) {
   frags(s).forEach(f => setFrag(f, revealAll));
   syncViz(s);
   s.classList.add("on");
+  syncEmbeds();
   history.replaceState(null, "", "#" + (cur + 1));
   const p = +s.dataset.part;
   bar.querySelector(".part").textContent = p ? p + " · " + PARTS[p] : "";
@@ -2250,7 +3159,7 @@ blank.onclick = () => blank.hidden = true;
 let sx = null, sy = 0;
 const vp = document.getElementById("viewport");
 vp.addEventListener("touchstart", e => {
-  if (e.target.closest(".demo")) { sx = null; return; }
+  if (e.target.closest(".demo, .board, .fp-play")) { sx = null; return; }
   sx = e.touches[0].clientX; sy = e.touches[0].clientY;
 }, { passive: true });
 vp.addEventListener("touchend", e => {
