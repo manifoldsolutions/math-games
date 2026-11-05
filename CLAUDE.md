@@ -34,6 +34,13 @@ games/<category>/<course>/<game>/index.html
   card shows its parent's glyph. New drawings follow the same family: 26×26
   grid, thin cyan lines (stroke 1.6, helper lines 1.2 and dimmer), no fills.
 - Catalog ids become URL parts: short, lowercase, digits and hyphens only.
+- Talks (Vadim, 2026-11-05): category `esitelmat` ("Esitelmät / Talks",
+  `sub: "sections"`), sections Yleistajuiset / Akateemiset / Pitchit
+  (popular / academic / pitches; philosophy counts as academic); a section
+  is added only once it has a talk. A talk is `kind: "talk"` ("Avaa /
+  View") with its own `lang`, shown as a FI / EN tag. Matematiikka 2.0
+  (Ressu 5.11.2026) is under Yleistajuiset but its folder stays
+  `games/esitelmat/ressu-2026/tekoaly/` (the address was already shared).
 - Languages: the main page has a FI/EN switch, stored site-wide in
   localStorage `lang` (the IFS explorer uses the same key). Catalog texts are
   a string or `{fi, en}`; a one-language category has `lang: "fi"`/`"en"` and
