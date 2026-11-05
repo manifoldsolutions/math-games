@@ -348,9 +348,13 @@ s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; he
 @keyframes lamp-g{ 0%, 100%{ fill:rgba(57,255,158,.08); } 25%{ fill:var(--green); } 50%{ fill:rgba(57,255,158,.08); } }
 @keyframes lamp-r{ 0%, 50%, 100%{ fill:rgba(255,61,110,.08); } 75%{ fill:var(--red); } }
 
-.dslide .stack p{ font-size:29px; }
-.dslide .stack{ gap:20px; }
-.dslide .viz.side{ width:700px; height:600px; }
+.dslide .stack p{ font-size:27px; }
+.dslide .stack{ gap:16px; }
+.dslide .viz.side{ width:520px; height:440px; }
+.dslide .cols{ gap:50px; }
+.dslide .formal{ display:flex; flex-direction:column; gap:2px; padding:10px 18px; border-left:3px solid var(--accent); background:rgba(0,229,255,.05); border-radius:0 var(--radius) var(--radius) 0; }
+.dslide .formal p{ font-size:25px; white-space:nowrap; }
+.dslide .formal p.muted{ font-size:20px; }
 .dgm .dbody, .dgm .redbtn{ opacity:0; transition:opacity .6s ease; }
 [data-state~="d"] .dgm .dbody, [data-state~="d"] .dgm .redbtn{ opacity:1; }
 .dgm .dbox{ fill:rgba(255,61,242,.05); stroke:var(--magenta); stroke-width:3; }
@@ -542,12 +546,59 @@ s.strike::after{ content:""; position:absolute; left:-4%; right:-4%; top:46%; he
 .term .pr{ color:var(--muted); }
 .term .out{ color:var(--gold); }
 /* Robottihiiri: the toy on a white card */
-.mouse-pic{ margin:0; align-self:center; background:#fff; border-radius:var(--radius); padding:20px 40px; box-shadow:0 0 22px rgba(0,229,255,.25); }
-.mouse-pic img{ display:block; height:480px; }
+.mouse-pic{ margin:0; align-self:center; }
+.mouse-pic img{ display:block; height:500px; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 22px rgba(0,229,255,.25); }
+/* Luku 4: kumpi? Two big cards to click */
+.choose-cards{ display:grid; grid-template-columns:1fr 1fr; gap:50px; }
+.pick{ position:relative; text-align:left; display:flex; flex-direction:column; gap:14px; padding:40px 44px; border-radius:var(--radius); border:2px solid rgba(0,229,255,.5); background:rgba(0,229,255,.05); color:var(--ink); font:400 28px/1.35 var(--ui); cursor:pointer; transition:background .2s ease, box-shadow .2s ease, transform .2s ease; }
+.pick:hover{ background:rgba(0,229,255,.12); box-shadow:0 0 30px rgba(0,229,255,.35); transform:translateY(-4px); }
+.pick b{ font:800 38px/1.15 var(--display); color:var(--accent-ink); text-transform:uppercase; letter-spacing:.03em; text-shadow:var(--glow-text); }
+.pick .key{ position:absolute; top:16px; right:22px; font:700 26px var(--display); color:var(--muted); }
+.pick.on{ border-color:var(--gold); }
+/* Hopfieldin verkko: the grid, the memories, the buttons and the energy */
+.hopf{ gap:26px; }
+.hop{ display:grid; grid-template-columns:auto 1fr; gap:60px; align-items:start; }
+.hop-grid{ width:520px; height:520px; touch-action:none; cursor:crosshair; user-select:none; }
+.hop-grid rect{ fill:rgba(0,229,255,.05); stroke:rgba(0,229,255,.25); stroke-width:1; transition:fill .15s ease; }
+.hop-grid rect.on{ fill:var(--accent); }
+.hop-grid rect.flip{ fill:var(--gold); transition:none; }
+.hop-grid{ filter:drop-shadow(0 0 8px rgba(0,229,255,.25)); }
+.hop-left{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+.hop-grid{ width:470px; height:470px; }
+.hop-side{ display:flex; flex-direction:column; gap:22px; }
+.hop-mem{ display:flex; align-items:center; gap:16px; font-size:24px; }
+.hop-thumbs{ display:flex; gap:14px; flex-wrap:wrap; }
+.hop-thumbs svg{ width:78px; height:78px; cursor:pointer; border:1px solid var(--line); border-radius:4px; }
+.hop-thumbs svg:hover{ border-color:var(--accent); }
+.hop-thumbs svg.near{ border-color:var(--gold); box-shadow:0 0 12px rgba(255,225,77,.5); }
+.hop-thumbs rect{ fill:var(--accent-ink); }
+.hop-btns{ display:flex; gap:12px; flex-wrap:wrap; }
+.hop-btns button{ font:600 22px var(--ui); padding:10px 18px; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); background:rgba(0,229,255,.06); color:var(--accent-ink); cursor:pointer; }
+.hop-btns button:hover{ background:rgba(0,229,255,.16); }
+.hop-btns button.go{ border-color:var(--gold); color:var(--gold); background:rgba(255,225,77,.08); }
+.hop-energy{ width:560px; height:220px; }
+.hop-energy .ax{ stroke:var(--muted); stroke-width:1.5; fill:none; }
+.hop-energy .ln{ stroke:var(--gold); stroke-width:3; fill:none; filter:drop-shadow(0 0 4px rgba(255,225,77,.6)); }
+.hop-energy text{ fill:var(--muted); font:400 18px var(--ui); }
+/* Ising-malli: a live simulation with a temperature slider */
+.ising-box{ display:flex; flex-direction:column; align-items:center; gap:16px; }
+.ising-c{ width:500px; height:500px; image-rendering:pixelated; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
+.ising-ctl{ display:flex; align-items:center; gap:14px; font-size:22px; color:var(--muted); }
+.ising-ctl input{ width:260px; accent-color:var(--accent); }
+.ising-ctl button{ font:600 20px var(--ui); padding:8px 16px; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); background:rgba(0,229,255,.06); color:var(--accent-ink); cursor:pointer; margin-left:12px; }
+/* Hopfield generalises Ising: a lattice beside a complete graph with weights */
+.hopgen{ gap:24px; }
+.hopgen-cols{ gap:60px; }
+.hopgen .stack{ align-items:center; gap:14px; text-align:center; }
+.hg{ width:320px; height:320px; }
+.hg line{ stroke:var(--accent); stroke-width:3; }
+.hg line.neg{ stroke:var(--magenta); }
+.hg circle{ fill:var(--bg); stroke:var(--accent); stroke-width:3; }
+.hg{ filter:drop-shadow(0 0 4px rgba(0,229,255,.35)); }
 /* Konsertti-paralleeli: two photos side by side */
 .pair-pics{ gap:40px; align-items:start; }
 .pair-pics figure{ margin:0; display:flex; flex-direction:column; gap:12px; }
-.pair-pics img{ width:100%; height:440px; object-fit:cover; display:block; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
+.pair-pics img{ width:100%; height:360px; object-fit:cover; display:block; border-radius:var(--radius); border:1px solid rgba(0,229,255,.55); box-shadow:0 0 18px rgba(0,229,255,.25); }
 .pair-pics figcaption{ font-size:30px; line-height:1.3; }
 .pair-pics figcaption b{ display:block; color:var(--accent-ink); font-weight:600; }
 .pair-pics figcaption small{ display:block; font-size:22px; color:var(--muted); }
@@ -679,14 +730,15 @@ body.idle{ cursor:none; }
 
 <!-- ════════════════════════ 1 · MINUN MATKANI ════════════════════════ -->
 <section class="slide" data-part="1">
-  <h2>Vadim Weinstein</h2>
+  <h2>Minä</h2>
   <ul class="pts">
-    <li>Ressu -02</li>
+    <li>Ressu, yo-05 </li>
     <li>FT 2011 (HY) matematiikasta: logiikka, joukko-oppi, topologia, </li>
     <li>MSc 2016 (WY) kognitiotieteestä: enaktivismi, mielen filosofia, </li>
     <li>Tutkimusta & luennointia Wienin, Helsingin ja Aalto-yliopistoissa 2012-2019</li>
     <li>Matemaattista robotiikkaa Oulun yliopistossa 2020-2026</li>
-    <li>Yritystoimintaa, konsultointia: nettikasinoiden matematiikkaa sekä matematiikan opettaminen <b>tekoälylle</b>, lukiolaisille ja muille. Manifold Solutions Oy, <span class="cyan">matikkapelit.fi</span>, TikTok <span class="cyan">@matikkapelit</span></li>, materiaalin kehittämistä asiakkaalle <span class="cyan">lääkisvalmennus.fi</span></li> <span class="muted">(lääkisvalmennuksen perustaja Sampo Tiensuu on myös Ressu)</span>
+    <li>Yritystoimintaa, konsultointia: nettikasinoiden matematiikkaa sekä matematiikan opettaminen <b>tekoälylle</b>, lukiolaisille ja muille. Manifold Solutions Oy, <span class="cyan">matikkapelit.fi</span>, TikTok <span class="cyan">@matikkapelit</span></li>
+    <li>Materiaalin kehittämistä mm. <span class="cyan">lääkisvalmennukselle</span> <span class="muted">(lääkisvalmennuksen perustaja Sampo Tiensuu on myös Ressu, lääkisvalmennus.fi)</span></li>
   </ul>
   <aside class="notes"><ul>
     <li>30 sekuntia. Tarkemmin osassa 9.</li>
@@ -828,10 +880,10 @@ body.idle{ cursor:none; }
       <h2>Eulerin lause</h2>
       <p>Tämä pätee kaikille yhtenäisille verkoille: Eulerin kierros on olemassa <span class="gold">jos ja vain jos</span> kaikki asteet ovat parillisia.</p>
       <p class="small muted">Parittomat solmut <span class="mag">magentalla</span>.</p>
-      <p class="f" data-viz="try1">Yritetään kierrosta: polku juuttuu <span class="mag">parittomaan solmuun</span>.</p>
+      <p class="f" data-viz="try1">Kun yrittää kiertää verkkoa, polku juuttuu aina <span class="mag">parittomaan solmuun</span>.</p>
       <i class="f step" data-viz="try2"></i>
       <p class="f" data-viz="even">Muutetaan verkkoa niin, että kaikki asteet ovat parillisia.</p>
-      <p class="f" data-viz="even circ">Nyt kierros onnistuu: jokainen särmä kuljetaan kerran, ja polku palaa alkuun.</p>
+      <p class="f" data-viz="even circ">Nyt kierros onnistuu.</p>
     </div>
     <!-- three nested squares of 12 nodes, built by the script (squareGraph) -->
     <div class="viz side"><svg class="pane sq" viewBox="-10 -10 440 440" preserveAspectRatio="xMidYMid meet"></svg></div>
@@ -955,7 +1007,7 @@ body.idle{ cursor:none; }
   <i class="f step" data-viz="go"></i>
   <div class="f" data-viz="go">
     <p>Eulerin polulle on helppo testi: laske asteet. Hamiltonin polulle <span class="mag">ei tunneta nopeaa menetelmää</span>.</p>
-    <p>Valmiin reitin <span class="gold">tarkistaminen</span> on helppoa. Onko sen <span class="gold">löytäminen</span> aina yhtä helppoa? Tämä on <span class="cyan">P = NP -ongelma</span>, avoin vuodesta 1971.</p>
+    <p>Paras tunnettu tapa on kokeilla kaikki mahdolliset reitit. Tämä on yhtäpitävä kuuluisan <span class="cyan">P = NP -ongelman</span> kanssa, joka on avoin vuodesta 1971. Kuka ehtii ratkaista tämän ensin, tekoäly vai ihminen?</p>
   </div>
   <aside class="notes"><ul>
     <li>Painalluksella vasemmalla piirtyy Hamiltonin polku. Oikealla yritetään yhä uudestaan eri solmuista: parhaimmillaan päästään 13 solmuun, ja yksi jää aina yli (magenta).</li>
@@ -974,7 +1026,7 @@ body.idle{ cursor:none; }
     <p>Eulerin havainto synnytti <span class="cyan">verkkoteorian</span> ja loi myös perustan <span class="gold">topologialle</span>.</p>
   </div>
   <figure class="f"><img src="img/metro-linjakartta.jpg" alt="Helsingin metron linjakartta"><figcaption>Topologinen</figcaption></figure>
-  <p>Esimerkki pyrähdyksestä matematiikassa.</p>
+  <p>Esimerkki matemaattisesta läpimurrosta.</p>
   <aside class="notes"><ul>
     <li>Sama metro kahdesti. Kartalla etäisyydet ja mutkat ovat oikein. Linjakartta heittää ne pois ja säilyttää vain järjestyksen ja haarautumisen Itäkeskuksessa: se on verkko.</li>
     <li>Matkustajalle linjakartta riittää: missä vaihdetaan, monesko asema.</li>
@@ -1022,10 +1074,11 @@ body.idle{ cursor:none; }
 
 <section class="slide" data-part="3">
   <h2>Robottihiiri</h2>
-  <figure class="mouse-pic"><img src="img/robottihiiri.jpg" alt="Lelurobotti, läpinäkyvä hiiri, jolla on metallilankainen viiksi"></figure>
-  <p class="f">Viiksi tuntee seinän ja ohjaa hiirtä: <span class="gold">seinän seuraaminen</span> mekaanisesti.</p>
+  <figure class="mouse-pic"><img src="img/theseus.jpg" alt="Shannonien Theseus-hiiri labyrintissaan MIT Museumissa"></figure>
+  <p class="f">Claude ja Betty Shannon 1950: <span class="gold">Theseus</span>, labyrintin ratkaiseva hiiri. Releet muistavat reitin.</p>
   <aside class="notes"><ul>
-    <li>Sama sääntö kuin labyrintin robotilla, toteutettuna viiksellä ja moottorilla.</li>
+    <li>Puinen hiiri liikkuu labyrintin alla olevan sähkömagneetin vetämänä. Puhelinreleet hoitavat logiikan: hiiri etsii reitin kokeilemalla ja muistaa sen, toisella kerralla se kulkee suoraan perille.</li>
+    <li>Nimi viittaa Theseukseen, joka löysi labyrintista ulos Ariadnen langan avulla.</li>
   </ul></aside>
 </section>
 
@@ -1062,13 +1115,26 @@ body.idle{ cursor:none; }
 </section>
 
 <!-- ════════════════════════ 4 · TEKOÄLYMALLIEN UNIVERSAALISUUS ════════════════════════ -->
-<section class="slide divider" data-part="4">
+<section class="slide choose" data-part="4" data-partname="Valitse luku">
+  <h2>Luku 4: kumpi?</h2>
+  <div class="choose-cards">
+    <button class="pick" data-go="a"><span class="key">1</span><b>Tekoälymallien universaalisuus</b><span>Tekoälyn mahdollisuudet ja rajoitteet (Turing 1937)</span></button>
+    <button class="pick" data-go="b"><span class="key">2</span><b>Hopfieldin verkot</b><span>Kielimallien (eräs) teoreettinen pohja (Hopfield 1982). Fysiikan Nobel 2024.</span></button>
+  </div>
+  <p class="muted">Äänestys! Klikkaa valittua, tai paina 1 tai 2.</p>
+  <aside class="notes"><ul>
+    <li>Klikkaus tai näppäin 1 / 2 vie valitun luvun alkuun. Toinen luku ohitetaan, ja luvun jälkeen jatketaan lukuun 5.</li>
+    <li>Pelkkä välilyönti tai nuoli valitsee luvun 1.</li>
+  </ul></aside>
+</section>
+
+<section class="slide divider" data-part="4" data-branch="a">
   <div class="num">04</div>
   <h2>Tekoälymallien universaalisuus</h2>
   <aside class="notes"><ul><li>8 min.</li></ul></aside>
 </section>
 
-<section class="slide" data-part="4">
+<section class="slide" data-part="4" data-branch="a">
   <div class="cols">
     <div class="stack">
       <h2>Tekoälymallit ovat universaaleja</h2>
@@ -1088,7 +1154,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide" data-part="4">
+<section class="slide" data-part="4" data-branch="a">
   <div class="cols">
     <div class="stack">
       <h2>Punainen nappi</h2>
@@ -1130,7 +1196,7 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
-<section class="slide dslide" data-part="4">
+<section class="slide dslide" data-part="4" data-branch="a">
   <div class="cols">
     <div class="stack">
       <h2>Häirikkö H</h2>
@@ -1138,6 +1204,12 @@ body.idle{ cursor:none; }
       <p class="f" data-viz="d self">H saa syötteeksi <span class="mag">oman koodinsa h</span>. Mitä T sanoo parista (h, h)?</p>
       <p class="f" data-viz="d self c1">"Turvallinen" ⇒ H painaa ⇒ <span class="red">T oli väärässä</span>.</p>
       <p class="f" data-viz="d self c2">"Vaarallinen" ⇒ H ei paina ⇒ <span class="red">T oli väärässä</span>.</p>
+      <div class="f formal" data-viz="d self c2">
+        <p class="muted">Korrektisuusoletuksesta seuraa, kun X on agentti, jonka koodi on x:</p>
+        <p>H(x) painaa nappia ⇔ T(x, x) = <span class="green">turvallinen</span> ⇔ X(x) on turvallinen</p>
+        <p class="muted">Sijoitetaan x = h:</p>
+        <p>H(h) <span class="mag">ei ole</span> turvallinen ⇔ H(h) on turvallinen</p>
+      </div>
       <p class="f" data-viz="d self c2 none">Täydellistä tarkastaja-agenttia T <span class="mag">ei ole</span>.</p>
       <p class="f" data-viz="d self c2 none">⇒ Mikään tarkastaja-agentti ei voi taata <span class="gold">kaikkien</span> agenttien turvallisuutta.</p>
       <p class="f" data-viz="d self c2 none">Tämä on <span class="cyan">teoreettinen</span> tulos. Käytännössä turvatarkastukset voivat toimia <span class="green">todella hyvin</span>.</p>
@@ -1189,6 +1261,100 @@ body.idle{ cursor:none; }
   </ul></aside>
 </section>
 
+<!-- ════════════════════════ 4B · HOPFIELDIN VERKOT (the other chapter 4) ════════════════════════ -->
+<section class="slide divider" data-part="4" data-branch="b" data-partname="Hopfieldin verkot">
+  <div class="num">04</div>
+  <h2>Hopfieldin verkot</h2>
+  <p class="sub">Verkko, joka muistaa</p>
+  <aside class="notes"><ul><li>8 min.</li></ul></aside>
+</section>
+
+<section class="slide ising" data-part="4" data-branch="b" data-partname="Hopfieldin verkot">
+  <div class="cols">
+    <div class="stack">
+      <h2>Ising-malli</h2>
+      <p>Magneetti ruudukkona: jokainen solu on pieni magneetti, <span class="gold">spin</span> ylös tai alas, +1 tai −1.</p>
+      <ul class="pts">
+        <li class="f">Naapurit haluavat osoittaa samaan suuntaan. Energia E = −Σ s<sub>i</sub>s<sub>j</sub> yli naapuriparien.</li>
+        <li class="f">Kylmässä spinit järjestyvät ja syntyy <span class="cyan">magneetti</span>. Kuumassa ne sekoittuvat.</li>
+      </ul>
+      <p class="f muted small">Lenz 1920, Ising 1925. Onsager ratkaisi tason mallin 1944: siirtymä tapahtuu lämpötilassa 2,27.</p>
+    </div>
+    <!-- a live 64 × 64 Ising model, heat-bath updates, temperature from the slider (isingSlide) -->
+    <div class="ising-box">
+      <canvas class="ising-c" width="64" height="64"></canvas>
+      <div class="ising-ctl">
+        <span>kylmä</span><input type="range" class="ising-t" min="0.5" max="4" step="0.05" value="1.5" aria-label="Lämpötila"><span>kuuma</span>
+        <button class="ising-mix">Sekoita</button>
+      </div>
+      <p class="ising-val small muted"></p>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Simulaatio pyörii koko ajan. Säädin muuttaa lämpötilaa: alle 2,27 syntyy isoja samansuuntaisia alueita, yli sen kohinaa. "Sekoita" aloittaa satunnaisesta tilasta.</li>
+    <li>Jokainen solu katsoo vain neljää naapuriaan, paikallinen sääntö, ja silti syntyy globaali järjestys.</li>
+  </ul></aside>
+</section>
+
+<section class="slide hopgen" data-part="4" data-branch="b" data-partname="Hopfieldin verkot">
+  <h2 class="q">Hopfieldin verkko on Ising-mallin yleistys</h2>
+  <div class="cols even hopgen-cols">
+    <div class="stack">
+      <svg class="hg hg-ising" viewBox="-20 -20 340 340"></svg>
+      <p><span class="cyan">Ising:</span> vain naapurit, ja jokainen pari vetää yhtä lujaa.</p>
+    </div>
+    <div class="stack f">
+      <svg class="hg hg-hop" viewBox="-170 -170 340 340"></svg>
+      <p><span class="cyan">Hopfield:</span> jokainen jokaiseen, ja jokaisella parilla oma paino w<sub>ij</sub>, <span class="cyan">positiivinen</span> tai <span class="mag">negatiivinen</span>.</p>
+    </div>
+  </div>
+  <p class="f">Energia on samaa muotoa, E = −½ Σ w<sub>ij</sub> s<sub>i</sub>s<sub>j</sub>. Painot valitaan muistojen mukaan, jolloin <span class="gold">muistot ovat energian laaksoja</span>.</p>
+  <aside class="notes"><ul>
+    <li>Hopfield 1982. Hebbin sääntö: w<sub>ij</sub> = Σ muistojen p<sub>i</sub>p<sub>j</sub>. Solut, jotka ovat muistoissa yhtä aikaa päällä, vahvistavat toisiaan.</li>
+    <li>Sotkettu kuva palautuu: solu kerrallaan kääntyy, ja energia laskee kuin pallo vierisi laaksoon. Seuraavaksi demo.</li>
+  </ul></aside>
+</section>
+
+<section class="slide hopf" data-part="4" data-branch="b" data-partname="Hopfieldin verkot">
+  <h2>Hopfield demo</h2>
+  <!-- a 10 × 10 Hopfield network: draw on the grid, store, scramble, recall with the energy falling (hopfieldDemo) -->
+  <div class="hop">
+    <div class="hop-left">
+      <svg class="hop-grid" viewBox="0 0 460 460"></svg>
+      <div class="hop-btns"><button data-act="noise">Sattumanvaraiset alkuarvot</button></div>
+    </div>
+    <div class="hop-side">
+      <div class="hop-mem"><span class="muted">Muistot:</span><div class="hop-thumbs"></div></div>
+      <div class="hop-btns">
+        <button data-act="store">Tallenna</button>
+        <button data-act="recall" class="go">Iteroi</button>
+        <button data-act="forget">Nollaa painot</button>
+      </div>
+      <svg class="hop-energy" viewBox="0 0 560 220"></svg>
+      <p class="hop-status small muted"></p>
+    </div>
+  </div>
+  <aside class="notes"><ul>
+    <li>Valmiina kolme muistoa: hymy, talo ja sydän. Klikkaa muistoa, paina Sattumanvaraiset alkuarvot ja sitten Iteroi: solut kääntyvät yksi kerrallaan, ja energia laskee portaittain.</li>
+    <li>Piirrä hiirellä ruudukkoon oma kuvio ja tallenna se. Liian monta muistoa: verkko alkaa muistaa sekoituksia, valemuistoja.</li>
+    <li>Nollaa painot: kaikki yhteydet yhtä vahvoja. Silloin jokainen solu seuraa enemmistöä, ja Iteroi vie tyhjään tai täyteen ruutuun. Uusi Tallenna aloittaa muistamisen alusta.</li>
+    <li>Energia E = −½ Σ w<sub>ij</sub> s<sub>i</sub> s<sub>j</sub>. Muistot ovat energiamaiseman laaksoja.</li>
+  </ul></aside>
+</section>
+
+<section class="slide center" data-part="4" data-branch="b" data-partname="Hopfieldin verkot">
+  <p class="big">Nykyiset kielimallit ovat Hopfieldin verkkojen kaukaisia jälkeläisiä.</p>
+  <div class="faces sm f" style="justify-content:center">
+    <figure class="face"><img src="img/hopfield.jpg" alt=""><figcaption>John Hopfield<small>s. 1933 · verkko 1982</small></figcaption></figure>
+    <figure class="face"><img src="img/hinton.jpg" alt=""><figcaption>Geoffrey Hinton<small>s. 1947</small></figcaption></figure>
+  </div>
+  <p class="f muted">Fysiikan Nobel 2024: Hopfield ja Hinton.</p>
+  <p class="f small">Hubert Ramsauer ym. 2020, <i>Hopfield Networks is All You Need</i></p>
+  <aside class="notes"><ul>
+    <li>Kielimallien huomiomekanismi on matemaattisesti modernin Hopfieldin verkon päivitysaskel: Ramsauer ym. 2020, "Hopfield Networks is All You Need".</li>
+  </ul></aside>
+</section>
+
 <!-- ════════════════════════ 5 · INHIMILLISYYS ════════════════════════ -->
 <section class="slide divider" data-part="5">
   <div class="num">05</div>
@@ -1201,6 +1367,8 @@ body.idle{ cursor:none; }
     <div class="stack">
       <p class="big left">Ymmärryksen kokemus ja viehätys</p>
       <p class="f">Kukaan ei voi saada ahaa-elämystä puolestani..</p>
+      <p class="f big left">…yhdessä</p>
+      <p class="f muted">Sosiaalinen toiminta vaatii ihmisiä – määritelmän mukaan :P</p>
     </div>
     <svg class="sun" viewBox="0 0 400 260" aria-hidden="true">
       <defs>
@@ -1237,7 +1405,11 @@ body.idle{ cursor:none; }
     <figure><img src="img/rso-musiikkitalo.jpg" alt="Radion sinfoniaorkesteri Musiikkitalossa"><figcaption><small>Radion sinfoniaorkesteri, Musiikkitalo 2023</small></figcaption></figure>
     <figure><img src="img/pamosa-2026.jpg" alt="PaMoSA-konferenssin paneelikeskustelu"><figcaption><small>Paneelikeskustelu, PaMoSA Oulu 2026</small></figcaption></figure>
   </div>
-  <p class="f">Asian ydin välittyy livenä paremmin. <span class="muted">Matematiikasta voi puhua samalla aallonpituudella kenen kanssa tahansa, mistä kulttuurista tahansa.</span></p>
+  <ul class="pts tight pair-pts">
+    <li class="f">Ideoiden jakaminen toimii livenä parhaiten.</li>
+    <li class="f">Matematiikasta voi puhua samalla aallonpituudella kenen kanssa tahansa, mistä kulttuurista tahansa.</li>
+    <li class="f">Matemaattinen diskurssi synnyttää omaa kulttuuria.</li>
+  </ul>
   <aside class="notes"><ul>
     <li>Musiikki: äänitteitä on voinut kuunnella kotona halvalla vuosikymmeniä, ja livestriimissä kuva ja ääni ovat usein parempia. Silti konsertit myydään loppuun: klassinen, pop, rock.</li>
     <li>Matematiikka: paperit ja videot ovat kaikkien saatavilla. Silti konferenssit ja seminaarit täyttyvät. Koronan jälkeen kasvokkain tapaaminen oli erityisen haluttua.</li>
@@ -1284,7 +1456,7 @@ body.idle{ cursor:none; }
 </section>
 
 <section class="slide" data-part="5">
-  <h2>Ego ja kilpailu</h2>
+  <h2>Kilpailullisuus ja omat saavutukset</h2>
   <ul class="pts">
     <li>Kilpailu, ensimmäisenä oleminen ja henkilökohtainen lähestymistapa ovat perinteisesti olleet iso osa matemaatikon motivaatiota.</li>
     <li class="f">Minkä muodon nämä saavat tulevaisuudessa?</li>
@@ -1708,40 +1880,6 @@ body.idle{ cursor:none; }
 <section class="slide" data-part="9">
   <div class="cols">
     <div class="stack">
-      <h2>Hopfieldin verkko</h2>
-      <p>Sama ruudukko, mutta nyt säännöt <span class="gold">opitaan</span> esimerkeistä.</p>
-      <ul class="pts">
-        <li class="f">Elämäpeli on tehty laskemaan loputtomiin.</li>
-        <li class="f">Hopfieldin verkko on tehty <span class="cyan">asettumaan muistoon</span>.</li>
-      </ul>
-    </div>
-    <div class="faces sm">
-      <figure class="face"><img src="img/hopfield.jpg" alt=""><figcaption>John Hopfield<small>s. 1933 · verkko 1982</small></figcaption></figure>
-      <figure class="face"><img src="img/hinton.jpg" alt=""><figcaption>Geoffrey Hinton<small>s. 1947</small></figcaption></figure>
-    </div>
-  </div>
-  <p class="f muted">Fysiikan Nobel 2024: Hopfield ja Hinton.</p>
-  <aside class="notes"><ul>
-    <li>Molemmat ovat binääristen solujen verkkoja, joita päivitetään säännöllä. Hopfieldin verkko ei ole elämäpelin yleistys.</li>
-    <li>Verkkona: jokainen solu on yhteydessä jokaiseen, ja yhteyksillä on painot.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="9">
-  <div class="demo">
-    <div class="tag">▶ DEMO</div>
-    <div class="what">Hopfieldin verkko: piirrä, tallenna, sotke, muista</div>
-    <div class="how">Piirrä 3–4 kuviota ja tallenna ne. Sotke yksi ja paina "Muista": solut kääntyvät yksi kerrallaan, ja vieressä energia laskee portaittain. Liian monta kuviota: valemuistoja.</div>
-  </div>
-  <aside class="notes"><ul>
-    <li>Energiamaisema: verkko vierii alamäkeen kuin pallo laaksoon, ja jokainen laakso on tallennettu muisto.</li>
-    <li>Valemuistot: verkko muistaa kuvion, jota sille ei koskaan näytetty.</li>
-  </ul></aside>
-</section>
-
-<section class="slide" data-part="9">
-  <div class="cols">
-    <div class="stack">
       <h2>Kuusikulmiot aivoissa</h2>
       <p>Rotan aivoissa on soluja, jotka laukeavat, kun rotta on <span class="gold">kuusikulmiohilan</span> pisteessä: grid cellit, 2005.</p>
       <p class="f">Malli: neuronit, jotka vahvistavat lähellä olevia ja estävät kauempana olevia. Hila syntyy itsestään.</p>
@@ -1788,11 +1926,6 @@ body.idle{ cursor:none; }
     <li>Varro kirjoitti mehiläisten kuusikulmioista jo 36 eaa. Hales todisti kennoteoreeman 1999.</li>
     <li>Paikallinen sääntö (jokainen kenno tai neuroni naapureineen) tuottaa globaalin hilan.</li>
   </ul></aside>
-</section>
-
-<section class="slide center" data-part="9">
-  <p class="big">Nykyiset kielimallit ovat Hopfieldin verkkojen kaukaisia jälkeläisiä.</p>
-  <p class="big cyan f">Mitä ne tekevät nyt matematiikalle?</p>
 </section>
 
 <section class="slide divider" data-part="9">
@@ -1983,7 +2116,7 @@ body.idle{ cursor:none; }
     <li>Martin Gardner: Konrad Jacobs, Erlangen, CC BY-SA 2.0 de, <a href="https://commons.wikimedia.org/wiki/File:Martin_Gardner.jpeg">Wikimedia Commons</a></li>
     <li>John Hopfield: Jay Dixit, CC BY-SA 4.0, <a href="https://commons.wikimedia.org/wiki/File:John_J._Hopfield_delivering_his_lecture_at_the_2024_Nobel_Prize_Lectures_in_Stockholm.jpg">Wikimedia Commons</a></li>
     <li>Geoffrey Hinton: Cmichel67, CC BY-SA 4.0, <a href="https://commons.wikimedia.org/wiki/File:Geoffrey_Hinton_in_2026.jpg">Wikimedia Commons</a></li>
-    <li>Terence Tao: Institute for Pure &amp; Applied Mathematics, CC BY 4.0, <a href="https://commons.wikimedia.org/wiki/File:Terence_Tao_at_IPAM%27s_Fireside_Chat_2026_(50m16s)_(cropped).jpg">Wikimedia Commons</a></li>
+    <li>Terence Tao, Tao-dia ja kysymysdia: Institute for Pure &amp; Applied Mathematics, CC BY 4.0, <a href="https://commons.wikimedia.org/wiki/File:Terence_Tao_at_IPAM%27s_Fireside_Chat_2026_(50m16s)_(cropped).jpg">Wikimedia Commons</a></li>
     <li>Garri Kasparov: Fryta 73 from Strzegom, CC BY-SA 2.0, <a href="https://commons.wikimedia.org/wiki/File:Garri_Kasparow_(18776605665)_(cropped)_2.jpg">Wikimedia Commons</a></li>
     <li>Vito Volterra: tuntematon, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Vito_Volterra.jpg">Wikimedia Commons</a></li>
     <li>Elias Lönnrot: tuntematon (muokkaus: Bff), Public domain, <a href="https://commons.wikimedia.org/wiki/File:Elias_L%C3%B6nnrot_portrait-2.jpg">Wikimedia Commons</a></li>
@@ -2002,7 +2135,7 @@ body.idle{ cursor:none; }
     <li>Anna Pavlova kuolevana joutsenena 1908: tuntematon kuvaaja, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Anna_Pavlova_as_the_Dying_Swan.jpg">Wikimedia Commons</a></li>
     <li>Magnus Carlsen 2012: Autopilot, CC BY-SA 3.0, <a href="https://commons.wikimedia.org/wiki/File:Magnus_Carlsen_(2012).jpg">Wikimedia Commons</a></li>
     <li>Muhammad Ali 1967: Ira Rosenberg, World Journal Tribune, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Muhammad_Ali_NYWTS.jpg">Wikimedia Commons</a></li>
-    <li>Terence Tao, kysymysdia: Penny Jennings / UCLA, kuva Taon artikkelista "Why maths has a future even in the era of AI", Nature 2026</li>
+    <li>Theseus-hiiri, Claude ja Betty Shannon 1950, MIT Museum: Nickknack00, CC BY 4.0, <a href="https://commons.wikimedia.org/wiki/File:Theseus_(1950),_Betty_and_Claude_Shannon,_MIT_Museum.jpg">Wikimedia Commons</a></li>
     <li>Alan Turing Princetonissa 1936: tuntematon kuvaaja, Public domain, <a href="https://commons.wikimedia.org/wiki/File:Alan_Turing_(1912-1954)_in_1936_at_Princeton_University.jpg">Wikimedia Commons</a></li>
     <li>Jouko Väänänen: Mirnadza, CC0, <a href="https://commons.wikimedia.org/wiki/File:Jouko_Vaananen2014.jpg">Wikimedia Commons</a></li>
     <li>Kirjojen kannet: <i>The Evolution of Physics</i> (Simon &amp; Schuster 1938), <i>The Knot Book</i> (AMS 2004), <i>Dependence Logic</i> (Cambridge University Press 2007), <i>Topology and AI</i> (EMS Press)</li>
@@ -2046,12 +2179,18 @@ const notesBox = document.getElementById("notes");
 const blank = document.getElementById("blank");
 let cur = 0;
 
+// a slide may name its part itself (the two chapters 4 and the choice between them)
+const partName = s => s.dataset.partname || PARTS[+s.dataset.part];
+// Two chapters 4: slides with data-branch belong to one of them, and the deck skips the other.
+let branch = "a";
+const inPath = s => !s.dataset.branch || s.dataset.branch === branch;
+
 // kicker over every non-divider slide
 slides.forEach(s => {
   const p = +s.dataset.part;
   if (p && !s.classList.contains("divider")) {
     const k = document.createElement("div");
-    k.className = "kicker"; k.textContent = p + " · " + PARTS[p];
+    k.className = "kicker"; k.textContent = p + " · " + partName(s);
     s.prepend(k);
   }
 });
@@ -2545,6 +2684,155 @@ addEventListener("keydown", e => {
   const b = document.querySelector(".slide.on canvas.board");
   if (b) { b.undo(); e.preventDefault(); }
 });
+
+// ── Ising-malli: heat-bath updates on a 64 × 64 torus while the slide is shown ──
+function isingSlide(sec) {
+  const L = 64, c = sec.querySelector(".ising-c"), ctx = c.getContext("2d"), img = ctx.createImageData(L, L);
+  const slider = sec.querySelector(".ising-t"), val = sec.querySelector(".ising-val");
+  const s = new Int8Array(L * L);
+  const mix = () => { for (let k = 0; k < s.length; k++) s[k] = Math.random() < .5 ? 1 : -1; };
+  const UP = [0, 229, 255], DN = [40, 22, 70];
+  const draw = () => {
+    for (let k = 0; k < s.length; k++) { const col = s[k] > 0 ? UP : DN; img.data.set(col, 4 * k); img.data[4 * k + 3] = 255; }
+    ctx.putImageData(img, 0, 0);
+  };
+  const sweep = T => {
+    for (let n = 0; n < s.length; n++) {
+      const k = (Math.random() * s.length) | 0, x = k % L, y = (k / L) | 0;
+      const h = s[y * L + (x + 1) % L] + s[y * L + (x + L - 1) % L] + s[((y + 1) % L) * L + x] + s[((y + L - 1) % L) * L + x];
+      s[k] = Math.random() < 1 / (1 + Math.exp(-2 * h / T)) ? 1 : -1;
+    }
+  };
+  const show = () => val.textContent = "lämpötila " + (+slider.value).toFixed(2).replace(".", ",");
+  slider.addEventListener("input", show);
+  slider.addEventListener("change", () => slider.blur());
+  sec.querySelector(".ising-mix").addEventListener("click", e => { e.currentTarget.blur(); mix(); draw(); });
+  mix(); draw(); show();
+  mover(sec.querySelector(".ising-box"), () => { const T = +slider.value; sweep(T); sweep(T); draw(); });
+}
+document.querySelectorAll(".slide.ising").forEach(isingSlide);
+
+// ── Hopfield on Ising-mallin yleistys: a 4 × 4 lattice and a complete graph with signed weights ──
+function hopgenSlide(sec) {
+  const a = sec.querySelector(".hg-ising"), b = sec.querySelector(".hg-hop");
+  const G = 100, P = [];
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) P.push([x * G, y * G]);
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+    if (x < 3) svgEl("line", { x1: x * G, y1: y * G, x2: (x + 1) * G, y2: y * G }, a);
+    if (y < 3) svgEl("line", { x1: x * G, y1: y * G, x2: x * G, y2: (y + 1) * G }, a);
+  }
+  P.forEach(([x, y]) => svgEl("circle", { cx: x, cy: y, r: 13 }, a));
+  const n = 8, R = 140, Q = [...Array(n)].map((_, i) => [R * Math.cos(2 * Math.PI * i / n - Math.PI / 2), R * Math.sin(2 * Math.PI * i / n - Math.PI / 2)]);
+  let seed = 5; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) {
+    const w = rnd() * 2 - 1;
+    svgEl("line", { x1: Q[i][0], y1: Q[i][1], x2: Q[j][0], y2: Q[j][1], class: w < 0 ? "neg" : "", style: `stroke-width:${(1 + 5 * Math.abs(w)).toFixed(1)};opacity:${(.35 + .65 * Math.abs(w)).toFixed(2)}` }, b);
+  }
+  Q.forEach(([x, y]) => svgEl("circle", { cx: x, cy: y, r: 13 }, b));
+}
+document.querySelectorAll(".slide.hopgen").forEach(hopgenSlide);
+
+// ── Hopfieldin verkko: 10 × 10 cells (±1), Hebbian weights, recall one flip at a time ──
+function hopfieldDemo(sec) {
+  const N = 10, M = N * N, CS = 46, grid = sec.querySelector(".hop-grid"), thumbs = sec.querySelector(".hop-thumbs");
+  const en = sec.querySelector(".hop-energy"), status = sec.querySelector(".hop-status");
+  const PRE = {
+    hymy: ["..######..", ".#......#.", "#..#..#..#", "#..#..#..#", "#........#", "#.#....#.#", "#..####..#", "#........#", ".#......#.", "..######.."],
+    talo: ["....##....", "...####...", "..######..", ".########.", "##########", ".#......#.", ".#.##...#.", ".#.##.###.", ".#....###.", ".########."],
+    sydän: ["..........", ".##....##.", "##########", "##########", "##########", ".########.", "..######..", "...####...", "....##....", ".........."],
+  };
+  const fromRows = r => r.join("").split("").map(c => c === "#" ? 1 : -1);
+  let mem = Object.values(PRE).map(fromRows), W = null, s = mem[0].slice(), run = null, hist = [];
+  const train = () => {
+    W = Array.from({ length: M }, () => new Float32Array(M));
+    for (const p of mem) for (let i = 0; i < M; i++) for (let j = 0; j < M; j++) if (i !== j) W[i][j] += p[i] * p[j] / M;
+    // no memories: every connection equally strong, so each cell follows the majority (empty or full grid)
+    if (!mem.length) for (let i = 0; i < M; i++) for (let j = 0; j < M; j++) if (i !== j) W[i][j] = 1 / M;
+  };
+  const field = i => { let h = 0; const w = W[i]; for (let j = 0; j < M; j++) h += w[j] * s[j]; return h; };
+  const energy = x => { let e = 0; for (let i = 0; i < M; i++) { let h = 0; for (let j = 0; j < M; j++) h += W[i][j] * x[j]; e -= x[i] * h / 2; } return e; };
+  const cells = [];
+  for (let k = 0; k < M; k++) cells.push(svgEl("rect", { x: (k % N) * CS + 1, y: Math.floor(k / N) * CS + 1, width: CS - 2, height: CS - 2, rx: 4 }, grid));
+  const paint = () => cells.forEach((c, k) => c.classList.toggle("on", s[k] > 0));
+  const nearest = () => {
+    let best = -1, bo = -1e9;
+    mem.forEach((p, m) => { let o = 0; for (let k = 0; k < M; k++) o += p[k] * s[k]; if (o > bo) { bo = o; best = m; } });
+    return bo === M ? best : -1;
+  };
+  const drawThumbs = () => {
+    thumbs.innerHTML = "";
+    const nr = nearest();
+    mem.forEach((p, m) => {
+      const t = svgEl("svg", { viewBox: "0 0 10 10", class: m === nr ? "near" : "" }, thumbs);
+      p.forEach((v, k) => { if (v > 0) svgEl("rect", { x: k % N + .08, y: Math.floor(k / N) + .08, width: .84, height: .84 }, t); });
+      t.addEventListener("click", () => { stop(); s = p.slice(); paint(); drawThumbs(); plot(); });
+    });
+  };
+  // energy plot: one point per flip
+  const X0 = 70, X1 = 540, Y0 = 20, Y1 = 180;
+  const plot = () => {
+    en.innerHTML = "";
+    svgEl("path", { class: "ax", d: `M${X0} ${Y0}V${Y1}H${X1}` }, en);
+    const lab = svgEl("text", { x: 4, y: 26 }, en); lab.textContent = "energia";
+    const ax = svgEl("text", { x: X1, y: 206, "text-anchor": "end" }, en); ax.textContent = "kääntöjä";
+    if (hist.length < 2) return;
+    const lo = Math.min(...mem.map(energy), ...hist), hi = Math.max(...hist), n = Math.max(hist.length - 1, 10);
+    const y = e => Y0 + (hi - e) / ((hi - lo) || 1) * (Y1 - Y0), x = i => X0 + i / n * (X1 - X0);
+    let d = `M${x(0)} ${y(hist[0])}`;
+    for (let i = 1; i < hist.length; i++) d += `H${x(i)}V${y(hist[i])}`;
+    svgEl("path", { class: "ln", d }, en);
+  };
+  const say = t => status.textContent = t;
+  const stop = () => { if (run) { clearInterval(run); run = null; } };
+  const recall = () => {
+    stop();
+    hist = [energy(s)]; plot();
+    let order = [], quiet = 0, flips = 0;
+    run = setInterval(() => {
+      cells.forEach(c => c.classList.remove("flip"));
+      for (let tries = 0; tries < M; tries++) {
+        if (!order.length) order = [...Array(M).keys()].sort(() => Math.random() - .5);
+        const i = order.pop(), h = field(i), v = h > 0 ? 1 : h < 0 ? -1 : s[i];
+        if (v !== s[i]) {
+          s[i] = v; flips++; quiet = 0;
+          cells[i].classList.toggle("on", v > 0); cells[i].classList.add("flip");
+          hist.push(hist[hist.length - 1] - 2 * Math.abs(h));   // a flip towards the sign of h: ΔE = −2|h|
+          plot(); say(`Kääntöjä ${flips}. Energia laskee.`); return;
+        }
+        if (++quiet >= M) break;
+      }
+      stop(); cells.forEach(c => c.classList.remove("flip"));
+      const nr = nearest(); drawThumbs();
+      const flat = s.every(v => v === s[0]) ? (s[0] > 0 ? "täyteen ruutuun" : "tyhjään ruutuun") : "";
+      say(nr >= 0 ? `Valmis: ${flips} kääntöä, verkko asettui muistoon.`
+        : !mem.length && flat ? `Valmis: ${flips} kääntöä. Kun painot ovat samat, verkko asettuu ${flat}.`
+        : `Pysähtyi ${flips} käännön jälkeen: tämä ei ole mikään tallennettu muisto.`);
+    }, 70);
+  };
+  const act = {
+    store: () => { stop(); if (!mem.some(p => p.every((v, k) => v === s[k]))) mem.push(s.slice()); train(); drawThumbs(); say(`Muistoja ${mem.length}.`); },
+    noise: () => { stop(); [...Array(M).keys()].sort(() => Math.random() - .5).slice(0, 25).forEach(k => s[k] = -s[k]); paint(); drawThumbs(); hist = []; plot(); say("Sattumanvaraiset alkuarvot: neljännes soluista käännetty."); },
+    recall,
+    clear: () => { stop(); s = Array(M).fill(-1); paint(); drawThumbs(); hist = []; plot(); say("Piirrä hiirellä ruudukkoon."); },
+    forget: () => { stop(); mem = []; train(); drawThumbs(); say("Painot nollattu: kaikki yhteydet ovat nyt yhtä vahvoja."); },
+  };
+  sec.querySelectorAll(".hop-btns button").forEach(b => b.addEventListener("click", () => { b.blur(); act[b.dataset.act](); }));
+  // drawing: the first cell decides whether this stroke paints or erases
+  let pen = 0;
+  const cellAt = e => {
+    const r = grid.getBoundingClientRect(), x = Math.floor((e.clientX - r.left) / r.width * N), y = Math.floor((e.clientY - r.top) / r.height * N);
+    return x >= 0 && y >= 0 && x < N && y < N ? y * N + x : -1;
+  };
+  grid.addEventListener("pointerdown", e => {
+    stop(); const k = cellAt(e); if (k < 0) return;
+    pen = -s[k]; s[k] = pen; paint(); try { grid.setPointerCapture(e.pointerId); } catch {}
+  });
+  grid.addEventListener("pointermove", e => { if (!pen) return; const k = cellAt(e); if (k >= 0 && s[k] !== pen) { s[k] = pen; paint(); } });
+  const up = () => { if (pen) { pen = 0; drawThumbs(); } };
+  grid.addEventListener("pointerup", up); grid.addEventListener("pointercancel", up);
+  train(); paint(); drawThumbs(); plot(); say("");
+}
+document.querySelectorAll(".slide.hopf").forEach(hopfieldDemo);
 
 // ── The maze ──
 // A perfect maze (seeded depth-first search): every cell reachable in exactly
@@ -3058,13 +3346,14 @@ function show(i, revealAll = false) {
   slides[cur].classList.remove("on");
   cur = i;
   const s = slides[cur];
+  if (s.dataset.branch) branch = s.dataset.branch;
   frags(s).forEach(f => setFrag(f, revealAll));
   syncViz(s);
   s.classList.add("on");
   syncEmbeds();
   history.replaceState(null, "", "#" + (cur + 1));
   const p = +s.dataset.part;
-  bar.querySelector(".part").textContent = p ? p + " · " + PARTS[p] : "";
+  bar.querySelector(".part").textContent = p ? p + " · " + partName(s) : "";
   bar.querySelector(".count").textContent = (cur + 1) + " / " + slides.length;
   prog.style.width = (100 * (cur + 1) / slides.length) + "%";
   const n = s.querySelector(".notes");
@@ -3096,7 +3385,7 @@ const slideAt = x => Math.max(0, Math.min(slides.length - 1, Math.floor(x / inne
 function hoverAt(x) {
   const i = slideAt(x), s = slides[i], p = +s.dataset.part;
   hoverFill.style.width = (100 * (i + 1) / slides.length) + "%";
-  tip.innerHTML = (p ? "<small>" + p + " · " + PARTS[p] + "</small>" : "") + "<b>" + (i + 1) + "</b>";
+  tip.innerHTML = (p ? "<small>" + p + " · " + partName(s) + "</small>" : "") + "<b>" + (i + 1) + "</b>";
   tip.append(slideName(s));
   tip.style.left = Math.max(tip.offsetWidth / 2 + 6, Math.min(innerWidth - tip.offsetWidth / 2 - 6, x)) + "px";
 }
@@ -3121,12 +3410,25 @@ bar.addEventListener("pointercancel", endScrub);
 
 function next() {
   const f = frags(slides[cur]).find(f => !f.classList.contains("shown"));
-  if (f) setFrag(f, true); else if (cur < slides.length - 1) show(cur + 1);
+  if (f) { setFrag(f, true); return; }
+  let j = cur + 1;
+  while (j < slides.length && !inPath(slides[j])) j++;
+  if (j < slides.length) show(j);
 }
 function prev() {
   const shown = frags(slides[cur]).filter(f => f.classList.contains("shown"));
-  if (shown.length) setFrag(shown[shown.length - 1], false); else if (cur > 0) show(cur - 1, true);
+  if (shown.length) { setFrag(shown[shown.length - 1], false); return; }
+  let j = cur - 1;
+  while (j >= 0 && !inPath(slides[j])) j--;
+  if (j >= 0) show(j, true);
 }
+// the choice slide: a click (or 1 / 2) goes to the start of that chapter
+function choose(b) {
+  branch = b;
+  document.querySelectorAll(".pick").forEach(x => x.classList.toggle("on", x.dataset.go === b));
+  show(slides.findIndex(s => s.dataset.branch === b));
+}
+document.querySelectorAll(".pick").forEach(x => x.addEventListener("click", () => { x.blur(); choose(x.dataset.go); }));
 
 function fullscreen() {
   if (document.fullscreenElement) document.exitFullscreen();
@@ -3145,6 +3447,7 @@ addEventListener("keydown", e => {
   else if (k === "f" || k === "F") fullscreen();
   else if (k === "n" || k === "N") notesBox.hidden = !notesBox.hidden;
   else if (k === "b" || k === "B" || k === ".") blank.hidden = !blank.hidden;
+  else if ((k === "1" || k === "2") && slides[cur].classList.contains("choose")) choose(k === "1" ? "a" : "b");
   else return;
   e.preventDefault();
 });
