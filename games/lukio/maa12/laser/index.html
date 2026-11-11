@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vaakasuora laser</title>
+
+<!-- ════════════════════════════════════════════════════════════════════
+     GAME: Vaakasuora laser (MAA12: does a function have an inverse?)
+     First draft (2026-11-11). Self-contained, uses assets/theme.css and
+     assets/celebrate.js.
+
+     The horizontal line test as a game. A function has an inverse exactly
+     when no horizontal line meets its graph twice; a laser beam is that line.
+     Two hits (two different x with the same f(x)) prove there is no inverse.
+
+     Level 1 "Näe": the graph is shown. The player drags up or down on the
+       board (or ↑/↓, Shift = 0.5) and lets go: the laser fires at that height
+       (y snaps to 0.1). Two or more hits solve the task (no inverse). If no
+       beam can hit twice (no multiple value), the player presses
+       "Moninkertaista arvoa ei löydy" (Vadim): the game's
+       laser sweeps the whole picture from bottom to top. If it finds a double
+       hit, it stops there and a life is lost; if not, the graph is reflected
+       in y = x and the gold curve is f⁻¹.
+     Level 2 "Rajaa": the player drags the ends of an interval under the graph
+       (dragged past the edge, an end goes to ±∞). The interval must contain
+       a given x₀; the goal is the biggest interval on which f has an inverse
+       (between the turning points round x₀, `best`). Each task starts from a
+       wide interval that is never an answer (`start`, Vadim). "Valmis"
+       sweeps the restricted graph. Not injective: the double hit (zoomed in
+       when it is tiny), "Yritä uudelleen", and from then on "Näytä oikea
+       vastaus" beside Valmis; only that button costs a life (Vadim).
+       Injective: points for the length (clipped to the picture), +50 for a
+       maximal interval, −25 per failed try (at least 25), the reflection
+       and the formula of f⁻¹.
+     Level 3 "Paloittain": as level 2 with piecewise linear functions of 5–7
+       pieces, each with two maximal intervals (`maximals`, exact from the
+       pieces' value ranges, `injectiveOn`); either one is a full answer.
+
+     Points per task × level number. Level 1: 100 − 10 per wasted shot (at
+     least 40), +50 for three hits at once. 3 lives; finishing gives +500
+     per life left.
+     Test: type "xyz" or open with ?testi for "⏭ Ohita taso (testi)".
+     ════════════════════════════════════════════════════════════════════ -->
+
+<link rel="stylesheet" href="../../../../assets/theme.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- interval brackets, the case brace, ≤ ∈ √ ∞: Chakra Petch's "(" looks like "[" -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{ --math:"Chakra Petch", "IBM Plex Sans", system-ui, sans-serif; }
+  main{ flex:1; display:flex; flex-direction:column; align-items:center; width:100%; }
+  .statusrow{ width:min(560px,100%); }
+
+  /* the task: question and formula */
+  .task{ width:min(560px,100%); padding:8px clamp(16px,4vw,28px) 0; text-align:center; }
+  .task .q{ font-size:15px; line-height:1.4; color:var(--muted); }
+  .task .fx{
+    font-family:var(--math); font-weight:600; font-size:clamp(19px,5vw,23px);
+    display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0 .35em;
+    min-height:2.7em; margin-top:4px;
+  }
+  .task .dom{ color:var(--muted); font-weight:500; }
+  .iv, .rel{ font-family:"IBM Plex Sans", sans-serif; font-weight:500; }   /* .rel: ≠ ≤ ≥ <, odd in Chakra Petch */
+  .frac{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; font-size:.78em; line-height:1.15; margin:0 .08em; }
+  .frac > span:first-child{ border-bottom:1.5px solid currentColor; padding:0 .25em; }
+  .rad{ border-top:1.5px solid currentColor; padding:0 .12em; margin-left:.03em; }
+  sup{ font-size:.62em; line-height:0; }
+  .pw{ display:inline-flex; align-items:center; gap:.2em; }
+  /* the case brace, drawn from four quarter-round borders so it grows with the rows */
+  .cbrace{ position:relative; align-self:stretch; width:.62em; margin:.15em .12em; --r:.32em; --w:.3em; --t:1.5px; }
+  .cbrace i{ position:absolute; box-sizing:border-box; border:0 solid currentColor; }
+  .cbrace i:nth-child(1){ left:var(--w); width:var(--w); top:0; height:calc(50% - var(--r)); border-left-width:var(--t); border-top-width:var(--t); border-top-left-radius:var(--r); }
+  .cbrace i:nth-child(2){ left:0; width:calc(var(--w) + var(--t)); top:calc(50% - var(--r)); height:var(--r); border-right-width:var(--t); border-bottom-width:var(--t); border-bottom-right-radius:var(--r); }
+  .cbrace i:nth-child(3){ left:0; width:calc(var(--w) + var(--t)); top:calc(50% - var(--t)); height:var(--r); border-right-width:var(--t); border-top-width:var(--t); border-top-right-radius:var(--r); }
+  .cbrace i:nth-child(4){ left:var(--w); width:var(--w); top:calc(50% - var(--t) + var(--r)); bottom:0; border-left-width:var(--t); border-bottom-width:var(--t); border-bottom-left-radius:var(--r); }
+  .cases{ display:grid; grid-template-columns:auto auto; gap:0 .9em; text-align:left; font-size:.82em; line-height:1.4; }
+  .cases .cond{ color:var(--muted); font-weight:500; }
+  .pw.many{ font-size:.8em; }
+  .pw.many .cases{ line-height:1.28; }
+  .m{ font-family:var(--math); font-weight:600; white-space:nowrap; }
+
+  /* the board */
+  .stage-wrap{ width:min(540px, 100%, calc((100dvh - 330px) * 1.035)); min-width:280px; padding:6px 8px 0; }
+  #stage{ display:block; width:100%; height:auto; aspect-ratio:480/464; touch-action:none;
+          user-select:none; -webkit-user-select:none; cursor:crosshair; outline:none; }
+  #stage .plotbg{ fill:rgba(8,7,15,.55); stroke:var(--line); }
+  #stage .grid line{ stroke:rgba(138,147,198,.13); stroke-width:1; }
+  #stage .axis{ stroke:rgba(138,147,198,.6); stroke-width:1.4; }
+  #stage .tick{ fill:var(--muted); font:500 14px var(--ui); paint-order:stroke; stroke:rgba(8,7,15,.9); stroke-width:4px; stroke-linejoin:round; }
+  #stage .axname{ fill:var(--muted); font:600 15px var(--math); }
+  .graph{ filter:var(--glow-cyan); }
+  .graph path{ fill:none; stroke:var(--ink); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  .graph .dot{ fill:var(--ink); }
+  .graph .dot.open{ fill:var(--bg); stroke:var(--ink); stroke-width:2.2; }
+  .graph.dim{ opacity:.32; filter:none; }
+  .graph.inv{ filter:drop-shadow(0 0 5px rgba(255,225,77,.6)); }
+  .graph.inv path{ stroke:var(--gold); }
+  .graph.inv .dot{ fill:var(--gold); }
+  .graph.inv .dot.open{ fill:var(--bg); stroke:var(--gold); }
+  .ghost{ opacity:.5; }
+  .ghost path{ fill:none; stroke:var(--muted); stroke-width:3; stroke-linecap:round; stroke-linejoin:round; }
+  .ghost .dot{ fill:var(--muted); }
+  .ghost .dot.open{ fill:var(--bg); stroke:var(--muted); stroke-width:2.2; }
+  .edge{ stroke:var(--accent); stroke-width:1.2; stroke-dasharray:4 6; opacity:.5; }
+  .yx{ stroke:var(--muted); stroke-width:1.4; stroke-dasharray:6 6; }
+  .yxlab{ fill:var(--muted); font:500 14px var(--math); }
+  .x0dot{ fill:var(--green); filter:drop-shadow(0 0 4px rgba(57,255,158,.8)); }
+  .aim{ stroke:var(--accent); stroke-width:1.5; stroke-dasharray:7 6; opacity:.8; }
+  .beamg{ filter:var(--glow-magenta); }
+  .beamg.spent{ opacity:.28; }
+  .beam{ stroke:var(--magenta); stroke-width:3; stroke-linecap:round; }
+  .hit{ fill:#fff; stroke:var(--magenta); stroke-width:3; }
+  .marks .drop{ stroke:var(--magenta-ink); stroke-width:1.4; stroke-dasharray:3 5; }
+  .marks.fail .hit{ stroke:var(--red); }
+  .marks.fail .drop{ stroke:var(--red); }
+  .xlab{ fill:var(--green-ink); font:600 16px var(--math); text-anchor:middle; paint-order:stroke; stroke:rgba(8,7,15,.95); stroke-width:5px; stroke-linejoin:round; }
+  .emitter{ fill:var(--accent); filter:var(--glow-cyan); }
+  .emitter.sweep{ fill:var(--magenta); filter:var(--glow-magenta); }
+  .ylab{ fill:var(--accent-ink); font:600 15px var(--math); paint-order:stroke; stroke:rgba(8,7,15,.95); stroke-width:5px; stroke-linejoin:round; }
+  .rail{ stroke:var(--line); stroke-width:5; stroke-linecap:round; }
+  .bar{ stroke:var(--accent); stroke-width:6; stroke-linecap:round; filter:var(--glow-cyan); }
+  .x0tick{ stroke:var(--green); stroke-width:3; stroke-linecap:round; }
+  .handle{ fill:var(--surface); stroke:var(--accent); stroke-width:3; }
+  .handle.on{ fill:var(--accent); }
+  .handle.live{ cursor:ew-resize; }
+  .grab{ stroke:transparent; stroke-width:18; pointer-events:stroke; cursor:ew-resize; }
+  #stage.resizing{ cursor:ew-resize; }      /* while an end is dragged, wherever the pointer is */
+  .dock{ fill:var(--muted); font:600 14px var(--math); text-anchor:middle; }
+  .dock.on{ fill:var(--accent-ink); }
+
+  .readout{ font-family:var(--math); font-weight:600; font-size:18px; min-height:1.5em; margin-top:2px; color:var(--accent-ink); }
+  .readout:empty{ min-height:0; }
+  .msg{ width:min(560px,100%); padding:8px clamp(16px,4vw,28px) 4px; text-align:center; font-size:15px; line-height:1.45; min-height:3.2em; }
+  .msg.good b{ color:var(--green-ink); }
+  .msg.bad b{ color:var(--red); }
+  .msg .plus{ color:var(--brown-ink); font-weight:700; white-space:nowrap; }
+  .msg .help{ color:var(--muted); }
+  .actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:4px 16px 6px; min-height:52px; }
+  .subctrl{ padding-top:4px; }
+</style>
+</head>
+<body class="game">
+
+  <header>
+    <a class="back" href="../../../../#/lukio/maa12">← Takaisin</a>
+    <span class="title">Vaakasuora laser</span>
+    <span class="hud"><span>Taso: <b id="level">1/3</b></span><span>Pisteet: <b id="score">0</b></span></span>
+  </header>
+
+  <main>
+    <div class="statusrow">
+      <span class="lives" id="lives" aria-label="Elämät"></span>
+      <span>Tehtävä: <b id="task">1/6</b></span>
+      <span id="shotsBox">Laukaukset: <b id="shots">0</b></span>
+    </div>
+
+    <div class="task">
+      <div class="q" id="q"></div>
+      <div class="fx" id="fx"></div>
+    </div>
+
+    <div class="stage-wrap">
+      <svg id="stage" viewBox="0 0 480 464" tabindex="0"
+           aria-label="Koordinaatisto. Laser: nuolet ylös ja alas, välilyönti ampuu."></svg>
+    </div>
+    <div class="readout" id="readout" aria-live="polite"></div>
+
+    <div class="msg" id="msg" aria-live="polite"></div>
+    <div class="actions" id="actions"></div>
+
+    <div class="subctrl">
+      <button id="restart">↺ Aloita alusta</button>
+      <button id="skipLevel" hidden>⏭ Ohita taso (testi)</button>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="win" role="dialog" aria-modal="true" aria-labelledby="ovTitle">
+      <h2 id="ovTitle"></h2>
+      <div class="result" id="ovResult"></div>
+      <p id="ovMsg"></p>
+      <div class="score" id="ovScore"></div>
+      <div class="btns" id="ovBtns"></div>
+    </div>
+  </div>
+
+<script src="../../../../assets/celebrate.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const stage = $("stage");
+
+/* ── board geometry (SVG user units) ─────────────────────────────────── */
+const W = 480, H = 464;
+const PL = 38, PR = 442, PT = 8, PB = 412;   // the plot: a square, so y = x is at 45°
+const TRACK_Y = 440, DOCK = 20;              // level 2: the interval's rail and its ±∞ docks
+
+/* ── rules ───────────────────────────────────────────────────────────── */
+const LIVES = 3, SHOT_COST = 10, MIN_PTS = 40, TRIPLE = 50, PERFECT = 50, BONUS_LIFE = 500;
+const TRY_COST = 25, TRY_MIN = 25;            // levels 2–3: a failed "Valmis" costs points, not a life
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const PI12 = Math.PI / 12;                   // the grid of the trig tasks
+let level = 0, ti = 0, task = null, mode, view;   // the task table below formats numbers through task
+
+/* ── numbers in Finnish: decimal comma, a real minus ─────────────────── */
+function fmt(v){
+  if(v === Infinity) return "∞";
+  if(v === -Infinity) return "−∞";
+  let s = (Math.round(v * 100) / 100).toFixed(2).replace(/\.?0+$/, "");
+  if(s === "-0") s = "0";
+  return s.replace("-", "−").replace(".", ",");
+}
+const isExact = v => Math.abs(v * 100 - Math.round(v * 100)) < 1e-4;     // exact to two decimals
+const gcd = (a, b) => b ? gcd(b, a % b) : a;
+const onPiGrid = v => Math.abs(v / PI12 - Math.round(v / PI12)) < 1e-6;
+function piFmt(v){                                                       // 6·π/12 → "π/2"
+  const k = Math.round(v / PI12);
+  if(k === 0) return "0";
+  const g = gcd(Math.abs(k), 12), n = Math.abs(k) / g, d = 12 / g;
+  return (k < 0 ? "−" : "") + (n === 1 ? "" : n) + "π" + (d === 1 ? "" : "/" + d);
+}
+// an x value as the task writes it: multiples of π/12 in a trig task
+const xExact = v => (task?.pi && onPiGrid(v)) || isExact(v);
+const xVal = v => isFinite(v) && task?.pi && onPiGrid(v) ? piFmt(v) : fmt(v);
+const xLabel = v => (xExact(v) ? "" : "≈ ") + xVal(v);
+
+/* ── formula pieces (HTML) ───────────────────────────────────────────── */
+const frac = (n, d) => `<span class="frac"><span>${n}</span><span>${d}</span></span>`;
+const root = s => `√<span class="rad">${s}</span>`;
+const INV = `f<sup>−1</sup>`;
+const rel = r => `<span class="rel">${r}</span>`;
+const pw = (rows, cls = "") => `<span class="pw ${cls}">f(x) =<span class="cbrace"><i></i><i></i><i></i><i></i></span><span class="cases">${
+  rows.map(([e, c]) => `<span>${e},</span><span class="cond">${c}</span>`).join("")}</span></span>`;
+function iv(a, b, show = xVal){
+  const A = show(a), B = show(b), sep = (A + B).includes(",") ? "; " : ", ";
+  return `<span class="m"><span class="iv">${a === -Infinity ? "(" : "["}</span>${A}${sep}${B}<span class="iv">${b === Infinity ? ")" : "]"}</span></span>`;
+}
+
+/* ── tasks ───────────────────────────────────────────────────────────────
+   A function is a list of pieces f on [a, b] (ca / cb: is that end in the
+   domain). `inj`: whether it has an inverse (the truth; the sweep only shows
+   it). `beam`: where the laser starts (else y = 0). view: the picture, centre and side (x and y the same scale). */
+const P = (f, a = -Infinity, b = Infinity, ca = true, cb = true) => ({ f, a, b, ca, cb });
+const V = (cx, cy, span) => ({ x0: cx - span/2, x1: cx + span/2, y0: cy - span/2, y1: cy + span/2 });
+
+const I = Infinity;
+// a piecewise linear task (level 3): the formula is written from the pieces
+function linTask(x0, lin){
+  const pieces = lin.map(([m, c, a, b, ca, cb]) => Object.assign(P(x => m * x + c, a, b, !!ca, !!cb), { m, c }));
+  const term = (m, c) => (m === 1 ? "" : m === -1 ? "−" : fmt(m)) + "x" + (c ? (c > 0 ? " + " : " − ") + fmt(Math.abs(c)) : "");
+  const le = closed => rel(closed ? "≤" : "&lt;");
+  const cond = p => p.a === -I ? `kun x ${le(p.cb)} ${fmt(p.b)}`
+                  : p.b === I ? `kun x ${rel(p.ca ? "≥" : "&gt;")} ${fmt(p.a)}`
+                  : `kun ${fmt(p.a)} ${le(p.ca)} x ${le(p.cb)} ${fmt(p.b)}`;
+  const owner = x => pieces.find(p => (x > p.a || (x === p.a && p.ca)) && (x < p.b || (x === p.b && p.cb)));
+  return { fx: pw(pieces.map(p => [term(p.m, p.c), cond(p)]), "many"), pieces, lin: true, x0, start: [-4, 4], view: V(0, 0, 9),
+           f: x => owner(x)?.f(x) ?? NaN };
+}
+
+const LEVELS = [
+  { mode: "see", name: "Näe",
+    q: () => "Onko funktiolla käänteisfunktio?",
+    help: "Käänteisfunktio on olemassa jos ja vain jos ei löydy moninkertaista arvoa, eli sellaista arvoa y, jonka funktio saavuttaa useammassa pisteessä. Etsi moninkertainen arvo siirtämällä nuolta ylös ja alas. Jos arvoa ei ole, klikkaa alla.",
+    tasks: [
+      { fx: "f(x) = x²", dom: `x ∈ ${iv(-2, 2)}`, pieces: [P(x => x*x, -2, 2)], inj: false, view: V(0, 2, 7) },
+      { fx: "f(x) = x³", dom: "x ∈ ℝ", pieces: [P(x => x**3)], inj: true, view: V(0, 0, 6) },
+      { fx: "f(x) = x³ − 3x", dom: "x ∈ ℝ", pieces: [P(x => x**3 - 3*x)], inj: false, view: V(0, 0, 7),
+        beam: -3 },     // at y = 0 it would already hit three times (Vadim)
+      { fx: `f(x) = ${frac("1", "x")}`, dom: `x ${rel("≠")} 0`,
+        pieces: [P(x => 1/x, -Infinity, 0, true, false), P(x => 1/x, 0, Infinity, false)], inj: true, view: V(0, 0, 8),
+        note: `Tässä tapauksessa f on itsensä käänteisfunktio, eli <span class="m">f = ${INV}</span>.` },
+      { fx: pw([["x + 1", `kun x ${rel("&lt;")} 0`], ["x − 1", `kun x ${rel("≥")} 0`]]),
+        pieces: [P(x => x + 1, -Infinity, 0, true, false), P(x => x - 1, 0)], inj: false, view: V(0, 0, 7),
+        beam: -2 },   // the laser's start; at y = 0 it would already hit twice (Vadim)
+      { fx: pw([["−x", `kun 0 ${rel("≤")} x ${rel("&lt;")} 1`], ["x", `kun 1 ${rel("≤")} x ${rel("≤")} 2`]]),
+        pieces: [P(x => -x, 0, 1, true, false), P(x => x, 1, 2)], inj: true, view: V(1, 0.5, 5) },
+    ] },
+  { mode: "restrict", name: "Rajaa",
+    q: t => `Etsi mahdollisimman suuri väli, joka sisältää pisteen x = ${xVal(t.x0)} ja jolla f:llä on käänteisfunktio.`,
+    help: "Etsi sopiva väli siirtämällä sen päätepisteitä. Vahvista vastauksesi painamalla ”Valmis”.",
+    tasks: [
+      { fx: "f(x) = x²", f: x => x*x, x0: 1, best: [0, Infinity], start: [-2, 2], inv: root("x"), view: V(0, 2, 7) },
+      { fx: "f(x) = x² − 2x", f: x => x*x - 2*x, x0: 3, best: [1, Infinity], start: [-1, 3.5], inv: `1 + ${root("x + 1")}`, view: V(1, 1, 7) },
+      { fx: "f(x) = |x − 1|", f: x => Math.abs(x - 1), x0: -1, best: [-Infinity, 1], start: [-2, 3.5], inv: "1 − x", view: V(0.5, 2.5, 7) },
+      { fx: "f(x) = (x + 1)² − 2", f: x => (x + 1)**2 - 2, x0: -3, best: [-Infinity, -1], start: [-3.5, 1], inv: `−1 − ${root("x + 2")}`, view: V(-1, 0.5, 7.5) },
+      { fx: "f(x) = x³ − 3x", f: x => x**3 - 3*x, x0: 0, best: [-1, 1], start: [-2, 2], inv: null, view: V(0, 0, 6) },
+      { fx: "f(x) = sin x", f: Math.sin, x0: 0, best: [-Math.PI/2, Math.PI/2], start: [-Math.PI, Math.PI], inv: "arcsin x", pi: true, view: V(0, 0, 8),
+        note: "Juuri näin määritellään arcsin." },
+    ] },
+  // Level 3 (Vadim): as level 2, with piecewise linear functions of 5–7 pieces whose
+  // biggest interval is not unique. Each has exactly two maximal intervals with
+  // whole-number ends (checked exactly offline and again by `maximals` here);
+  // the start [−4, 4] is never one. A piece: [m, c, a, b, ca, cb], f = mx + c from
+  // a to b, ca / cb: whether that end belongs to the piece.
+  { mode: "restrict", name: "Paloittain",
+    q: t => `Etsi mahdollisimman suuri väli, joka sisältää pisteen x = ${xVal(t.x0)} ja jolla f:llä on käänteisfunktio.`,
+    help: "",
+    tasks: [
+      linTask(0,    [[-1, 0, -I, -3, 1, 1], [0.5, 2.5, -3, -1, 0, 1], [-1, -2, -1, 1, 0, 1], [1, -3, 1, 2, 0, 0], [-2, 7, 2, I, 1, 1]]),
+      linTask(1,    [[2, 4, -I, -1, 1, 0], [-2, -3, -1, 0, 1, 1], [1, -3, 0, 1, 0, 0], [2, -3, 1, 2, 1, 0], [-2, 7, 2, 3, 1, 1], [-1, 2, 3, I, 0, 1]]),
+      linTask(-0.5, [[0.5, 4.5, -I, -3, 1, 0], [1, 2, -3, -1, 1, 0], [-2, 1, -1, 0, 1, 0], [2, -3, 0, 1, 1, 0], [-0.5, 1.5, 1, 3, 1, 1], [-0.5, 3.5, 3, I, 0, 1]]),
+      linTask(0,    [[0.5, 2.5, -I, -3, 1, 1], [1, 5, -3, -2, 0, 0], [1, 3, -2, 0, 1, 1], [-1, 1, 0, 1, 0, 0], [-1.5, 1.5, 1, 3, 1, 1], [-1, 5, 3, I, 0, 1]]),
+      linTask(-1,   [[-1, -6, -I, -3, 1, 0], [0.5, -1.5, -3, -1, 1, 0], [1, 1, -1, 0, 1, 1], [-1, 3, 0, 1, 0, 1], [-1, 0, 1, 3, 0, 0], [-1, 2, 3, I, 1, 1]]),
+      linTask(1,    [[1, 4, -I, -3, 1, 1], [-1, -2, -3, -1, 0, 0], [-3, 0, -1, 0, 1, 0], [-1, -2, 0, 1, 1, 1], [1, -4, 1, 2, 0, 0], [-2, 5, 2, 3, 1, 0], [1, -1, 3, I, 1, 1]]),
+    ] },
+];
+
+/* ── state ───────────────────────────────────────────────────────────── */
+let score = 0, levelScore = 0, lives = LIVES, shots = 0;
+let phase = "play";          // play | busy (an animation) | done (result shown) | overlay
+let gen = 0;                 // bumped on every new task: older animations stop
+let dom = [0, 1], active = 1;  // levels 2–3: the chosen interval and the handle being moved
+let tries = 0;               // levels 2–3: failed "Valmis" on this task
+// what render() draws besides the function itself
+const R = { beamY: 0, aim: false, beam: null, marks: null, inv: null, invPieces: null };
+
+/* ── coordinates ─────────────────────────────────────────────────────── */
+const sx = x => PL + (x - view.x0) / (view.x1 - view.x0) * (PR - PL);
+const sy = y => PB - (y - view.y0) / (view.y1 - view.y0) * (PB - PT);
+const wx = px => view.x0 + (px - PL) / (PR - PL) * (view.x1 - view.x0);
+const wy = py => view.y0 + (PB - py) / (PB - PT) * (view.y1 - view.y0);
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+const cl = v => clamp(v, -4000, 4000);
+const r1 = v => Math.round(v * 10) / 10;
+const ease = t => t < .5 ? 2*t*t : 1 - (-2*t + 2)**2 / 2;
+function svgPt(e){
+  const r = stage.getBoundingClientRect();
+  return { x: (e.clientX - r.left) * W / r.width, y: (e.clientY - r.top) * H / r.height };
+}
+
+/* ── solving f(x) = y on the visible part ───────────────────────────── */
+function bisect(f, y, lo, hi){
+  let glo = f(lo) - y;
+  for(let k = 0; k < 64; k++){
+    const m = (lo + hi) / 2, gm = f(m) - y;
+    if(gm === 0) return m;
+    if(gm * glo < 0) hi = m; else { lo = m; glo = gm; }
+  }
+  return (lo + hi) / 2;
+}
+function minAbs(f, y, lo, hi){                 // ternary search of |f − y|
+  for(let k = 0; k < 90; k++){
+    const m1 = lo + (hi - lo) / 3, m2 = hi - (hi - lo) / 3;
+    if(Math.abs(f(m1) - y) < Math.abs(f(m2) - y)) hi = m2; else lo = m1;
+  }
+  return (lo + hi) / 2;
+}
+// every x in [xlo, xhi] where a piece takes the value y (also where it only touches y)
+function solve(pieces, y, xlo = view.x0, xhi = view.x1){
+  const out = [];
+  for(const p of pieces){
+    let a = Math.max(p.a, xlo), b = Math.min(p.b, xhi);
+    if(a > b) continue;
+    if(a === p.a && !p.ca) a += 1e-7 * Math.max(1, Math.abs(a));
+    if(b === p.b && !p.cb) b -= 1e-7 * Math.max(1, Math.abs(b));
+    if(!(a <= b)) continue;
+    const N = a === b ? 0 : 1200, xs = new Float64Array(N + 1), gs = new Float64Array(N + 1);
+    for(let i = 0; i <= N; i++){ xs[i] = N ? a + (b - a) * i / N : a; gs[i] = p.f(xs[i]) - y; }
+    for(let i = 0; i <= N; i++){
+      const g = gs[i];
+      if(!isFinite(g)) continue;
+      if(Math.abs(g) < 1e-9){ out.push(xs[i]); continue; }
+      const gn = gs[i + 1];
+      if(i < N && isFinite(gn) && Math.abs(gn) >= 1e-9 && g * gn < 0) out.push(bisect(p.f, y, xs[i], xs[i + 1]));
+      // a beam that only touches the graph (a turning point at exactly this height)
+      if(i > 0 && i < N && g * gs[i - 1] > 0 && g * gn > 0 && Math.abs(g) < Math.abs(gs[i - 1]) && Math.abs(g) <= Math.abs(gn)){
+        const m = minAbs(p.f, y, xs[i - 1], xs[i + 1]);
+        if(Math.abs(p.f(m) - y) < 1e-7) out.push(m);
+      }
+    }
+  }
+  out.sort((u, v) => u - v);
+  return out.filter((v, i) => i === 0 || v - out[i - 1] > 1e-6);
+}
+
+// the skeptic's find: going up from the bottom, the first height where the
+// beam meets the graph twice, far enough apart to see (exact values first)
+function witness(pieces){
+  const spanX = view.x1 - view.x0, spanY = view.y1 - view.y0, ys = [];
+  const st = niceStep(spanY) / 10;
+  for(let k = Math.ceil(view.y0 / st); k * st <= view.y1; k++) ys.push(+(k * st).toFixed(10));
+  for(const p of pieces){
+    const a = Math.max(p.a, view.x0), b = Math.min(p.b, view.x1);
+    if(!(a < b)) continue;
+    for(const e of [p.a, p.b]) if(isFinite(e) && e >= view.x0 && e <= view.x1 && isFinite(p.f(e))) ys.push(p.f(e));
+    // just inside every turning point
+    const N = 800; let prev = p.f(a), dPrev = 0;
+    for(let i = 1; i <= N; i++){
+      const v = p.f(a + (b - a) * i / N), d = v - prev;
+      if(dPrev * d < 0) ys.push(prev - Math.sign(dPrev) * 1e-3 * spanY);
+      if(d !== 0) dPrev = d;
+      prev = v;
+    }
+  }
+  const cands = ys.filter(y => y >= view.y0 && y <= view.y1).sort((u, v) => u - v)
+    .map(y => ({ y, hits: solve(pieces, y) })).filter(c => c.hits.length >= 2);
+  if(!cands.length) return null;
+  const spread = c => c.hits[c.hits.length - 1] - c.hits[0];
+  const thr = Math.min(0.6 * Math.max(...cands.map(spread)), 0.12 * spanX);
+  return cands.find(c => spread(c) >= thr && isExact(c.y) && c.hits.every(xExact))
+      || cands.find(c => spread(c) >= thr);
+}
+
+// "f(−1) = f(1) = 1", or "f(x) = 3, kun x ≈ 0,38 tai x ≈ 2,62"
+function hitText(y, hits){
+  if(isExact(y) && hits.every(xExact)) return `<span class="m">${hits.map(h => `f(${xVal(h)})`).join(" = ")} = ${fmt(y)}</span>`;
+  return `<span class="m">f(x) ${isExact(y) ? "=" : "≈"} ${fmt(y)}</span>, kun ` +
+    hits.map(h => `<span class="m">x ${xExact(h) ? "=" : "≈"} ${xVal(h)}</span>`).join(" tai ");
+}
+
+/* ── drawing ─────────────────────────────────────────────────────────── */
+function niceStep(span){
+  const raw = span / 7, p = 10 ** Math.floor(Math.log10(raw)), m = raw / p;
+  return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+}
+
+// pieces as SVG; s < 1 is the reflection in y = x under way (s = −1: f⁻¹)
+function curveSVG(pieces, { lo = -Infinity, hi = Infinity, s = 1, dots = true } = {}){
+  const span = view.x1 - view.x0;
+  const X0 = Math.min(view.x0, view.y0) - span, X1 = Math.max(view.x1, view.y1) + span;
+  const map = (x, y) => s === 1 ? [x, y] : [x - (1 - s) * (x - y) / 2, y + (1 - s) * (x - y) / 2];
+  let d = "", c = "";
+  for(const p of pieces){
+    let a = Math.max(p.a, lo, X0), b = Math.min(p.b, hi, X1);
+    if(!(a < b)){
+      const y = p.f(a);
+      if(dots && a === b && p.ca && p.cb && isFinite(y)){
+        const [mx, my] = map(a, y);
+        c += `<circle class="dot" cx="${cl(sx(mx)).toFixed(1)}" cy="${cl(sy(my)).toFixed(1)}" r="5"/>`;
+      }
+      continue;
+    }
+    const a2 = a === p.a && !p.ca ? a + 1e-6 * Math.max(1, Math.abs(a)) : a;
+    const b2 = b === p.b && !p.cb ? b - 1e-6 * Math.max(1, Math.abs(b)) : b;
+    const N = 420; let pen = false;
+    for(let i = 0; i <= N; i++){
+      const x = a2 + (b2 - a2) * i / N, y = p.f(x);
+      if(!isFinite(y)){ pen = false; continue; }
+      const [mx, my] = map(x, y);
+      d += (pen ? "L" : "M") + cl(sx(mx)).toFixed(1) + "," + cl(sy(my)).toFixed(1);
+      pen = true;
+    }
+    if(!dots) continue;
+    for(const [e, closed] of [[p.a, p.ca], [p.b, p.cb]]){
+      if(!isFinite(e) || e < a || e > b) continue;
+      const y = p.f(e);
+      if(!isFinite(y)) continue;
+      const [mx, my] = map(e, y);
+      c += `<circle class="dot${closed ? "" : " open"}" cx="${cl(sx(mx)).toFixed(1)}" cy="${cl(sy(my)).toFixed(1)}" r="5"/>`;
+    }
+  }
+  return `<path d="${d}"/>${c}`;
+}
+
+function gridSVG(){
+  const spanX = view.x1 - view.x0, st = niceStep(spanX);
+  const xst = task.pi && spanX > 3 ? Math.PI / 2 : st;
+  const xs = [], ys = [];
+  for(let k = Math.ceil(view.x0 / xst - 1e-9); k * xst <= view.x1 + 1e-9; k++) xs.push(k * xst);
+  for(let k = Math.ceil(view.y0 / st - 1e-9); k * st <= view.y1 + 1e-9; k++) ys.push(k * st);
+  let s = `<rect class="plotbg" x="${PL}" y="${PT}" width="${PR - PL}" height="${PB - PT}"/><g class="grid">`;
+  for(const x of xs) s += `<line x1="${sx(x).toFixed(1)}" y1="${PT}" x2="${sx(x).toFixed(1)}" y2="${PB}"/>`;
+  for(const y of ys) s += `<line x1="${PL}" y1="${sy(y).toFixed(1)}" x2="${PR}" y2="${sy(y).toFixed(1)}"/>`;
+  s += `</g>`;
+  const hasX = view.y0 <= 0 && view.y1 >= 0, hasY = view.x0 <= 0 && view.x1 >= 0;
+  const ay = clamp(sy(0), PT, PB), ax = clamp(sx(0), PL, PR);
+  if(hasX) s += `<line class="axis" x1="${PL}" y1="${ay}" x2="${PR}" y2="${ay}"/>`;
+  if(hasY) s += `<line class="axis" x1="${ax}" y1="${PT}" x2="${ax}" y2="${PB}"/>`;
+  const ly = ay + 18 <= PB - 3 ? ay + 18 : ay - 7;
+  const tx = xst === st ? fmt : piFmt;
+  const taken = R.marks ? R.marks.hits.map(sx) : [];      // the hits' own x labels go in this row
+  for(const x of xs){
+    const X = sx(x);
+    if(Math.abs(x) < 1e-9 && hasY || X < PL + 10 || X > PR - 10 || taken.some(T => Math.abs(T - X) < 36)) continue;
+    s += `<text class="tick" x="${X.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle">${tx(x)}</text>`;
+  }
+  const left = ax - 7 >= PL + 22;
+  for(const y of ys){
+    const Y = sy(y);
+    if(Math.abs(y) < 1e-9 && hasX || Y < PT + 10 || Y > PB - 8) continue;
+    s += `<text class="tick" x="${left ? ax - 7 : ax + 7}" y="${(Y + 5).toFixed(1)}" text-anchor="${left ? "end" : "start"}">${fmt(y)}</text>`;
+  }
+  if(hasX) s += `<text class="axname" x="${PR - 10}" y="${ay - 8}">x</text>`;
+  if(hasY) s += `<text class="axname" x="${ax + 8}" y="${PT + 16}">y</text>`;
+  return s;
+}
+
+const curPieces = () => mode === "restrict" ? restricted(dom[0], dom[1]) : task.pieces;
+const hx = v => v === -Infinity ? PL - DOCK : v === Infinity ? PR + DOCK : clamp(sx(v), PL, PR);
+
+function render(){
+  const o = [];
+  o.push(`<defs><clipPath id="clipPlot"><rect x="${PL}" y="${PT}" width="${PR - PL}" height="${PB - PT}"/></clipPath>`);
+  o.push(`</defs>`, gridSVG(), `<g clip-path="url(#clipPlot)">`);
+
+  const pcs = curPieces(), dim = R.inv != null ? " dim" : "";
+  if(mode === "restrict"){
+    o.push(`<g class="ghost">${curveSVG(task.lin ? task.pieces : [P(task.f)], { dots: !!task.lin })}</g>`);
+    for(const e of dom) if(isFinite(e)) o.push(`<line class="edge" x1="${sx(e)}" y1="${PT}" x2="${sx(e)}" y2="${PB}"/>`);
+  }
+  o.push(`<g class="graph${dim}">${curveSVG(pcs)}</g>`);
+  if(R.inv != null){
+    const a = Math.max(view.x0, view.y0), b = Math.min(view.x1, view.y1);
+    if(a < b){
+      o.push(`<line class="yx" x1="${sx(a)}" y1="${sy(a)}" x2="${sx(b)}" y2="${sy(b)}"/>`);
+      o.push(`<text class="yxlab" x="${sx(b) - 8}" y="${sy(b) + 34}" text-anchor="end">y = x</text>`);
+    }
+    o.push(`<g class="graph inv">${curveSVG(R.invPieces, { s: R.inv })}</g>`);
+  }
+  if(mode === "restrict") o.push(`<circle class="x0dot" cx="${sx(task.x0)}" cy="${cl(sy(task.f(task.x0)))}" r="6"/>`);
+  o.push(`</g>`);
+
+  // the beam: the player's aim, a shot or the sweep
+  if(R.aim && phase === "play"){
+    const Y = sy(R.beamY);
+    o.push(`<line class="aim" x1="${PL}" y1="${Y}" x2="${PR}" y2="${Y}"/>`);
+  }
+  if(R.beam){
+    const Y = sy(R.beam.y);
+    o.push(`<g class="beamg${R.beam.spent ? " spent" : ""}"><line class="beam" x1="${PL}" y1="${Y}" x2="${R.beam.front}" y2="${Y}"/>`);
+    for(const h of R.beam.hits) if(sx(h) <= R.beam.front + 1) o.push(`<circle class="hit" cx="${sx(h)}" cy="${Y}" r="6"/>`);
+    o.push(`</g>`);
+  }
+  if(R.marks){
+    const Y = sy(R.marks.y), axisY = clamp(sy(0), PT, PB), below = axisY + 22 <= PB - 2;
+    o.push(`<g class="marks${R.marks.fail ? " fail" : ""}">`);
+    let lastX = -1e9, shift = 0;
+    for(const h of R.marks.hits){
+      const X = sx(h);
+      shift = X - lastX < 50 ? (shift ? 0 : 18) : 0; lastX = X;
+      o.push(`<line class="drop" x1="${X}" y1="${Y}" x2="${X}" y2="${axisY}"/>`);
+      o.push(`<text class="xlab" x="${X}" y="${below ? axisY + 20 + shift : axisY - 9 - shift}">${xLabel(h)}</text>`);
+    }
+    for(const h of R.marks.hits) o.push(`<circle class="hit" cx="${sx(h)}" cy="${Y}" r="6.5"/>`);
+    o.push(`</g>`);
+  }
+  // the emitter in the left margin
+  if(mode !== "restrict" || R.beam){
+    const y = R.beam ? R.beam.y : R.beamY, Y = clamp(sy(y), PT, PB);
+    o.push(`<g class="emitter${R.beam && R.beam.sweep ? " sweep" : ""}"><rect x="${PL - 34}" y="${Y - 6}" width="18" height="12" rx="2"/>` +
+           `<path d="M${PL - 17},${Y - 9} L${PL - 2},${Y} L${PL - 17},${Y + 9} Z"/></g>`);
+    if((R.aim && phase === "play") || (R.beam && !R.beam.sweep) || (R.marks && R.beam)){
+      const ty = Y - 9 < PT + 16 ? Y + 22 : Y - 9;
+      o.push(`<text class="ylab" x="${PL + 8}" y="${ty}">y = ${fmt(y)}</text>`);
+    }
+  }
+  // level 2: the interval under the plot
+  if(mode === "restrict"){
+    o.push(`<line class="rail" x1="${PL}" y1="${TRACK_Y}" x2="${PR}" y2="${TRACK_Y}"/>`);
+    o.push(`<text class="dock${dom[0] === -Infinity ? " on" : ""}" x="${PL - DOCK}" y="${TRACK_Y + 22}">−∞</text>`);
+    o.push(`<text class="dock${dom[1] === Infinity ? " on" : ""}" x="${PR + DOCK}" y="${TRACK_Y + 22}">∞</text>`);
+    o.push(`<line class="bar" x1="${hx(dom[0])}" y1="${TRACK_Y}" x2="${hx(dom[1])}" y2="${TRACK_Y}"/>`);
+    o.push(`<line class="x0tick" x1="${sx(task.x0)}" y1="${TRACK_Y - 11}" x2="${sx(task.x0)}" y2="${TRACK_Y + 11}"/>`);
+    dom.forEach((v, i) => o.push(`<circle class="handle${i === active && phase === "play" ? " on" : ""}${phase === "play" ? " live" : ""}" cx="${hx(v)}" cy="${TRACK_Y}" r="10"/>`));
+    // the ends can be grabbed: a wide invisible line over each, with the ↔ cursor (Vadim)
+    if(phase === "play") for(const e of dom) if(isFinite(e)) o.push(`<line class="grab" x1="${sx(e)}" y1="${PT}" x2="${sx(e)}" y2="${TRACK_Y + 12}"/>`);
+    $("readout").innerHTML = `x ∈ ${iv(dom[0], dom[1])}`;
+  }
+  stage.innerHTML = o.join("");
+}
+
+/* ── animation helpers: stop when the task changes ───────────────────── */
+function anim(ms, step){
+  const g = gen;
+  if(REDUCED) ms = 1;
+  return new Promise(res => {
+    const t0 = performance.now();
+    const frame = now => {
+      if(g !== gen) return;
+      const t = ms <= 1 ? 1 : Math.min(1, (now - t0) / ms);
+      step(t);
+      if(t < 1) requestAnimationFrame(frame); else res();
+    };
+    requestAnimationFrame(frame);
+  });
+}
+function wait(ms){
+  const g = gen;
+  return new Promise(res => setTimeout(() => { if(g === gen) res(); }, REDUCED ? 0 : ms));
+}
+// move the picture; spans change geometrically (a smooth zoom)
+function tweenView(to, ms){
+  const from = { ...view };
+  const c0 = [(from.x0 + from.x1) / 2, (from.y0 + from.y1) / 2], c1 = [(to.x0 + to.x1) / 2, (to.y0 + to.y1) / 2];
+  const s0 = [from.x1 - from.x0, from.y1 - from.y0], s1 = [to.x1 - to.x0, to.y1 - to.y0];
+  return anim(ms, t => {
+    const e = ease(t);
+    const cx = c0[0] + (c1[0] - c0[0]) * e, cy = c0[1] + (c1[1] - c0[1]) * e;
+    const wX = s0[0] * (s1[0] / s0[0]) ** e, wY = s0[1] * (s1[1] / s0[1]) ** e;
+    view = { x0: cx - wX / 2, x1: cx + wX / 2, y0: cy - wY / 2, y1: cy + wY / 2 };
+    render();
+  });
+}
+
+/* ── the laser ───────────────────────────────────────────────────────── */
+// the player's shot (level 1)
+async function fire(){
+  if(phase !== "play") return;
+  phase = "busy"; shots++; hud();
+  const y = R.beamY, hits = solve(task.pieces, y);
+  R.aim = false; R.marks = null;
+  await anim(260, t => { R.beam = { y, front: PL + t * (PR - PL), hits }; render(); });
+  if(hits.length >= 2){
+    R.marks = { y, hits };
+    render();
+    const pts = Math.max(MIN_PTS, 100 - SHOT_COST * (shots - 1)) + (hits.length >= 3 ? TRIPLE : 0);
+    done(pts, `<b>${hits.length >= 3 ? "Kolmoisosuma!" : "Kaksoisosuma!"}</b> ${hitText(y, hits)}: eri kohdissa sama arvo, joten käänteisfunktiota ei ole.`, "good");
+    return;
+  }
+  R.beam.spent = true; render();
+  phase = "play";
+  msg(hits.length ? `Yksi osuma: <span class="m">x ${xExact(hits[0]) ? "=" : "≈"} ${xVal(hits[0])}</span>.`
+                  : `Ohi: laser ei osunut kuvaajaan.`, "");
+}
+
+// the game's laser sweeps up from the bottom; with a witness it stops there
+async function sweep(pieces, w){
+  const y0 = view.y0, y1 = w ? w.y : view.y1;
+  const ms = Math.max(500, 1800 * (y1 - y0) / (view.y1 - view.y0));
+  await anim(ms, t => {
+    const y = y0 + (y1 - y0) * t;
+    R.beam = { y, front: PR, hits: solve(pieces, y), sweep: true };
+    render();
+  });
+  if(!w){ R.beam = null; render(); return; }
+  R.beam = { y: w.y, front: PR, hits: w.hits, sweep: true };
+  R.marks = { y: w.y, hits: w.hits, fail: true };
+  render();
+  // a double hit too close to see: zoom in on it
+  const spread = w.hits[w.hits.length - 1] - w.hits[0];
+  if(spread / (view.x1 - view.x0) * (PR - PL) < 36){
+    await wait(400);
+    const span = Math.max(spread / 0.4, 0.05), cx = (w.hits[0] + w.hits[w.hits.length - 1]) / 2;
+    await tweenView({ x0: cx - span / 2, x1: cx + span / 2, y0: w.y - span / 2, y1: w.y + span / 2 }, 900);
+  }
+}
+
+// reflect the graph in y = x; the gold curve is f⁻¹
+async function reflect(pieces){
+  const lo = Math.min(view.x0, view.y0), hi = Math.max(view.x1, view.y1);
+  if(lo < view.x0 - 1e-9 || lo < view.y0 - 1e-9 || hi > view.x1 + 1e-9 || hi > view.y1 + 1e-9)
+    await tweenView({ x0: lo, x1: hi, y0: lo, y1: hi }, 600);
+  R.invPieces = pieces;
+  await anim(1500, t => { R.inv = 1 - 2 * ease(t); render(); });
+}
+
+// "Moninkertaista arvoa ei löydy" (level 1)
+async function claimInjective(){
+  if(phase !== "play") return;
+  phase = "busy"; actions([]);
+  R.aim = false; R.beam = null; R.marks = null;
+  if(task.inj){
+    await sweep(task.pieces, null);
+    await reflect(task.pieces);
+    done(Math.max(MIN_PTS, 100 - SHOT_COST * shots),
+      `<b>Oikein!</b> Mikään vaakasuora suora ei osu kuvaajaan kahdesti, joten f:llä on käänteisfunktio. Kultainen käyrä on <span class="m">${INV}</span>: f peilattuna suoran <span class="m">y = x</span> yli.${task.note ? " " + task.note : ""}`, "good");
+  } else {
+    const w = witness(task.pieces);
+    await sweep(task.pieces, w);
+    loseLife();
+    done(0, w ? `<b>Laser löysi kaksoisosuman:</b> ${hitText(w.y, w.hits)}. Käänteisfunktiota ei ole.`
+              : `<b>Väärin:</b> käänteisfunktiota ei ole.`, "bad");
+  }
+}
+
+/* ── levels 2 and 3: the interval ───────────────────────────────────────
+   The player's interval is closed, its ends on the grid (0.1, or π/12 in a
+   trig task), or ±∞. Level 2: f is injective on it exactly when it lies in
+   `best`. Level 3: exactly, from the pieces' value ranges (`injectiveOn`). */
+const EPS = 1e-9;
+const step = () => task.pi ? PI12 : 0.1;
+const snapX = v => task.pi ? Math.round(v / PI12) * PI12 : r1(v);
+const same = (u, v) => u === v || Math.abs(u - v) < 1e-6;
+const gridEnds = () => [Math.ceil(task.view.x0 / step() - 1e-9) * step(), Math.floor(task.view.x1 / step() + 1e-9) * step()];
+const clipLen = ([u, v]) => Math.max(0, Math.min(v, task.view.x1) - Math.max(u, task.view.x0));
+const longest = list => list.reduce((m, x) => clipLen(x) > clipLen(m) + EPS ? x : m);
+
+// the function on [a, b]: level 3's pieces cut to it (an end inside a piece becomes closed)
+function restricted(a, b){
+  if(!task.lin) return [P(task.f, a, b)];
+  const out = [];
+  for(const p of task.pieces){
+    const inA = a > p.a + EPS, inB = b < p.b - EPS;
+    const lo = inA ? a : p.a, loC = inA || p.ca, hi = inB ? b : p.b, hiC = inB || p.cb;
+    if(lo > hi + EPS || (Math.abs(lo - hi) < EPS && !(loC && hiC))) continue;
+    out.push(Object.assign(P(p.f, lo, hi, loC, hiC), { m: p.m, c: p.c }));
+  }
+  return out;
+}
+function injectiveOn(a, b){
+  if(!task.lin) return a >= task.best[0] - EPS && b <= task.best[1] + EPS;
+  // each linear piece is injective by itself; two pieces must not share a value
+  const ranges = restricted(a, b).map(p => {
+    const lo = [p.m * p.a + p.c, p.ca], hi = [p.m * p.b + p.c, p.cb];
+    return p.m > 0 ? [lo, hi] : [hi, lo];
+  });
+  const meet = ([L1, U1], [L2, U2]) => {
+    const lo = Math.abs(L1[0] - L2[0]) < EPS ? [L1[0], L1[1] && L2[1]] : L1[0] > L2[0] ? L1 : L2;
+    const up = Math.abs(U1[0] - U2[0]) < EPS ? [U1[0], U1[1] && U2[1]] : U1[0] < U2[0] ? U1 : U2;
+    return lo[0] < up[0] - EPS || (Math.abs(lo[0] - up[0]) < EPS && lo[1] && up[1]);
+  };
+  for(let i = 0; i < ranges.length; i++)
+    for(let j = i + 1; j < ranges.length; j++) if(meet(ranges[i], ranges[j])) return false;
+  return true;
+}
+// every maximal interval containing x₀: injective, and neither end can move out a step
+function maximals(){
+  if(!task.lin){
+    const [ba, bb] = task.best;
+    return [[isFinite(ba) ? Math.ceil(ba / step() - 1e-6) * step() : ba, isFinite(bb) ? Math.floor(bb / step() + 1e-6) * step() : bb]];
+  }
+  const [g0, g1] = gridEnds(), A = [-I], B = [];
+  for(let k = Math.round(g0 * 10); k <= Math.round(g1 * 10); k++){
+    const v = k / 10;
+    if(v <= task.x0 + EPS) A.push(v);
+    if(v >= task.x0 - EPS) B.push(v);
+  }
+  B.push(I);
+  const far = A.map(a => {                         // the furthest b that still works
+    let j = -1;
+    for(let k = 0; k < B.length; k++){
+      if(B[k] <= a + EPS) continue;
+      if(injectiveOn(a, B[k])) j = k; else break;
+    }
+    return j;
+  });
+  const out = [];
+  A.forEach((a, i) => { if(far[i] >= 0 && (i === 0 || far[i - 1] < far[i])) out.push([a, B[far[i]]]); });
+  return out;
+}
+
+function moveHandle(px){
+  let v;
+  if(active === 0 && px < PL - 6) v = -Infinity;
+  else if(active === 1 && px > PR + 6) v = Infinity;
+  else v = clamp(snapX(wx(clamp(px, PL, PR))), ...gridEnds());
+  if(active === 0) v = Math.min(v, task.x0); else v = Math.max(v, task.x0);
+  if(active === 0 && same(v, dom[1])) v = dom[1] - step();
+  if(active === 1 && same(v, dom[0])) v = dom[0] + step();
+  dom[active] = v;
+  render();
+}
+function nudgeHandle(dir){
+  const v = dom[active];
+  if(!isFinite(v)){ if(Math.sign(v) !== dir) moveHandle(active === 0 ? PL : PR); return; }
+  const nv = snapX(v + dir * step()), [g0, g1] = gridEnds();
+  if(nv > g1 + EPS && active === 1) moveHandle(PR + 20);
+  else if(nv < g0 - EPS && active === 0) moveHandle(PL - 20);
+  else moveHandle(sx(nv));
+}
+
+const ivs = list => list.map(m => iv(...m)).join(" ja ");
+function invText(){
+  if(task.lin) return "";
+  return task.inv ? ` Käänteisfunktio: <span class="m">${INV}(x) = ${task.inv}</span>.${task.note ? " " + task.note : ""}`
+                  : ` Käänteisfunktiolle ei ole tuttua lauseketta, mutta se on olemassa.`;
+}
+
+// "Valmis". Not injective: the laser shows why and the player tries again (Vadim);
+// from then on "Näytä oikea vastaus" stands beside Valmis.
+async function submitDomain(){
+  if(phase !== "play") return;
+  phase = "busy"; actions([]); R.marks = null; R.beam = null; render();
+  const [a, b] = dom, pieces = restricted(a, b), maxs = task.maxs;
+  if(injectiveOn(a, b)){
+    const mine = maxs.filter(m => m[0] <= a + EPS && b <= m[1] + EPS);
+    const perfect = mine.some(m => same(m[0], a) && same(m[1], b));
+    const ratio = mine.length ? Math.min(1, clipLen([a, b]) / clipLen(longest(mine))) : 1;
+    const pts = Math.max(TRY_MIN, Math.round(100 * ratio) + (perfect ? PERFECT : 0) - TRY_COST * tries);
+    const others = maxs.filter(m => !(same(m[0], a) && same(m[1], b)));
+    await sweep(pieces, null);
+    await reflect(pieces);
+    let t;
+    if(perfect) t = maxs.length === 1 ? `<b>Täydellinen!</b> ${iv(a, b)} on suurin mahdollinen väli.`
+                                      : `<b>Täydellinen!</b> ${iv(a, b)} on maksimaalinen: sitä ei voi laajentaa. Myös ${ivs(others)} on maksimaalinen.`;
+    else t = `<b>Oikein,</b> tällä välillä f:llä on käänteisfunktio. ` +
+             (maxs.length === 1 ? `Suurin mahdollinen väli olisi ${iv(...maxs[0])}.`
+              : mine.length > 1 ? `Väliä voi vielä laajentaa, esimerkiksi ${mine.map(m => iv(...m)).join(" tai ")}.`
+              : `Väliä voi vielä laajentaa: ${iv(...(mine[0] || longest(maxs)))}.`);
+    done(pts, t + invText(), "good");
+    return;
+  }
+  tries++;
+  const w = witness(pieces);
+  await sweep(pieces, w);
+  msg((w ? `<b>Laser löysi kaksoisosuman:</b> ${hitText(w.y, w.hits)}.` : `<b>Väli on liian suuri.</b>`) + ` Yritä uudelleen.`, "bad");
+  const zoomed = !same(view.x0, task.view.x0) || !same(view.x1, task.view.x1);
+  if(zoomed){ await wait(1800); await tweenView(task.view, 700); }
+  if(R.beam) R.beam.spent = true;
+  phase = "play";
+  actions([["Valmis", submitDomain, "primary"], ["Näytä oikea vastaus", showAnswer, "danger"]]);
+  render();
+}
+
+// "Näytä oikea vastaus": only this costs a life (Vadim)
+async function showAnswer(){
+  if(phase !== "play") return;
+  phase = "busy"; actions([]); R.marks = null; R.beam = null;
+  loseLife();
+  const m = longest(task.maxs), others = task.maxs.filter(x => x !== m);
+  dom = [...m]; render();
+  await wait(350);
+  const pieces = restricted(...m);
+  await sweep(pieces, null);
+  await reflect(pieces);
+  done(0, `<b>Oikea vastaus:</b> ${iv(...m)}.` + (others.length ? ` Myös ${ivs(others)} kelpaa.` : "") + invText(), "bad");
+}
+
+/* ── flow ────────────────────────────────────────────────────────────── */
+function newGame(){
+  score = 0; lives = LIVES; level = 0;
+  renderLives(false);
+  startLevel();
+}
+function startLevel(){ levelScore = 0; ti = 0; startTask(); }
+
+function startTask(){
+  gen++;
+  $("overlay").classList.remove("show");
+  task = LEVELS[level].tasks[ti]; mode = LEVELS[level].mode; view = { ...task.view };
+  shots = 0; phase = "play";
+  Object.assign(R, { beamY: task.beam ?? (view.y0 <= 0 && view.y1 >= 0 ? 0 : r1((view.y0 + view.y1) / 2)), aim: false, beam: null, marks: null,
+                     inv: null, invPieces: null });
+  tries = 0;
+  if(mode === "restrict"){
+    dom = task.start.map(snapX); active = 1;       // too wide on purpose: never an answer (Vadim)
+    task.maxs ??= maximals();
+  }
+  $("q").textContent = LEVELS[level].q(task);
+  $("fx").innerHTML = task.dom ? `<span>${task.fx}<span class="dom">,</span></span><span class="dom">${task.dom}</span>` : task.fx;
+  $("readout").innerHTML = "";
+  $("shotsBox").style.visibility = mode === "restrict" ? "hidden" : "";
+  msg(ti < 2 && LEVELS[level].help ? `<span class="help">${LEVELS[level].help}</span>` : "", "");
+  actions(mode === "restrict" ? [["Valmis", submitDomain, "primary"]] : [["Moninkertaista arvoa ei löydy", claimInjective]]);
+  hud(); render();
+}
+
+function done(pts, html, cls){
+  phase = "done";
+  const gained = pts * (level + 1);
+  score += gained; levelScore += gained; hud();
+  msg(html + (gained ? ` <span class="plus">+${gained}</span>` : ""), cls);
+  const last = ti + 1 >= LEVELS[level].tasks.length;
+  actions([[lives <= 0 || last ? "Jatka" : "Seuraava", next, "primary"]]);
+  render();
+  $("actions").querySelector("button").focus({ preventScroll: true });
+}
+
+function next(){
+  if(phase !== "done") return;
+  if(lives <= 0) return showOverlay("over");
+  ti++;
+  if(ti >= LEVELS[level].tasks.length) return showOverlay(level + 1 < LEVELS.length ? "level" : "complete");
+  startTask();
+}
+
+function loseLife(){ lives = Math.max(0, lives - 1); renderLives(true); }
+
+/* ── page parts ──────────────────────────────────────────────────────── */
+const nf = n => n.toLocaleString("fi-FI");
+function hud(){
+  $("level").textContent = `${level + 1}/${LEVELS.length}`;
+  $("task").textContent = `${ti + 1}/${LEVELS[level].tasks.length}`;
+  $("score").textContent = nf(score);
+  $("shots").textContent = shots;
+}
+const LIFE_ICON = `<circle class="life-cup" cx="9" cy="11" r="5.5"/><line class="life-rim" x1="17" y1="11" x2="37" y2="11"/>`;
+function renderLives(justLost){
+  $("lives").innerHTML = Array.from({ length: LIVES }, (_, i) =>
+    `<svg viewBox="0 0 40 22" class="${i < lives ? "" : "lost"}${justLost && i === lives ? " just-lost" : ""}">${LIFE_ICON}</svg>`).join("");
+}
+function msg(html, cls){ $("msg").innerHTML = html; $("msg").className = "msg " + (cls || ""); }
+function actions(list){
+  const box = $("actions"); box.innerHTML = "";
+  for(const [label, fn, kind] of list){
+    const b = document.createElement("button");
+    b.className = "btn" + (kind ? " " + kind : ""); b.textContent = label;
+    b.addEventListener("click", fn);
+    box.appendChild(b);
+  }
+}
+
+function showOverlay(kind){
+  gen++; phase = "overlay";
+  const rows = [], btns = [];
+  const course = ["Palaa kurssiin", null];
+  let title, result = "", text = "";
+  if(kind === "level"){
+    title = `Taso ${level + 1} läpi!`;
+    result = `+${nf(levelScore)}`;
+    rows.push(["Tason pisteet", nf(levelScore)], ["Pisteet yhteensä", nf(score), true]);
+    text = `Seuraavaksi: taso ${level + 2}, ${LEVELS[level + 1].name}.`;
+    btns.push(["Seuraava taso", () => { level++; startLevel(); }]);
+    celebrate();
+  } else if(kind === "complete"){
+    const bonus = lives * BONUS_LIFE, before = score;
+    score += bonus; hud();
+    title = "Kaikki tasot läpi!";
+    result = nf(score);
+    rows.push(["Tehtävät", nf(before)], [`Elämät ${lives} × ${BONUS_LIFE}`, "+" + nf(bonus)], ["Yhteensä", nf(score), true]);
+    btns.push(["Pelaa uudestaan", newGame]);
+    celebrate();
+  } else {
+    title = "Peli päättyi";
+    result = nf(score);
+    text = "Elämät loppuivat.";
+    btns.push(["Pelaa uudestaan", newGame]);
+  }
+  btns.push(course);
+  $("ovTitle").textContent = title;
+  $("ovResult").innerHTML = result;
+  $("ovMsg").innerHTML = text; $("ovMsg").hidden = !text;
+  $("ovScore").innerHTML = rows.map(([l, v, tot]) =>
+    `<span${tot ? ' class="tot"' : ""}>${l}</span><span class="v${tot ? " tot" : ""}">${v}</span>`).join("");
+  const box = $("ovBtns"); box.innerHTML = "";
+  btns.forEach(([label, fn], i) => {
+    const el = document.createElement(fn ? "button" : "a");
+    el.textContent = label;
+    if(fn) el.addEventListener("click", fn); else el.href = "../../../../#/lukio/maa12";
+    if(i === 0) el.className = "primary";
+    box.appendChild(el);
+  });
+  $("overlay").classList.add("show");
+  box.firstChild.focus();
+}
+
+/* ── input ───────────────────────────────────────────────────────────── */
+// The drag listens on the whole window and only tries pointer capture
+// (some Chrome versions refuse it); a new press ends a drag whose release was lost.
+let drag = null;
+function aimAt(py){ R.beamY = r1(clamp(wy(clamp(py, PT, PB)), view.y0, view.y1)); R.aim = true; R.beam = null; render(); }
+stage.addEventListener("pointerdown", e => {
+  if(drag) endDrag(false);
+  if(phase !== "play") return;
+  e.preventDefault();
+  try { stage.setPointerCapture(e.pointerId); } catch(_) {}
+  drag = { id: e.pointerId };
+  const p = svgPt(e);
+  if(mode === "restrict"){
+    active = Math.abs(p.x - hx(dom[0])) <= Math.abs(p.x - hx(dom[1])) ? 0 : 1;
+    stage.classList.add("resizing");
+    moveHandle(p.x);
+  } else aimAt(p.y);
+  addEventListener("pointermove", onMove);
+  addEventListener("pointerup", onUp);
+  addEventListener("pointercancel", onCancel);
+});
+function onMove(e){
+  if(!drag || e.pointerId !== drag.id || phase !== "play") return;
+  const p = svgPt(e);
+  if(mode === "restrict") moveHandle(p.x); else aimAt(p.y);
+}
+function onUp(e){ if(drag && e.pointerId === drag.id) endDrag(true); }
+function onCancel(e){ if(drag && e.pointerId === drag.id) endDrag(false); }
+function endDrag(release){
+  stage.classList.remove("resizing");
+  removeEventListener("pointermove", onMove);
+  removeEventListener("pointerup", onUp);
+  removeEventListener("pointercancel", onCancel);
+  drag = null;
+  if(mode !== "restrict" && phase === "play"){
+    if(release) fire(); else { R.aim = false; render(); }
+  }
+}
+
+document.addEventListener("keydown", e => {
+  if($("overlay").classList.contains("show") || e.target.closest("button, a")) return;
+  if(phase === "done" && (e.key === "Enter" || e.key === " ")){ e.preventDefault(); next(); return; }
+  if(phase !== "play") return;
+  if(mode === "restrict"){
+    // ←/→ move the right end, with Shift the left end
+    if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
+      e.preventDefault(); active = e.shiftKey ? 0 : 1;
+      nudgeHandle(e.key === "ArrowRight" ? 1 : -1);
+    }
+    return;
+  }
+  if(e.key === "ArrowUp" || e.key === "ArrowDown"){
+    e.preventDefault();
+    const d = (e.key === "ArrowUp" ? 1 : -1) * (e.shiftKey ? 0.5 : 0.1);
+    R.beamY = r1(clamp(R.beamY + d, view.y0, view.y1)); R.aim = true; R.beam = null; render();
+  } else if(e.key === " "){
+    e.preventDefault(); fire();
+  }
+});
+
+$("restart").addEventListener("click", newGame);
+
+/* testing (Vadim): typing "xyz", or the page opened with ?testi, shows a
+   button that skips to the next level. Students never see it. */
+const TEST_CODE = "xyz"; let typed = "";
+const showTestTools = () => { $("skipLevel").hidden = false; };
+if(new URLSearchParams(location.search).has("testi")) showTestTools();
+document.addEventListener("keydown", e => { typed = (typed + e.key.toLowerCase()).slice(-TEST_CODE.length); if(typed === TEST_CODE) showTestTools(); });
+$("skipLevel").addEventListener("click", () => {
+  if(phase === "overlay") return;
+  if(level + 1 < LEVELS.length){ level++; startLevel(); } else showOverlay("complete");
+});
+
+newGame();
+</script>
+</body>
+</html>

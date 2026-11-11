@@ -1000,6 +1000,67 @@ games/<category>/<course>/<game>/index.html
   An auto-player in headless Chrome played levels 1–6 through with no
   errors.
 
+## Vaakasuora laser (MAA12, draft since 2026-11-11)
+
+- `games/lukio/maa12/laser/`, course MAA 12 ("Käänteisfunktiot"). The
+  horizontal line test as a game: a laser beam is the horizontal line, and
+  two hits (two x, the same f(x)) prove there is no inverse. Idea 1 of a
+  MAA12 brainstorm (Vadim); the ε–δ duel is in `FUTURE_GAMES.md`
+  (untracked).
+- Three levels. (The first draft's level 3 "Pimeässä", graph hidden, was
+  dropped by Vadim; the present level 3 is new.)
+- Level 1 "Näe" (graph shown): drag up/down on the board and let go to fire
+  (y snaps to 0.1). Two hits solve the task; the button "Moninkertaista
+  arvoa ei löydy" (Vadim's wording, as is the help text: "Käänteisfunktio on
+  olemassa jos ja vain jos ei löydy moninkertaista arvoa …") makes the
+  game's laser sweep the picture bottom to top: a double hit costs a life,
+  otherwise the graph is reflected in y = x (gold = f⁻¹). Traps: 1/x
+  (injective, not monotone; its win text adds "Tässä tapauksessa f on
+  itsensä käänteisfunktio, eli f = f⁻¹", Vadim), a piecewise function going
+  down then jumping up (injective), two increasing pieces that overlap
+  (not). A task's laser never starts where it already hits twice (`beam`;
+  task 3 starts at y = −3 and task 5 at y = −2, Vadim).
+- Level 2 "Rajaa": drag the ends of an interval under the graph (past the
+  edge = ±∞); the biggest interval containing x₀ on which f is invertible
+  (`best`, between the turning points). Each task starts from a wide
+  interval that is never an answer (`start`, Vadim's values: [−2, 2],
+  [−1, 3,5], [−2, 3,5], [−3,5, 1], [−2, 2], [−π, π]). Outside the interval
+  the curve is as thick as inside but dark and dim (Vadim; it was dashed).
+  The texts ("Etsi mahdollisimman suuri väli, joka sisältää pisteen x = …",
+  "Etsi sopiva väli siirtämällä sen päätepisteitä …") are Vadim's.
+  sin x snaps to π/12 and ends with "Juuri näin määritellään arcsin."
+  Over an end's line (and its handle) the mouse shows the ↔ cursor
+  (`ew-resize`, Vadim; an 18-unit invisible `.grab` line), and keeps it
+  while an end is dragged.
+- Valmis on an interval where f is not injective (Vadim): the sweep stops at
+  the double hit (zoomed in if tiny, then back), "Yritä uudelleen", no life
+  lost, and from then on "Näytä oikea vastaus" (red frame) beside Valmis.
+  Only that button costs a life; it sets the interval to the answer.
+  A failed try costs 25 points of the task (my default; at least 25 left).
+  The answer is never shown before that (the green "best" bar is gone).
+- Level 3 "Paloittain" (Vadim): level 2 with piecewise linear functions of
+  5–7 pieces (`linTask`, pieces [m, c, a, b, ca, cb]; the formula is written
+  from them), where the maximal interval is not unique. Any maximal interval
+  (injective, neither end can move out a grid step) is a full answer, and
+  the text names the others ("Myös … on maksimaalinen"). `injectiveOn` is
+  exact: each piece is injective, and no two pieces' value ranges (with
+  open/closed ends) meet; `maximals` scans the grid. The six functions were
+  picked from a random search with an exact offline check: exactly two
+  maximal intervals each, whole-number ends, start [−4, 4] never an answer.
+  Vadim's own example (x + 2 / −x / x − 2) has a sliding family of maximal
+  intervals (parallel pieces), and as closed intervals [−2, 2] and [0, 4]
+  can't both work whichever piece owns 0 and 2; so it isn't used. Jumps
+  between pieces sloping the same way make such families; turning points
+  and jumps between pieces sloping opposite ways give a few clean answers.
+- The case brace is drawn from four bordered quarter-rounds (`.cbrace`), so
+  it grows with 7 rows; the font's "{" didn't.
+- My defaults, not yet discussed with Vadim: the task lists of levels 1–2,
+  points (level 1: 100 − 10 per wasted shot, +50 triple hit; levels 2–3:
+  100 × length share, +50 maximal, −25 per failed try; × level number;
+  +500 per life), 3 lives, control hints on a level's first two tasks
+  (level 3 has none; no Esittely yet), colours (graph white, beam magenta,
+  f⁻¹ gold, x₀ green).
+
 ## Open questions (ask Vadim before deciding)
 
 - "Weighing": the scale accepts a box removed on one side and x diamonds on the
