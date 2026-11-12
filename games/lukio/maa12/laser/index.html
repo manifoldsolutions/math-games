@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Vaakasuora laser</title>
+<title>Käänteisfunktiot</title>
 
 <!-- ════════════════════════════════════════════════════════════════════
-     GAME: Vaakasuora laser (MAA12: does a function have an inverse?)
+     GAME: Käänteisfunktiot (MAA12: does a function have an inverse?)
+     Named Vaakasuora laser until 2026-11-11 (Vadim); the folder stays laser/.
      First draft (2026-11-11). Self-contained, uses assets/theme.css and
      assets/celebrate.js.
 
@@ -28,14 +29,17 @@
        (between the turning points round x₀, `best`). Each task starts from a
        wide interval that is never an answer (`start`, Vadim). "Valmis"
        sweeps the restricted graph. Not injective: the double hit (zoomed in
-       when it is tiny), "Yritä uudelleen", and from then on "Näytä oikea
-       vastaus" beside Valmis; only that button costs a life (Vadim).
+       when it is tiny), "Kaksoisosuma löytyi! … Yritä uudelleen", and from then on "Näytä oikea
+       vastaus" under Valmis; only that button costs a life (Vadim).
        Injective: points for the length (clipped to the picture), +50 for a
        maximal interval, −25 per failed try (at least 25), the reflection
        and the formula of f⁻¹.
-     Level 3 "Paloittain": as level 2 with piecewise linear functions of 5–7
-       pieces, each with two maximal intervals (`maximals`, exact from the
-       pieces' value ranges, `injectiveOn`); either one is a full answer.
+     Level 3 "Paloittain": as level 2 with piecewise functions whose maximal
+       interval is not unique (two, or infinitely many), and a tap on a
+       handle opens or closes that end. Injectivity is exact, from the
+       pieces' value ranges (`injectiveOn`); any maximal interval on the
+       grid is a full answer (`maximals`), and so is a closed one that only
+       an open end could widen (Vadim: "Täydellinen" is no big deal).
 
      Points per task × level number. Level 1: 100 − 10 per wasted shot (at
      least 40), +50 for three hits at once. 3 lives; finishing gives +500
@@ -57,16 +61,16 @@
   .task{ width:min(560px,100%); padding:8px clamp(16px,4vw,28px) 0; text-align:center; }
   .task .q{ font-size:15px; line-height:1.4; color:var(--muted); }
   .task .fx{
-    font-family:var(--math); font-weight:600; font-size:clamp(19px,5vw,23px);
+    font-family:var(--math); font-weight:600; font-size:clamp(21px,5.6vw,26px);   /* bigger, Vadim: indices were hard to read */
     display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0 .35em;
     min-height:2.7em; margin-top:4px;
   }
   .task .dom{ color:var(--muted); font-weight:500; }
   .iv, .rel{ font-family:"IBM Plex Sans", sans-serif; font-weight:500; }   /* .rel: ≠ ≤ ≥ <, odd in Chakra Petch */
-  .frac{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; font-size:.78em; line-height:1.15; margin:0 .08em; }
+  .frac{ display:inline-flex; flex-direction:column; align-items:center; vertical-align:middle; font-size:.82em; line-height:1.15; margin:0 .08em; }
   .frac > span:first-child{ border-bottom:1.5px solid currentColor; padding:0 .25em; }
   .rad{ border-top:1.5px solid currentColor; padding:0 .12em; margin-left:.03em; }
-  sup{ font-size:.62em; line-height:0; }
+  sup, sub{ font-size:.75em; line-height:0; }
   .pw{ display:inline-flex; align-items:center; gap:.2em; }
   /* the case brace, drawn from four quarter-round borders so it grows with the rows */
   .cbrace{ position:relative; align-self:stretch; width:.62em; margin:.15em .12em; --r:.32em; --w:.3em; --t:1.5px; }
@@ -75,9 +79,11 @@
   .cbrace i:nth-child(2){ left:0; width:calc(var(--w) + var(--t)); top:calc(50% - var(--r)); height:var(--r); border-right-width:var(--t); border-bottom-width:var(--t); border-bottom-right-radius:var(--r); }
   .cbrace i:nth-child(3){ left:0; width:calc(var(--w) + var(--t)); top:calc(50% - var(--t)); height:var(--r); border-right-width:var(--t); border-top-width:var(--t); border-top-right-radius:var(--r); }
   .cbrace i:nth-child(4){ left:var(--w); width:var(--w); top:calc(50% - var(--t) + var(--r)); bottom:0; border-left-width:var(--t); border-bottom-width:var(--t); border-bottom-left-radius:var(--r); }
-  .cases{ display:grid; grid-template-columns:auto auto; gap:0 .9em; text-align:left; font-size:.82em; line-height:1.4; }
+  .cases{ display:grid; grid-template-columns:auto auto; gap:0 .9em; text-align:left; font-size:.94em; line-height:1.4; }
   .cases .cond{ color:var(--muted); font-weight:500; }
-  .pw.many{ font-size:.8em; }
+  .pw.many{ font-size:.86em; }
+  .fxl{ white-space:nowrap; }
+  .fxnote{ flex-basis:100%; font-size:.76em; font-weight:500; color:var(--muted); }   /* "missä …" under a formula */
   .pw.many .cases{ line-height:1.28; }
   .m{ font-family:var(--math); font-weight:600; white-space:nowrap; }
 
@@ -107,6 +113,7 @@
   .yx{ stroke:var(--muted); stroke-width:1.4; stroke-dasharray:6 6; }
   .yxlab{ fill:var(--muted); font:500 14px var(--math); }
   .x0dot{ fill:var(--green); filter:drop-shadow(0 0 4px rgba(57,255,158,.8)); }
+  .x0txt{ color:var(--green); font-weight:600; white-space:nowrap; text-shadow:0 0 6px rgba(57,255,158,.55); }   /* x₀ in the question, as its dot (Vadim) */
   .aim{ stroke:var(--accent); stroke-width:1.5; stroke-dasharray:7 6; opacity:.8; }
   .beamg{ filter:var(--glow-magenta); }
   .beamg.spent{ opacity:.28; }
@@ -125,6 +132,8 @@
   .handle{ fill:var(--surface); stroke:var(--accent); stroke-width:3; }
   .handle.on{ fill:var(--accent); }
   .handle.live{ cursor:ew-resize; }
+  .hbr{ fill:var(--accent-ink); font:600 17px "IBM Plex Sans", sans-serif; text-anchor:middle; pointer-events:none; }
+  .hbr.on{ fill:var(--bg); }
   .grab{ stroke:transparent; stroke-width:18; pointer-events:stroke; cursor:ew-resize; }
   #stage.resizing{ cursor:ew-resize; }      /* while an end is dragged, wherever the pointer is */
   .dock{ fill:var(--muted); font:600 14px var(--math); text-anchor:middle; }
@@ -135,9 +144,11 @@
   .msg{ width:min(560px,100%); padding:8px clamp(16px,4vw,28px) 4px; text-align:center; font-size:15px; line-height:1.45; min-height:3.2em; }
   .msg.good b{ color:var(--green-ink); }
   .msg.bad b{ color:var(--red); }
+  .msg.bad b.retry{ color:var(--green-ink); white-space:nowrap; }   /* "Yritä uudelleen." (Vadim) */
   .msg .plus{ color:var(--brown-ink); font-weight:700; white-space:nowrap; }
   .msg .help{ color:var(--muted); }
   .actions{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:4px 16px 6px; min-height:52px; }
+  .actions.stack{ flex-direction:column; align-items:center; }
   .subctrl{ padding-top:4px; }
 </style>
 </head>
@@ -145,7 +156,7 @@
 
   <header>
     <a class="back" href="../../../../#/lukio/maa12">← Takaisin</a>
-    <span class="title">Vaakasuora laser</span>
+    <span class="title">Käänteis&shy;funktiot</span>
     <span class="hud"><span>Taso: <b id="level">1/3</b></span><span>Pisteet: <b id="score">0</b></span></span>
   </header>
 
@@ -231,11 +242,12 @@ const frac = (n, d) => `<span class="frac"><span>${n}</span><span>${d}</span></s
 const root = s => `√<span class="rad">${s}</span>`;
 const INV = `f<sup>−1</sup>`;
 const rel = r => `<span class="rel">${r}</span>`;
-const pw = (rows, cls = "") => `<span class="pw ${cls}">f(x) =<span class="cbrace"><i></i><i></i><i></i><i></i></span><span class="cases">${
+const pw = (rows, cls = "") => `<span class="pw ${cls}"><span class="fxl">f(x) =</span><span class="cbrace"><i></i><i></i><i></i><i></i></span><span class="cases">${
   rows.map(([e, c]) => `<span>${e},</span><span class="cond">${c}</span>`).join("")}</span></span>`;
-function iv(a, b, show = xVal){
-  const A = show(a), B = show(b), sep = (A + B).includes(",") ? "; " : ", ";
-  return `<span class="m"><span class="iv">${a === -Infinity ? "(" : "["}</span>${A}${sep}${B}<span class="iv">${b === Infinity ? ")" : "]"}</span></span>`;
+// an interval; ca / cb: whether that end is in it (an infinite end never is)
+function iv(a, b, ca = true, cb = true){
+  const A = xVal(a), B = xVal(b), sep = (A + B).includes(",") ? "; " : ", ";
+  return `<span class="m"><span class="iv">${isFinite(a) && ca ? "[" : "("}</span>${A}${sep}${B}<span class="iv">${isFinite(b) && cb ? "]" : ")"}</span></span>`;
 }
 
 /* ── tasks ───────────────────────────────────────────────────────────────
@@ -246,17 +258,57 @@ const P = (f, a = -Infinity, b = Infinity, ca = true, cb = true) => ({ f, a, b, 
 const V = (cx, cy, span) => ({ x0: cx - span/2, x1: cx + span/2, y0: cy - span/2, y1: cy + span/2 });
 
 const I = Infinity;
-// a piecewise linear task (level 3): the formula is written from the pieces
-function linTask(x0, lin){
-  const pieces = lin.map(([m, c, a, b, ca, cb]) => Object.assign(P(x => m * x + c, a, b, !!ca, !!cb), { m, c }));
-  const term = (m, c) => (m === 1 ? "" : m === -1 ? "−" : fmt(m)) + "x" + (c ? (c > 0 ? " + " : " − ") + fmt(Math.abs(c)) : "");
+// a piecewise task (level 3): a piece is [m, c, a, b, ca, cb, q], f = qx² + mx + c
+// from a to b (q may be left out: a line); the formula is written from the pieces.
+// opts may set start, view, slide, note.
+function pwTask(x0, rows, opts = {}){
+  const pieces = rows.map(([m, c, a, b, ca, cb, q = 0]) => Object.assign(P(x => (q * x + m) * x + c, a, b, !!ca, !!cb), { q, m, c }));
+  // ½ is written as a fraction: x/2, x²/2 (Vadim)
+  const coef = (k, s) => k === 1 ? s : k === -1 ? "−" + s : Number.isInteger(1 / k) ? frac(s, 1 / k) : fmt(k) + s;
+  const term = ({ q, m, c }) => {
+    const ts = [[q, "x²"], [m, "x"]].filter(t => t[0]).map(([k, s]) => [k, coef(Math.abs(k), s)]);
+    if(c) ts.push([c, fmt(Math.abs(c))]);
+    if(q < 0 && c > 0) ts.unshift(ts.pop());                    // 2 − x² (Vadim), not −x² + 2
+    return ts.map(([k, s], i) => i ? (k < 0 ? " − " : " + ") + s : (k < 0 ? "−" : "") + s).join("");
+  };
   const le = closed => rel(closed ? "≤" : "&lt;");
   const cond = p => p.a === -I ? `kun x ${le(p.cb)} ${fmt(p.b)}`
                   : p.b === I ? `kun x ${rel(p.ca ? "≥" : "&gt;")} ${fmt(p.a)}`
                   : `kun ${fmt(p.a)} ${le(p.ca)} x ${le(p.cb)} ${fmt(p.b)}`;
   const owner = x => pieces.find(p => (x > p.a || (x === p.a && p.ca)) && (x < p.b || (x === p.b && p.cb)));
-  return { fx: pw(pieces.map(p => [term(p.m, p.c), cond(p)]), "many"), pieces, lin: true, x0, start: [-4, 4], view: V(0, 0, 9),
-           f: x => owner(x)?.f(x) ?? NaN };
+  return Object.assign({ fx: pw(pieces.map(p => [term(p), cond(p)]), pieces.length > 3 ? "many" : ""), pieces, piecewise: true,
+           x0, start: [-4, 4], view: V(0, 0, 9), f: x => owner(x)?.f(x) ?? NaN }, opts);
+}
+
+// level 3, tasks 5 and 6 (Vadim): with x_k = 1 − 2^−k, f(x) = x_(k+1) − (x − x_k) on the
+// k-th step, k = 0, 1, 2, … (slope −1), and f(x) = x otherwise. The two differ only in
+// the steps' ends (Vadim):
+//   5: x_k ≤ x < x_(k+1). Step k takes (x_k, x_(k+1)], nothing repeats: answer (−∞, ∞).
+//   6: x_k < x ≤ x_(k+1). Step k takes [x_k, x_(k+1)), and f(0) = f(½) = 0: the maximal
+//      intervals round ¼ are (0, ∞) and (−∞, ½), both with an open end.
+// Steps k = 0 … 5 are drawn exactly (Vadim: k ≤ 6; with 20 every redraw drew every
+// sliver and the app slowed down). The rest, from x_6 to 1 (1/64), is one piece taking
+// step 6's values (slope −½), so it never takes 1 = f(1). No dots from k = 3 on.
+function stairTask(left){                    // left: the steps are [x_k, x_(k+1)), else (x_k, x_(k+1)]
+  const K = 6, xk = k => 1 - 2 ** -k;
+  const id = (a, b, ca, cb) => Object.assign(P(x => x, a, b, ca, cb), { q: 0, m: 1, c: 0 });
+  const pieces = [id(-I, 0, true, !left)];
+  for(let k = 0; k < K; k++){
+    const lo = xk(k), hi = xk(k + 1), c = lo + hi;                  // f(x) = x_(k+1) − (x − x_k) = x_k + x_(k+1) − x
+    pieces.push(Object.assign(P(x => c - x, lo, hi, left, !left), { q: 0, m: -1, c, small: k >= 3 }));
+  }
+  const lo = xk(K), top = xk(K + 1);
+  pieces.push(Object.assign(P(x => top - (x - lo) / 2, lo, 1, left, false), { q: 0, m: -0.5, c: top + lo / 2, small: true }));
+  pieces.push(id(1, I, true, true));
+  const owner = x => pieces.find(p => (x > p.a || (x === p.a && p.ca)) && (x < p.b || (x === p.b && p.cb)));
+  const lt = rel("&lt;"), le = rel("≤"), x_ = j => `x<sub>${j}</sub>`, par = t => `<span class="iv">(</span>${t}<span class="iv">)</span>`;
+  return { fx: pw([[`${x_("k+1")} − ${par(`x − ${x_("k")}`)}`,
+                    `kun ${x_("k")} ${left ? le : lt} x ${left ? lt : le} ${x_("k+1")},<br>k = 0, 1, 2, …`],
+                   ["x", "muulloin,"]], "many") + `<span class="fxnote">missä ${x_("k")} = 1 − 2<sup>−k</sup></span>`,
+           pieces, piecewise: true, x0: 0.25, start: [0, 1], view: V(0.5, 0.5, 2), f: x => owner(x)?.f(x) ?? NaN,
+           // task 6's answers end with how it differs from task 5 (Vadim)
+           note: left ? "" : `Tämän tehtävän ainoa ero edelliseen tehtävään on ehto <span class="m">${x_("k")} ${lt} x ${le} ${x_("k+1")}</span> ` +
+                             `(eikä <span class="m">${x_("k")} ${le} x ${lt} ${x_("k+1")}</span>), mutta se vaikuttaa vastaukseen: nyt <span class="m">f(0) = f(0,5) = 0</span>!` };
 }
 
 const LEVELS = [
@@ -278,7 +330,7 @@ const LEVELS = [
         pieces: [P(x => -x, 0, 1, true, false), P(x => x, 1, 2)], inj: true, view: V(1, 0.5, 5) },
     ] },
   { mode: "restrict", name: "Rajaa",
-    q: t => `Etsi mahdollisimman suuri väli, joka sisältää pisteen x = ${xVal(t.x0)} ja jolla f:llä on käänteisfunktio.`,
+    q: t => `Etsi mahdollisimman suuri väli, joka sisältää pisteen <span class="x0txt">x = ${xVal(t.x0)}</span> ja jolla f:llä on käänteisfunktio.`,
     help: "Etsi sopiva väli siirtämällä sen päätepisteitä. Vahvista vastauksesi painamalla ”Valmis”.",
     tasks: [
       { fx: "f(x) = x²", f: x => x*x, x0: 1, best: [0, Infinity], start: [-2, 2], inv: root("x"), view: V(0, 2, 7) },
@@ -289,21 +341,28 @@ const LEVELS = [
       { fx: "f(x) = sin x", f: Math.sin, x0: 0, best: [-Math.PI/2, Math.PI/2], start: [-Math.PI, Math.PI], inv: "arcsin x", pi: true, view: V(0, 0, 8),
         note: "Juuri näin määritellään arcsin." },
     ] },
-  // Level 3 (Vadim): as level 2, with piecewise linear functions of 5–7 pieces whose
-  // biggest interval is not unique. Each has exactly two maximal intervals with
-  // whole-number ends (checked exactly offline and again by `maximals` here);
-  // the start [−4, 4] is never one. A piece: [m, c, a, b, ca, cb], f = mx + c from
-  // a to b, ca / cb: whether that end belongs to the piece.
+  // Level 3 (Vadim): as level 2, with piecewise functions whose biggest interval
+  // is not unique, and the ends of the interval may be open (tap a handle).
+  // 1: one jump, two maximal intervals. 2 and 3 (Vadim): two increasing pieces with a
+  // jump down, so infinitely many maximal intervals that don't combine (`slide`:
+  // examples and why). 4: two jumps, two maximal intervals. 5 and 6 (Vadim): infinitely
+  // many jumps, the same steps with different ends: injective on ℝ; (0, ∞) & (−∞, ½).
+  // The finite answers were checked exactly offline and again by `maximals` here;
+  // a start is never an answer. A piece: [m, c, a, b, ca, cb, q], see pwTask.
   { mode: "restrict", name: "Paloittain",
-    q: t => `Etsi mahdollisimman suuri väli, joka sisältää pisteen x = ${xVal(t.x0)} ja jolla f:llä on käänteisfunktio.`,
-    help: "",
+    q: t => `Etsi mahdollisimman suuri väli, joka sisältää pisteen <span class="x0txt">x = ${xVal(t.x0)}</span> ja jolla f:llä on käänteisfunktio.`,
+    help: "Välin päätepisteen voi tehdä avoimeksi tai suljetuksi napauttamalla sitä.",
     tasks: [
-      linTask(0,    [[-1, 0, -I, -3, 1, 1], [0.5, 2.5, -3, -1, 0, 1], [-1, -2, -1, 1, 0, 1], [1, -3, 1, 2, 0, 0], [-2, 7, 2, I, 1, 1]]),
-      linTask(1,    [[2, 4, -I, -1, 1, 0], [-2, -3, -1, 0, 1, 1], [1, -3, 0, 1, 0, 0], [2, -3, 1, 2, 1, 0], [-2, 7, 2, 3, 1, 1], [-1, 2, 3, I, 0, 1]]),
-      linTask(-0.5, [[0.5, 4.5, -I, -3, 1, 0], [1, 2, -3, -1, 1, 0], [-2, 1, -1, 0, 1, 0], [2, -3, 0, 1, 1, 0], [-0.5, 1.5, 1, 3, 1, 1], [-0.5, 3.5, 3, I, 0, 1]]),
-      linTask(0,    [[0.5, 2.5, -I, -3, 1, 1], [1, 5, -3, -2, 0, 0], [1, 3, -2, 0, 1, 1], [-1, 1, 0, 1, 0, 0], [-1.5, 1.5, 1, 3, 1, 1], [-1, 5, 3, I, 0, 1]]),
-      linTask(-1,   [[-1, -6, -I, -3, 1, 0], [0.5, -1.5, -3, -1, 1, 0], [1, 1, -1, 0, 1, 1], [-1, 3, 0, 1, 0, 1], [-1, 0, 1, 3, 0, 0], [-1, 2, 3, I, 1, 1]]),
-      linTask(1,    [[1, 4, -I, -3, 1, 1], [-1, -2, -3, -1, 0, 0], [-3, 0, -1, 0, 1, 0], [-1, -2, 0, 1, 1, 1], [1, -4, 1, 2, 0, 0], [-2, 5, 2, 3, 1, 0], [1, -1, 3, I, 1, 1]]),
+      pwTask(1,   [[-1, 0, -I, 2, 1, 1], [1, 0, 2, I, 0, 1]]),                                      // (−∞, 2] & [−2, ∞)
+      pwTask(2,   [[0.5, 0, -I, 2, 1, 0], [0.5, -2, 2, I, 1, 1]], { view: V(2, 0, 10), start: [-2, 6],
+        slide: { eg: [[0, 4, true, false], [-1, 3, false, true], [2, I, true, false]],
+                 why: `<span class="m">f(x) = f(x + 4)</span>, kun <span class="m">−2 ${rel("≤")} x ${rel("&lt;")} 2</span>` } }),
+      pwTask(0,   [[0, 1, -I, 0, 1, 0, -0.5], [0, -1, 0, I, 1, 1, 0.5]], {
+        slide: { eg: [[-1.2, 1.6, true, false], [-1.6, 1.2, false, true], [0, I, true, false]],
+                 why: `<span class="m">f(a) = f(b)</span>, kun <span class="m">a ${rel("&lt;")} 0 ${rel("≤")} b</span> ja <span class="m">a² + b² = 4</span>` } }),
+      pwTask(1.5, [[1, 1, -I, -1, 1, 0], [-1, 2, -1, 2, 1, 1], [1, -1, 2, I, 0, 1]]),              // (−∞, 2] & [1, ∞)
+      stairTask(true),                                                                               // x_k ≤ x < x_(k+1): (−∞, ∞)
+      stairTask(false),                                                                              // x_k < x ≤ x_(k+1): (0, ∞) & (−∞, ½)
     ] },
 ];
 
@@ -312,6 +371,8 @@ let score = 0, levelScore = 0, lives = LIVES, shots = 0;
 let phase = "play";          // play | busy (an animation) | done (result shown) | overlay
 let gen = 0;                 // bumped on every new task: older animations stop
 let dom = [0, 1], active = 1;  // levels 2–3: the chosen interval and the handle being moved
+let domC = [true, true];      // whether each end is in it (level 3 may open them; ±∞ never is)
+const cur = () => [dom[0], dom[1], domC[0], domC[1]];
 let tries = 0;               // levels 2–3: failed "Valmis" on this task
 // what render() draws besides the function itself
 const R = { beamY: 0, aim: false, beam: null, marks: null, inv: null, invPieces: null };
@@ -356,7 +417,8 @@ function solve(pieces, y, xlo = view.x0, xhi = view.x1){
     if(a === p.a && !p.ca) a += 1e-7 * Math.max(1, Math.abs(a));
     if(b === p.b && !p.cb) b -= 1e-7 * Math.max(1, Math.abs(b));
     if(!(a <= b)) continue;
-    const N = a === b ? 0 : 1200, xs = new Float64Array(N + 1), gs = new Float64Array(N + 1);
+    // samples by width: a piece as wide as the picture gets 1200, a sliver (level 3, task 5) 60
+    const N = a === b ? 0 : Math.round(clamp(1200 * (b - a) / (xhi - xlo), 60, 1200)), xs = new Float64Array(N + 1), gs = new Float64Array(N + 1);
     for(let i = 0; i <= N; i++){ xs[i] = N ? a + (b - a) * i / N : a; gs[i] = p.f(xs[i]) - y; }
     for(let i = 0; i <= N; i++){
       const g = gs[i];
@@ -394,8 +456,10 @@ function witness(pieces){
       prev = v;
     }
   }
-  const cands = ys.filter(y => y >= view.y0 && y <= view.y1).sort((u, v) => u - v)
-    .map(y => ({ y, hits: solve(pieces, y) })).filter(c => c.hits.length >= 2);
+  // also halfway between neighbours: an overlap between two open ends, (2; 2,1), holds no grid height
+  const base = ys.filter(y => y >= view.y0 && y <= view.y1).sort((u, v) => u - v), all = [];
+  base.forEach((y, i) => { all.push(y); if(i + 1 < base.length && base[i + 1] - y > 1e-9) all.push((y + base[i + 1]) / 2); });
+  const cands = all.map(y => ({ y, hits: solve(pieces, y) })).filter(c => c.hits.length >= 2);
   if(!cands.length) return null;
   const spread = c => c.hits[c.hits.length - 1] - c.hits[0];
   const thr = Math.min(0.6 * Math.max(...cands.map(spread)), 0.12 * spanX);
@@ -426,7 +490,7 @@ function curveSVG(pieces, { lo = -Infinity, hi = Infinity, s = 1, dots = true } 
     let a = Math.max(p.a, lo, X0), b = Math.min(p.b, hi, X1);
     if(!(a < b)){
       const y = p.f(a);
-      if(dots && a === b && p.ca && p.cb && isFinite(y)){
+      if(dots && !p.small && a === b && p.ca && p.cb && isFinite(y)){
         const [mx, my] = map(a, y);
         c += `<circle class="dot" cx="${cl(sx(mx)).toFixed(1)}" cy="${cl(sy(my)).toFixed(1)}" r="5"/>`;
       }
@@ -442,7 +506,7 @@ function curveSVG(pieces, { lo = -Infinity, hi = Infinity, s = 1, dots = true } 
       d += (pen ? "L" : "M") + cl(sx(mx)).toFixed(1) + "," + cl(sy(my)).toFixed(1);
       pen = true;
     }
-    if(!dots) continue;
+    if(!dots || p.small) continue;              // a sliver: its dots would only blot
     for(const [e, closed] of [[p.a, p.ca], [p.b, p.cb]]){
       if(!isFinite(e) || e < a || e > b) continue;
       const y = p.f(e);
@@ -487,7 +551,7 @@ function gridSVG(){
   return s;
 }
 
-const curPieces = () => mode === "restrict" ? restricted(dom[0], dom[1]) : task.pieces;
+const curPieces = () => mode === "restrict" ? restricted(...cur()) : task.pieces;
 const hx = v => v === -Infinity ? PL - DOCK : v === Infinity ? PR + DOCK : clamp(sx(v), PL, PR);
 
 function render(){
@@ -497,7 +561,7 @@ function render(){
 
   const pcs = curPieces(), dim = R.inv != null ? " dim" : "";
   if(mode === "restrict"){
-    o.push(`<g class="ghost">${curveSVG(task.lin ? task.pieces : [P(task.f)], { dots: !!task.lin })}</g>`);
+    o.push(`<g class="ghost">${curveSVG(task.piecewise ? task.pieces : [P(task.f)], { dots: !!task.piecewise })}</g>`);
     for(const e of dom) if(isFinite(e)) o.push(`<line class="edge" x1="${sx(e)}" y1="${PT}" x2="${sx(e)}" y2="${PB}"/>`);
   }
   o.push(`<g class="graph${dim}">${curveSVG(pcs)}</g>`);
@@ -553,10 +617,16 @@ function render(){
     o.push(`<text class="dock${dom[1] === Infinity ? " on" : ""}" x="${PR + DOCK}" y="${TRACK_Y + 22}">∞</text>`);
     o.push(`<line class="bar" x1="${hx(dom[0])}" y1="${TRACK_Y}" x2="${hx(dom[1])}" y2="${TRACK_Y}"/>`);
     o.push(`<line class="x0tick" x1="${sx(task.x0)}" y1="${TRACK_Y - 11}" x2="${sx(task.x0)}" y2="${TRACK_Y + 11}"/>`);
-    dom.forEach((v, i) => o.push(`<circle class="handle${i === active && phase === "play" ? " on" : ""}${phase === "play" ? " live" : ""}" cx="${hx(v)}" cy="${TRACK_Y}" r="10"/>`));
+    dom.forEach((v, i) => {
+      const on = i === active && phase === "play";
+      o.push(`<circle class="handle${on ? " on" : ""}${phase === "play" ? " live" : ""}" cx="${hx(v)}" cy="${TRACK_Y}" r="${task.piecewise ? 12 : 10}"/>`);
+      // level 3: the handle shows its bracket; a tap opens or closes the end
+      if(task.piecewise && isFinite(v))
+        o.push(`<text class="hbr${on ? " on" : ""}" x="${hx(v)}" y="${TRACK_Y + 6}">${i ? (domC[1] ? "]" : ")") : (domC[0] ? "[" : "(")}</text>`);
+    });
     // the ends can be grabbed: a wide invisible line over each, with the ↔ cursor (Vadim)
     if(phase === "play") for(const e of dom) if(isFinite(e)) o.push(`<line class="grab" x1="${sx(e)}" y1="${PT}" x2="${sx(e)}" y2="${TRACK_Y + 12}"/>`);
-    $("readout").innerHTML = `x ∈ ${iv(dom[0], dom[1])}`;
+    $("readout").innerHTML = `x ∈ ${iv(...cur())}`;
   }
   stage.innerHTML = o.join("");
 }
@@ -666,9 +736,11 @@ async function claimInjective(){
 }
 
 /* ── levels 2 and 3: the interval ───────────────────────────────────────
-   The player's interval is closed, its ends on the grid (0.1, or π/12 in a
-   trig task), or ±∞. Level 2: f is injective on it exactly when it lies in
-   `best`. Level 3: exactly, from the pieces' value ranges (`injectiveOn`). */
+   The player's interval has its ends on the grid (0.1, or π/12 in a trig
+   task), or ±∞. Level 2: closed, and f is injective on it exactly when it
+   lies in `best`. Level 3: an end may be open (tap its handle; Vadim), and
+   injectivity is exact, from the pieces' value ranges (`injectiveOn`).
+   An interval is [a, b, ca, cb], ca / cb: whether that end is in it. */
 const EPS = 1e-9;
 const step = () => task.pi ? PI12 : 0.1;
 const snapX = v => task.pi ? Math.round(v / PI12) * PI12 : r1(v);
@@ -676,25 +748,38 @@ const same = (u, v) => u === v || Math.abs(u - v) < 1e-6;
 const gridEnds = () => [Math.ceil(task.view.x0 / step() - 1e-9) * step(), Math.floor(task.view.x1 / step() + 1e-9) * step()];
 const clipLen = ([u, v]) => Math.max(0, Math.min(v, task.view.x1) - Math.max(u, task.view.x0));
 const longest = list => list.reduce((m, x) => clipLen(x) > clipLen(m) + EPS ? x : m);
+const norm = ([a, b, ca = true, cb = true]) => [a, b, isFinite(a) && ca, isFinite(b) && cb];
+const sameIv = (I, J) => { const [a, b, ca, cb] = norm(I), [c, d, cc, cd] = norm(J);
+  return same(a, c) && same(b, d) && ca === cc && cb === cd; };
+const covers = (J, I) => { const [a, b, ca, cb] = norm(I), [c, d, cc, cd] = norm(J);   // J ⊇ I
+  return (c < a - EPS || (same(c, a) && (cc || !ca))) && (d > b + EPS || (same(d, b) && (cd || !cb))); };
 
-// the function on [a, b]: level 3's pieces cut to it (an end inside a piece becomes closed)
-function restricted(a, b){
-  if(!task.lin) return [P(task.f, a, b)];
+// the function on the interval: level 3's pieces cut to it
+function restricted(a, b, ca = true, cb = true){
+  if(!task.piecewise) return [P(task.f, a, b, ca, cb)];
   const out = [];
   for(const p of task.pieces){
-    const inA = a > p.a + EPS, inB = b < p.b - EPS;
-    const lo = inA ? a : p.a, loC = inA || p.ca, hi = inB ? b : p.b, hiC = inB || p.cb;
+    const [lo, loC] = a > p.a + EPS ? [a, ca] : a > p.a - EPS ? [p.a, p.ca && ca] : [p.a, p.ca];
+    const [hi, hiC] = b < p.b - EPS ? [b, cb] : b < p.b + EPS ? [p.b, p.cb && cb] : [p.b, p.cb];
     if(lo > hi + EPS || (Math.abs(lo - hi) < EPS && !(loC && hiC))) continue;
-    out.push(Object.assign(P(p.f, lo, hi, loC, hiC), { m: p.m, c: p.c }));
+    out.push(Object.assign(P(p.f, lo, hi, loC, hiC), { q: p.q, m: p.m, c: p.c, small: p.small }));
   }
   return out;
 }
-function injectiveOn(a, b){
-  if(!task.lin) return a >= task.best[0] - EPS && b <= task.best[1] + EPS;
-  // each linear piece is injective by itself; two pieces must not share a value
-  const ranges = restricted(a, b).map(p => {
-    const lo = [p.m * p.a + p.c, p.ca], hi = [p.m * p.b + p.c, p.cb];
-    return p.m > 0 ? [lo, hi] : [hi, lo];
+// a piece's value at x, at ±∞ its limit
+const valAt = (p, x) => isFinite(x) ? p.f(x) : (p.q ? Math.sign(p.q) : Math.sign(p.m) * Math.sign(x)) * Infinity;
+// a parabola piece splits at its turning point into two monotone parts (the point goes left)
+function monoParts(p){
+  const h = p.q ? -p.m / (2 * p.q) : NaN;
+  if(!(h > p.a + EPS && h < p.b - EPS)) return [p];
+  return [P(p.f, p.a, h, p.ca, true), P(p.f, h, p.b, false, p.cb)].map(r => Object.assign(r, { q: p.q, m: p.m, c: p.c }));
+}
+function injectiveOn(a, b, ca = true, cb = true){
+  if(!task.piecewise) return a >= task.best[0] - EPS && b <= task.best[1] + EPS;
+  // each monotone part is injective by itself; two parts must not share a value
+  const ranges = restricted(a, b, ca, cb).flatMap(monoParts).map(p => {
+    const A = [valAt(p, p.a), p.ca], B = [valAt(p, p.b), p.cb];
+    return A[0] <= B[0] ? [A, B] : [B, A];
   });
   const meet = ([L1, U1], [L2, U2]) => {
     const lo = Math.abs(L1[0] - L2[0]) < EPS ? [L1[0], L1[1] && L2[1]] : L1[0] > L2[0] ? L1 : L2;
@@ -705,30 +790,38 @@ function injectiveOn(a, b){
     for(let j = i + 1; j < ranges.length; j++) if(meet(ranges[i], ranges[j])) return false;
   return true;
 }
-// every maximal interval containing x₀: injective, and neither end can move out a step
-function maximals(){
-  if(!task.lin){
+// every maximal interval containing x₀ on the grid: injective, and no bigger grid
+// interval is (closedOnly: among closed intervals only). The possible left ends
+// from the outside in: −∞, [g, (g, [g + 0,1, …; the right ends likewise.
+function maximals(closedOnly = false){
+  if(!task.piecewise){
     const [ba, bb] = task.best;
-    return [[isFinite(ba) ? Math.ceil(ba / step() - 1e-6) * step() : ba, isFinite(bb) ? Math.floor(bb / step() + 1e-6) * step() : bb]];
+    return [[isFinite(ba) ? Math.ceil(ba / step() - 1e-6) * step() : ba, isFinite(bb) ? Math.floor(bb / step() + 1e-6) * step() : bb, true, true]];
   }
-  const [g0, g1] = gridEnds(), A = [-I], B = [];
+  const [g0, g1] = gridEnds(), L = [[-I, false]], Rt = [];
   for(let k = Math.round(g0 * 10); k <= Math.round(g1 * 10); k++){
     const v = k / 10;
-    if(v <= task.x0 + EPS) A.push(v);
-    if(v >= task.x0 - EPS) B.push(v);
+    if(v < task.x0 - EPS) L.push(...(closedOnly ? [[v, true]] : [[v, true], [v, false]]));
+    else if(v <= task.x0 + EPS) L.push([v, true]);
+    if(v > task.x0 + EPS) Rt.push(...(closedOnly ? [[v, true]] : [[v, false], [v, true]]));
+    else if(v >= task.x0 - EPS) Rt.push([v, true]);
   }
-  B.push(I);
-  const far = A.map(a => {                         // the furthest b that still works
+  Rt.push([I, false]);
+  const far = L.map(([a, ca]) => {                 // the furthest right end that still works
     let j = -1;
-    for(let k = 0; k < B.length; k++){
-      if(B[k] <= a + EPS) continue;
-      if(injectiveOn(a, B[k])) j = k; else break;
-    }
+    for(let k = 0; k < Rt.length; k++){ if(injectiveOn(a, Rt[k][0], ca, Rt[k][1])) j = k; else break; }
     return j;
   });
   const out = [];
-  A.forEach((a, i) => { if(far[i] >= 0 && (i === 0 || far[i - 1] < far[i])) out.push([a, B[far[i]]]); });
+  L.forEach(([a, ca], i) => { if(far[i] >= 0 && (i === 0 || far[i - 1] < far[i])) out.push([a, Rt[far[i]][0], ca, Rt[far[i]][1]]); });
   return out;
+}
+// maximal among all intervals, not only those on the grid: no end can move out a little
+function exactlyMaximal(I){
+  const [a, b, ca, cb] = norm(I), d = 1e-4, grow = [];
+  if(isFinite(a)) grow.push(ca ? [a - d, b, true, cb] : [a, b, true, cb]);
+  if(isFinite(b)) grow.push(cb ? [a, b + d, ca, true] : [a, b, ca, true]);
+  return grow.every(g => !injectiveOn(...g));
 }
 
 function moveHandle(px){
@@ -737,6 +830,7 @@ function moveHandle(px){
   else if(active === 1 && px > PR + 6) v = Infinity;
   else v = clamp(snapX(wx(clamp(px, PL, PR))), ...gridEnds());
   if(active === 0) v = Math.min(v, task.x0); else v = Math.max(v, task.x0);
+  if(!domC[active] && same(v, task.x0)) v += active ? step() : -step();     // an open end can't sit on x₀
   if(active === 0 && same(v, dom[1])) v = dom[1] - step();
   if(active === 1 && same(v, dom[0])) v = dom[0] + step();
   dom[active] = v;
@@ -750,47 +844,81 @@ function nudgeHandle(dir){
   else if(nv < g0 - EPS && active === 0) moveHandle(PL - 20);
   else moveHandle(sx(nv));
 }
+// level 3: a tap on a handle opens or closes that end (not at x₀: it must stay in)
+function toggleEnd(i){
+  if(!task.piecewise || phase !== "play" || !isFinite(dom[i]) || same(dom[i], task.x0)) return;
+  domC[i] = !domC[i]; active = i; render();
+}
 
 const ivs = list => list.map(m => iv(...m)).join(" ja ");
+// level 3: name the other maximal intervals and why they don't combine (Vadim)
+const otherText = list => list.length === 1 ? ` Toinen maksimaalinen väli on ${iv(...list[0])}.`
+                                            : ` Muut maksimaaliset välit ovat ${ivs(list)}.`;
+function apartText(){
+  const ms = task.maxs.map(norm);
+  const l = ms.reduce((p, m) => m[0] < p[0] - EPS || (same(m[0], p[0]) && m[2]) ? m : p);
+  const r = ms.reduce((p, m) => m[1] > p[1] + EPS || (same(m[1], p[1]) && m[3]) ? m : p);
+  return ms.length === 2 ? ` Niitä ei voi yhdistää: välillä ${iv(l[0], r[1], l[2], r[3])} f:llä ei ole käänteisfunktiota.`
+                         : ` Mitään kahta niistä ei voi yhdistää.`;
+}
+// tasks with infinitely many maximal intervals (`slide`): a few, and why they don't combine
+function slideText(I){
+  const eg = task.slide.eg.filter(m => !sameIv(m, I)).map(m => iv(...m));
+  return ` Maksimaalisia välejä on äärettömän monta, esimerkiksi ${eg.slice(0, -1).join(", ")} ja ${eg.at(-1)}, eikä niitä voi yhdistää: ${task.slide.why}.`;
+}
 function invText(){
-  if(task.lin) return "";
+  if(task.piecewise) return task.note ? " " + task.note : "";
   return task.inv ? ` Käänteisfunktio: <span class="m">${INV}(x) = ${task.inv}</span>.${task.note ? " " + task.note : ""}`
                   : ` Käänteisfunktiolle ei ole tuttua lauseketta, mutta se on olemassa.`;
 }
 
 // "Valmis". Not injective: the laser shows why and the player tries again (Vadim);
-// from then on "Näytä oikea vastaus" stands beside Valmis.
+// from then on "Näytä oikea vastaus" stands under Valmis (Vadim).
 async function submitDomain(){
   if(phase !== "play") return;
   phase = "busy"; actions([]); R.marks = null; R.beam = null; render();
-  const [a, b] = dom, pieces = restricted(a, b), maxs = task.maxs;
-  if(injectiveOn(a, b)){
-    const mine = maxs.filter(m => m[0] <= a + EPS && b <= m[1] + EPS);
-    const perfect = mine.some(m => same(m[0], a) && same(m[1], b));
-    const ratio = mine.length ? Math.min(1, clipLen([a, b]) / clipLen(longest(mine))) : 1;
+  const I = norm(cur()), pieces = restricted(...I), maxs = task.maxs;
+  if(injectiveOn(...I)){
+    const mine = maxs.filter(m => covers(m, I));
+    const onGrid = maxs.some(m => sameIv(m, I));
+    // "Täydellinen" is meant to be easy (Vadim): also a closed interval that only an open end could still widen
+    const perfect = onGrid || task.closedMaxs.some(m => sameIv(m, I));
+    const ratio = perfect || !mine.length ? 1 : Math.min(1, clipLen(I) / clipLen(longest(mine)));
     const pts = Math.max(TRY_MIN, Math.round(100 * ratio) + (perfect ? PERFECT : 0) - TRY_COST * tries);
-    const others = maxs.filter(m => !(same(m[0], a) && same(m[1], b)));
+    const others = maxs.filter(m => !covers(m, I));
     await sweep(pieces, null);
     await reflect(pieces);
     let t;
-    if(perfect) t = maxs.length === 1 ? `<b>Täydellinen!</b> ${iv(a, b)} on suurin mahdollinen väli.`
-                                      : `<b>Täydellinen!</b> ${iv(a, b)} on maksimaalinen: sitä ei voi laajentaa. Myös ${ivs(others)} on maksimaalinen.`;
-    else t = `<b>Oikein,</b> tällä välillä f:llä on käänteisfunktio. ` +
-             (maxs.length === 1 ? `Suurin mahdollinen väli olisi ${iv(...maxs[0])}.`
-              : mine.length > 1 ? `Väliä voi vielä laajentaa, esimerkiksi ${mine.map(m => iv(...m)).join(" tai ")}.`
-              : `Väliä voi vielä laajentaa: ${iv(...(mine[0] || longest(maxs)))}.`);
+    if(perfect){
+      // the bigger one shown keeps one of the player's ends if it can
+      const big = mine.find(m => sameIv([m[0], I[1], m[2], I[3]], I)) || mine.find(m => sameIv([I[0], m[1], I[2], m[3]], I)) || longest(mine);
+      t = `<b>Täydellinen!</b> ` + (!onGrid ? `${iv(...I)} kelpaa. Avoimella päätepisteellä sen saisi vielä hieman suuremmaksi: ${iv(...big)}.`
+                                   : !exactlyMaximal(I) ? `${iv(...I)} kelpaa, eikä sitä voi laajentaa 0,1:n askelin.`
+                                   : maxs.length === 1 ? `${iv(...I)} on suurin mahdollinen väli.`
+                                   : `${iv(...I)} on maksimaalinen: sitä ei voi laajentaa.`);
+      if(task.slide) t += slideText(I);
+      else if(others.length) t += otherText(others) + apartText();
+    }
+    else if(task.slide) t = `<b>Oikein,</b> tällä välillä f:llä on käänteisfunktio. Väliä voi vielä laajentaa, esimerkiksi väliksi ${iv(...longest(mine))}.` + slideText(I);
+    else if(maxs.length === 1) t = `<b>Oikein,</b> tällä välillä f:llä on käänteisfunktio. Suurin mahdollinen väli olisi ${iv(...maxs[0])}.`;
+    else {
+      const mx = mine.length ? mine : [longest(maxs)];
+      t = `<b>Oikein,</b> tällä välillä f:llä on käänteisfunktio. ` +
+          (mx.length > 1 ? `Väliä voi vielä laajentaa ${mx.length === 2 ? "kahdella" : "usealla"} tavalla: ${mx.map(m => iv(...m)).join(" tai ")}.`
+                         : `Väliä voi vielä laajentaa: ${iv(...mx[0])}.` + otherText(maxs.filter(m => m !== mx[0]))) + apartText();
+    }
     done(pts, t + invText(), "good");
     return;
   }
   tries++;
   const w = witness(pieces);
   await sweep(pieces, w);
-  msg((w ? `<b>Laser löysi kaksoisosuman:</b> ${hitText(w.y, w.hits)}.` : `<b>Väli on liian suuri.</b>`) + ` Yritä uudelleen.`, "bad");
+  msg((w ? `<b>Kaksoisosuma löytyi!</b> ${hitText(w.y, w.hits)}.` : `<b>Väli on liian suuri.</b>`) + ` <b class="retry">Yritä uudelleen.</b>`, "bad");
   const zoomed = !same(view.x0, task.view.x0) || !same(view.x1, task.view.x1);
   if(zoomed){ await wait(1800); await tweenView(task.view, 700); }
   if(R.beam) R.beam.spent = true;
   phase = "play";
-  actions([["Valmis", submitDomain, "primary"], ["Näytä oikea vastaus", showAnswer, "danger"]]);
+  actions([["Valmis", submitDomain, "primary"], ["Näytä oikea vastaus", showAnswer, "danger"]], true);   // under Valmis (Vadim)
   render();
 }
 
@@ -799,13 +927,15 @@ async function showAnswer(){
   if(phase !== "play") return;
   phase = "busy"; actions([]); R.marks = null; R.beam = null;
   loseLife();
-  const m = longest(task.maxs), others = task.maxs.filter(x => x !== m);
-  dom = [...m]; render();
+  const m = norm(task.slide ? task.slide.eg[0] : longest(task.maxs));
+  const others = task.slide ? [] : task.maxs.filter(x => !sameIv(x, m));
+  dom = [m[0], m[1]]; domC = [!isFinite(m[0]) || m[2], !isFinite(m[1]) || m[3]]; render();
   await wait(350);
   const pieces = restricted(...m);
   await sweep(pieces, null);
   await reflect(pieces);
-  done(0, `<b>Oikea vastaus:</b> ${iv(...m)}.` + (others.length ? ` Myös ${ivs(others)} kelpaa.` : "") + invText(), "bad");
+  done(0, `<b>Oikea vastaus:</b> ${task.slide ? "esimerkiksi " : ""}${iv(...m)}.` +
+          (task.slide ? slideText(m) : others.length ? ` Myös ${ivs(others)} kelpaa.` + apartText() : "") + invText(), "bad");
 }
 
 /* ── flow ────────────────────────────────────────────────────────────── */
@@ -825,10 +955,11 @@ function startTask(){
                      inv: null, invPieces: null });
   tries = 0;
   if(mode === "restrict"){
-    dom = task.start.map(snapX); active = 1;       // too wide on purpose: never an answer (Vadim)
+    dom = task.start.map(snapX); domC = [true, true]; active = 1;   // too wide on purpose: never an answer (Vadim)
     task.maxs ??= maximals();
+    task.closedMaxs ??= task.piecewise ? maximals(true) : task.maxs;
   }
-  $("q").textContent = LEVELS[level].q(task);
+  $("q").innerHTML = LEVELS[level].q(task);
   $("fx").innerHTML = task.dom ? `<span>${task.fx}<span class="dom">,</span></span><span class="dom">${task.dom}</span>` : task.fx;
   $("readout").innerHTML = "";
   $("shotsBox").style.visibility = mode === "restrict" ? "hidden" : "";
@@ -872,8 +1003,8 @@ function renderLives(justLost){
     `<svg viewBox="0 0 40 22" class="${i < lives ? "" : "lost"}${justLost && i === lives ? " just-lost" : ""}">${LIFE_ICON}</svg>`).join("");
 }
 function msg(html, cls){ $("msg").innerHTML = html; $("msg").className = "msg " + (cls || ""); }
-function actions(list){
-  const box = $("actions"); box.innerHTML = "";
+function actions(list, stack = false){          // stack: one under the other
+  const box = $("actions"); box.innerHTML = ""; box.classList.toggle("stack", stack);
   for(const [label, fn, kind] of list){
     const b = document.createElement("button");
     b.className = "btn" + (kind ? " " + kind : ""); b.textContent = label;
@@ -941,7 +1072,10 @@ stage.addEventListener("pointerdown", e => {
   if(mode === "restrict"){
     active = Math.abs(p.x - hx(dom[0])) <= Math.abs(p.x - hx(dom[1])) ? 0 : 1;
     stage.classList.add("resizing");
-    moveHandle(p.x);
+    // level 3: a press on a handle may be a tap (open / close the end); it moves only once dragged
+    if(task.piecewise && Math.abs(p.x - hx(dom[active])) <= 18 && Math.abs(p.y - TRACK_Y) <= 20){
+      drag.tap = { x: p.x, y: p.y }; render();
+    } else moveHandle(p.x);
   } else aimAt(p.y);
   addEventListener("pointermove", onMove);
   addEventListener("pointerup", onUp);
@@ -950,6 +1084,7 @@ stage.addEventListener("pointerdown", e => {
 function onMove(e){
   if(!drag || e.pointerId !== drag.id || phase !== "play") return;
   const p = svgPt(e);
+  if(drag.tap){ if(Math.hypot(p.x - drag.tap.x, p.y - drag.tap.y) < 7) return; drag.tap = null; }
   if(mode === "restrict") moveHandle(p.x); else aimAt(p.y);
 }
 function onUp(e){ if(drag && e.pointerId === drag.id) endDrag(true); }
@@ -959,7 +1094,9 @@ function endDrag(release){
   removeEventListener("pointermove", onMove);
   removeEventListener("pointerup", onUp);
   removeEventListener("pointercancel", onCancel);
+  const tap = release && drag?.tap;
   drag = null;
+  if(tap && mode === "restrict") toggleEnd(active);
   if(mode !== "restrict" && phase === "play"){
     if(release) fire(); else { R.aim = false; render(); }
   }

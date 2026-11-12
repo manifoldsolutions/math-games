@@ -1000,8 +1000,12 @@ games/<category>/<course>/<game>/index.html
   An auto-player in headless Chrome played levels 1–6 through with no
   errors.
 
-## Vaakasuora laser (MAA12, draft since 2026-11-11)
+## Käänteisfunktiot (MAA12, draft since 2026-11-11)
 
+- Named Vaakasuora laser at first; Vadim renamed it Käänteisfunktiot
+  (2026-11-11). Its folder `games/lukio/maa12/laser/` and catalog id `laser`
+  stay. The header title has a soft hyphen (`Käänteis&shy;funktiot`): one
+  long word would push the HUD off a 390 px phone.
 - `games/lukio/maa12/laser/`, course MAA 12 ("Käänteisfunktiot"). The
   horizontal line test as a game: a laser beam is the horizontal line, and
   two hits (two x, the same f(x)) prove there is no inverse. Idea 1 of a
@@ -1028,37 +1032,92 @@ games/<category>/<course>/<game>/index.html
   the curve is as thick as inside but dark and dim (Vadim; it was dashed).
   The texts ("Etsi mahdollisimman suuri väli, joka sisältää pisteen x = …",
   "Etsi sopiva väli siirtämällä sen päätepisteitä …") are Vadim's.
+  "x = …" in the question is in the neon green of the x₀ dot (`.x0txt`,
+  Vadim; levels 2 and 3).
   sin x snaps to π/12 and ends with "Juuri näin määritellään arcsin."
   Over an end's line (and its handle) the mouse shows the ↔ cursor
   (`ew-resize`, Vadim; an 18-unit invisible `.grab` line), and keeps it
   while an end is dragged.
 - Valmis on an interval where f is not injective (Vadim): the sweep stops at
   the double hit (zoomed in if tiny, then back), "Yritä uudelleen", no life
-  lost, and from then on "Näytä oikea vastaus" (red frame) beside Valmis.
+  lost, and from then on "Näytä oikea vastaus" (red frame) under Valmis
+  (Vadim; it was beside it). The message (Vadim): "Kaksoisosuma löytyi!
+  f(−2) = f(2) = −1. Yritä uudelleen.", the last words bold and green.
   Only that button costs a life; it sets the interval to the answer.
   A failed try costs 25 points of the task (my default; at least 25 left).
   The answer is never shown before that (the green "best" bar is gone).
-- Level 3 "Paloittain" (Vadim): level 2 with piecewise linear functions of
-  5–7 pieces (`linTask`, pieces [m, c, a, b, ca, cb]; the formula is written
-  from them), where the maximal interval is not unique. Any maximal interval
-  (injective, neither end can move out a grid step) is a full answer, and
-  the text names the others ("Myös … on maksimaalinen"). `injectiveOn` is
-  exact: each piece is injective, and no two pieces' value ranges (with
-  open/closed ends) meet; `maximals` scans the grid. The six functions were
-  picked from a random search with an exact offline check: exactly two
-  maximal intervals each, whole-number ends, start [−4, 4] never an answer.
-  Vadim's own example (x + 2 / −x / x − 2) has a sliding family of maximal
-  intervals (parallel pieces), and as closed intervals [−2, 2] and [0, 4]
-  can't both work whichever piece owns 0 and 2; so it isn't used. Jumps
-  between pieces sloping the same way make such families; turning points
-  and jumps between pieces sloping opposite ways give a few clean answers.
+- Level 3 "Paloittain" (Vadim): level 2 with piecewise functions (`pwTask`,
+  pieces [m, c, a, b, ca, cb, q], f = qx² + mx + c, q left out for a line;
+  the formula is written from them, a downward parabola as "2 − x²", ½ as
+  a fraction: x/2, x²/2), where the maximal interval is not unique.
+- Level 3's ends may be open (Vadim, 2026-11-12): a tap on a handle
+  (`toggleEnd`; a press on a handle moves it only once dragged 7 units)
+  switches that end between closed and open. The handle shows its bracket
+  ([ ( ] ), as do the readout and every interval in the texts (`iv(a, b,
+  ca, cb)`); the graph shows an open dot. An end on x₀ stays closed. The
+  help line on tasks 1–2: "Välin päätepisteen voi tehdä avoimeksi tai
+  suljetuksi napauttamalla sitä." (my wording). Level 2 stays closed.
+- Level 3's tasks (Vadim, 2026-11-12):
+  1. −x / x, jump at 2, x₀ = 1: (−∞, 2] and [−2, ∞).
+  2. x/2 (x < 2) / x/2 − 2, x₀ = 2: two increasing pieces with a jump
+     down, so infinitely many maximal intervals, [a, a + 4) and
+     (a, a + 4] (f(x) = f(x + 4) for −2 ≤ x < 2), and [2, ∞). The closed
+     [a, a + 4] fails at its ends, which is why ends can be open. View
+     x ∈ [−3, 7], start [−2, 6].
+  3. 1 − x²/2 (x < 0) / x²/2 − 1, x₀ = 0: likewise, a < 0 ≤ b with
+     a² + b² < 4 (≤ 4 with an open end), and [0, ∞). On the grid the
+     boundary is reached only at [−1,2; 1,6), (−1,6; 1,2] and (−2, 0].
+  4. x + 1 / −x + 2 / x − 1 (two jumps), x₀ = 1,5: (−∞, 2] and [1, ∞).
+  5. and 6. Vadim's staircase (2026-11-12, after slope −1/2, slope −2 and
+     open steps): with x_k = 1 − 2^−k, f(x) = x_(k+1) − (x − x_k) on the
+     k-th step, k = 0, 1, 2, … (slope −1), and f(x) = x otherwise
+     ("muulloin, missä x_k = 1 − 2^−k"). x₀ = 0,25, start [0, 1], view
+     [−0,5; 1,5]. The two differ only in the steps' ends (Vadim):
+     5: x_k ≤ x < x_(k+1): step k takes (x_k, x_(k+1)], nothing repeats,
+        the answer is (−∞, ∞) (f is not its own inverse: f(0) = ½).
+     6: x_k < x ≤ x_(k+1): step k takes [x_k, x_(k+1)), f(0) = f(½) = 0,
+        so (0, ∞) and (−∞; 0,5), both with an open end; closed,
+        [0,1; ∞) and (−∞; 0,4] also count as "Täydellinen". The start
+        [0, 1] shows f(0) = f(0,5) = 0. Its answer texts end (Vadim's
+        frame, my words): "Tämän tehtävän ainoa ero edelliseen tehtävään on
+        ehto x_k < x ≤ x_(k+1) (eikä x_k ≤ x < x_(k+1)), mutta se vaikuttaa
+        vastaukseen: nyt f(0) = f(0,5) = 0!"
+     `stairTask(left)`: steps k = 0 … 5 exactly (Vadim: k ≤ 6; with
+     k ≤ 20 a redraw took 3× longer and the app slowed down), then one
+     piece from x_6 to 1 taking step 6's values (slope −½, so it never
+     takes 1 = f(1)); no dots from k = 3 on (`small`). The parabola task
+     (x², x² − 3, 2 − x²) that was 6/6 is gone (Vadim).
+- Level 3 answers (Vadim: "Täydellinen" must not be a big deal): `maximals`
+  finds the maximal intervals on the 0,1 grid with open or closed ends
+  (left ends from the outside in: −∞, [g, (g, [g + 0,1, …). "Täydellinen"
+  (full 150) is any of them, and also a closed interval that only an open
+  end could still widen (`closedMaxs`: [0; 3,9] in task 2; the text names
+  [0, 4)). If even that isn't maximal off the grid (`exactlyMaximal`: task
+  3's [−1; 1,7], the bound is √3), the text says it can't grow "0,1:n
+  askelin". Tasks 2–3 (`slide`) name a few maximal intervals and why
+  they don't combine ("Maksimaalisia välejä on äärettömän monta,
+  esimerkiksi [0, 4), (−1, 3] ja [2, ∞), eikä niitä voi yhdistää: f(x) =
+  f(x + 4), kun −2 ≤ x < 2."); "Näytä oikea vastaus" shows the first.
+  The other tasks name both maximal intervals and their union (Vadim,
+  `otherText`, `apartText`): "Toinen maksimaalinen väli on (−∞, 2]. Niitä
+  ei voi yhdistää: välillä (−∞, ∞) f:llä ei ole käänteisfunktiota."
+- `injectiveOn` is exact: a parabola piece is split at its turning point
+  (`monoParts`), each monotone part is injective, and no two parts' value
+  ranges (with open/closed ends) meet. The laser also tries heights halfway
+  between its candidates (an overlap like (2; 2,1) between two open ends
+  holds no grid height), and samples a piece by its width (slivers: 60).
+  Checked on thousands of random intervals with random open ends: the laser
+  finds a real double hit exactly when `injectiveOn` says no.
 - The case brace is drawn from four bordered quarter-rounds (`.cbrace`), so
   it grows with 7 rows; the font's "{" didn't.
+- Formulas were made bigger (Vadim, 2026-11-12: indices were hard to read):
+  21–26 px, cases .94em, sup/sub .75em. The widest (level 3 task 5) fits a
+  360 px phone; at 360×740 levels 2–3 scroll by about 18 px.
 - My defaults, not yet discussed with Vadim: the task lists of levels 1–2,
   points (level 1: 100 − 10 per wasted shot, +50 triple hit; levels 2–3:
   100 × length share, +50 maximal, −25 per failed try; × level number;
   +500 per life), 3 lives, control hints on a level's first two tasks
-  (level 3 has none; no Esittely yet), colours (graph white, beam magenta,
+  (level 3's is about open ends; no Esittely yet), colours (graph white, beam magenta,
   f⁻¹ gold, x₀ green).
 
 ## Open questions (ask Vadim before deciding)
